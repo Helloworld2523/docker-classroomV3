@@ -1,0 +1,223 @@
+{% extends "live/base_room.html" %}
+{% load live_extras %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    /* CSS สำหรับเอฟเฟกต์กระพริบตา (Blinker) */
+    /* แนะนำให้ย้ายไปที่ custom.css หรือ CSS global ใน base.html เพื่อไม่ให้ซ้ำซ้อน */
+    .blink_me {
+        animation: blinker 1s linear infinite;
+    }
+    @keyframes blinker {
+        50% { opacity: 0; }
+    }
+
+    /* CSS สำหรับ Video Player Placeholder เมื่อไม่มีการถ่ายทอดสด */
+    .video-placeholder {
+        background-color: var(--bs-dark); /* ใช้สี dark ของ Bootstrap */
+        color: var(--bs-light); /* ใช้สี light ของ Bootstrap */
+        display: flex;
+        flex-direction: column; /* จัดองค์ประกอบให้เรียงลงมา */
+        align-items: center;
+        justify-content: center;
+        min-height: 400px; /* กำหนดความสูงให้เท่ากับ Player */
+        border-radius: var(--bs-border-radius); /* ใช้ border-radius ของ Bootstrap */
+        text-align: center;
+        padding: 1.5rem; /* เพิ่ม padding */
+    }
+    .video-placeholder .fas {
+        font-size: 3.5rem; /* ไอคอนใหญ่ขึ้น */
+        margin-bottom: 1rem;
+        color: var(--bs-secondary); /* สีไอคอน */
+    }
+    .video-placeholder h4 {
+        margin-bottom: 0.5rem;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <a class="btn btn-warning mb-4" role="button" onclick="history.back()">
+        <i class="fas fa-arrow-left me-2"></i> กลับสู่หน้าหลัก
+    </a>
+
+    <div class="p-4 mb-4 bg-light rounded-3 text-center shadow-sm"> {# ใช้ shadow-sm เพิ่มมิติ #}
+        <h1 class="display-5 fw-bold text-primary mb-3">ห้องเรียน {{ q|upper }}</h1> {# display-5, fw-bold เพื่อความโดดเด่น #}
+        <p class="lead mb-2">
+            <i class="fas fa-calendar-alt me-2"></i> วันนี้ ({{ IsDayString }}) มีบรรยายวิชาทั้งหมด
+            <span class="badge bg-info fs-5 py-2 px-3">{{ subjectCount_out }}</span> วิชา {# py-2 px-3 เพิ่มขนาด badge #}
+        </p>
+        <p class="mb-0">
+            <span id="contentSpan" class="badge bg-success py-2 px-3">กำลังโหลดข้อมูลผู้รับชม...</span> {# py-2 px-3 เพิ่มขนาด badge #}
+        </p>
+    </div>
+
+    {% if room_comment %}
+        <div class="alert alert-warning alert-dismissible fade show mb-4 shadow-sm" role="alert">
+            <h5 class="alert-heading mb-2"><span class="badge bg-danger blink_me py-2 px-3"><i class="fas fa-exclamation-triangle me-2"></i> หมายเหตุ</span></h5>
+            <p class="mb-0">{{ room_comment|linebreaks }}</p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <h2 class="mb-4 text-center text-secondary">การถ่ายทอดสด</h2> {# text-secondary เพื่อสีที่นุ่มนวลขึ้น #}
+
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-10 col-md-12"> {# ขยาย col ให้ใหญ่ขึ้น #}
+            {% if location == 1 or location == 2 or location == 3 or location == 5 or location == 7 or location == 8 %}
+                <link href="https://unpkg.com/video.js/dist/video-js.css" rel="stylesheet">
+                <script src="https://unpkg.com/video.js/dist/video.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+                
+                <video id="my_video_{{ location }}" class="video-js vjs-default-skin rounded shadow-lg" controls autoplay muted preload="auto"  width="850" height="400" data-setup='{}'>
+                    <source src="{{ server }}{{ q|lower }}/playlist.m3u8" type="application/x-mpegURL">
+                    <p class="vjs-no-js">
+                        เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอแบบ HTML5
+                        โปรดเปิดใช้งาน JavaScript หรืออัปเกรดเบราว์เซอร์ของคุณ.
+                    </p>
+                </video>
+                <script>
+                    var video = document.getElementById('my_video_{{ location }}');
+                    if (Hls.isSupported()) {
+                        var hls = new Hls();
+                        hls.loadSource('{{ server }}{{ q|lower }}/playlist.m3u8');
+                        hls.attachMedia(video);
+                        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                            video.play();
+                        });
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        video.src = '{{ server }}{{ q|lower }}/playlist.m3u8';
+                        video.addEventListener('loadedmetadata', function () {
+                            video.play();
+                        });
+                    } else {
+                        console.log('HLS not supported');
+                        // Fallback message for unsupported browsers
+                        video.parentNode.innerHTML = `
+                            <div class="video-placeholder">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <h4 class="mt-3">เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ</h4>
+                                <p class="mb-0">โปรดตรวจสอบการรองรับ HTML5 หรือไม่มีการถ่ายทอดสดในขณะนี้</p>
+                            </div>`;
+                    }
+                </script>
+
+            {% elif location == 4 %}
+                <link href="{% static 'videojs/video-js.css' %}" rel="stylesheet">
+                <script src="{% static 'videojs/video.js' %}"></script>
+                <script src="{% static 'videojs/videojs-contrib-hls.js' %}"></script>
+                <link rel="stylesheet" type="text/css" href="{% static 'videojs/videojs-matrix.css' %}">
+                <video id="my_video_{{ location }}" class="video-js vjs-default-skin vjs-matrix  rounded shadow-lg"  width="850" height="400" data-setup='{}'>
+                </video>
+                <script>
+                    const player = videojs('my_video_{{ location }}', {
+                        "controls": true,
+                        "autoplay": true,
+                        "preload": "auto",
+                        "text": "{{ q }}",
+                    });
+                    player.src({
+                        src: '{{ server }}{{ q|lower }}.m3u8',
+                        type: 'application/x-mpegURL',
+                    });
+                    player.fluid(true);
+                </script>
+
+            {% elif location == 6 %}
+                <link href="https://unpkg.com/video.js/dist/video-js.css" rel="stylesheet">
+                <script src="https://unpkg.com/video.js/dist/video.js"></script>
+                <script src="https://unpkg.com/videojs-contrib-hls/dist/videojs-contrib-hls.js"></script>
+                <video id="my_video_1" class="video-js vjs-fluid vjs-default-skin vjs-big-play-centered  rounded shadow-lg" controls preload="auto" autoplay="true" width="850" height="400" poster="https://www.dailygizmo.tv/wp-content/uploads/2017/05/y0-500x512.jpg" data-setup='{}'>
+                    <source src="https://vtop-playground.ml/hls_dash/master.m3u8" type="application/x-mpegURL">
+                    <p class="vjs-no-js">
+                        เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอแบบ HTML5
+                        โปรดเปิดใช้งาน JavaScript หรืออัปเกรดเบราว์เซอร์ของคุณ.
+                    </p>
+                </video>
+                <script>
+                    var player = videojs('my_video_1');
+                    player.play();
+                </script>
+
+            {% else %}
+                <div class="video-placeholder shadow-sm">
+                    <i class="fas fa-video-slash"></i>
+                    <h4 class="mt-3">ไม่มีการถ่ายทอดสดในขณะนี้</h4>
+                    <p class="mb-0">โปรดตรวจสอบกำหนดการ หรือกลับมาอีกครั้งในภายหลัง</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <h2 class="mb-4 text-center text-secondary">ตารางวิชาทั้งหมดในห้อง {{ q|upper }}</h2>
+
+    {% if subjectCount_out == 0 %}
+        <div class="alert alert-info text-center shadow-sm" role="alert">
+            <p class="mb-0">ไม่มีวิชาอื่นๆ ที่มีการบรรยายในห้องนี้</p>
+        </div>
+    {% else %}
+        <div class="table-responsive"> {# ทำให้ตาราง responsive บนหน้าจอขนาดเล็ก #}
+            <table class="table table-striped table-hover align-middle shadow-sm"> {# ใช้ table-striped, table-hover, align-middle, shadow-sm เพื่อความสวยงาม #}
+                <thead class="table-dark"> {# ใช้ table-dark แทน thead-dark #}
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">วัน-เวลาเรียน</th>
+                        <th scope="col">วิชา</th>
+                        <th scope="col">อาจารย์ผู้สอน</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject_out in data_subjec_out %}
+                    <tr>
+                        <th scope="row">{{ forloop.counter }}</th>
+                        <td>
+                            <strong class="text-primary">{{ subject_out.course_day|ChangDay }}</strong><br/>
+                            <small class="text-muted">{{ subject_out.time_start}} - {{ subject_out.time_end }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ subject_out.course_no }}</strong><br/>
+                            <small class="text-muted">{{ subject_out.course_name_thai }}</small>
+                        </td>
+                        <td>{{ subject_out.instructor }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    <script>
+      function updateSessionsCount() {
+          // ดึงชื่อห้องจาก URL path ของ Django template (q คือค่า room_name)
+          const roomName = "{{ q|lower|escapejs }}";
+          const apiUrl = `/get-live-viewers/${roomName}/`;
+
+          fetch(apiUrl)
+              .then(response => {
+                  if (!response.ok) {
+                      throw new Error('Network response was not ok ' + response.statusText);
+                  }
+                  return response.json();
+              })
+              .then(data => {
+                  const sessions_total_val = data.sessions_total; // ดึงค่าจาก JSON response
+                  const spanElement = document.getElementById("contentSpan");
+                  spanElement.innerHTML = `ผู้รับชมขณะนี้ <span class="badge bg-success ms-2">${sessions_total_val}</span> คน (${new Date().toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })})`;
+              })
+              .catch(error => {
+                  console.error('Error fetching live viewer data:', error);
+                  const spanElement = document.getElementById("contentSpan");
+                  spanElement.innerHTML = `ผู้รับชมขณะนี้ <span class="badge bg-secondary ms-2">N/A</span> คน (ข้อมูลผิดพลาด)`;
+              });
+      }
+
+      // ตั้งเวลาให้ฟังก์ชันทำงานทุก 5 วินาที
+      setInterval(updateSessionsCount, 5000);
+      // เรียกฟังก์ชันครั้งแรกทันทีเมื่อโหลดหน้าเว็บ
+      updateSessionsCount(); 
+  </script>
+
+</div> {# ปิด container-fluid #}
+
+{% endblock content %}

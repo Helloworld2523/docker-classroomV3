@@ -1,0 +1,34 @@
+{% extends "live/base_moniter.html" %}
+{% load live_extras %}
+{% block content %}
+
+<br/>
+
+{% comment %} {{data_location}} {% endcomment %}
+<h1>แสดงรายการสถานที่ ที่มีการถ่ายทอดสด</h3>
+<div class="row">
+{% for location in data_location %}
+    {% comment %} <a href="{% url 'getLocation' location=location.id%}">{{location.location_name}}</a> {% endcomment %}
+    {% comment %} <button type="button" class="btn btn-success">Success</button> {% endcomment %}
+    {% comment %} <a href="{% url 'getLocation' location=location.id%}" class="btn btn-success" role="button">{{location.location_name}}</a> {% endcomment %}
+        <div class="col-md-4">
+          <div class="card mb-4 shadow-sm">
+            <svg class="bd-placeholder-img card-img-top" width="100%" height="80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false" role="img" aria-label="Placeholder: Thumbnail"><title>Placeholder</title><rect width="100%" height="100%" fill="#3399ff"/><text x="50%" y="50%" fill="#eceeef" dy=".3em">{{location.location_name}} </text></svg>
+            <div class="card-body">
+              <p class="card-text">  
+              <a href="{% url 'getLocation' location=location.id%}" class="btn btn-outline-info" role="button">ตรวจดูห้องถ่ายทอดสด {{location.location_name}} ...</a> 
+              </p>         
+            </div>
+          </div>
+        </div>  
+{% endfor %}
+</div>
+{% comment %} {% for subject in data_subject %}
+    <tr>
+    <th scope="row">{{forloop.counter}}</th>
+    <td>{{subject.course_day|ChangDay}}<br/><small>{{subject.time_start}}-{{subject.time_end}}</small></td>
+    <td>{{subject.course_no}}<br/><small>{{subject.course_name_thai}}</small></td>
+    <td>{{subject.instructor}}</td>
+    </tr>
+{% endfor %} {% endcomment %}
+{% endblock content %}

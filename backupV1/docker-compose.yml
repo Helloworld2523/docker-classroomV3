@@ -1,0 +1,30 @@
+version: "3.7"
+
+services:
+
+  django:
+    build: ./cyberclassroom
+    container_name: django
+    restart: always
+    #command: "python3 manage.py runserver 0.0.0.0:8000"
+    #command: "uwsgi web1.ini"
+    #command: "uwsgi --http :8000 --module cyberclassroom.wsgi --master --processes 4 --threads 2"
+    volumes:
+      - ./cyberclassroom:/app
+    # #- /Users/a0002/Desktop/SubmarineDjango/submarine/:/code
+    # ports:
+    #   - "8000:8000"
+    expose:
+      - 8080
+    
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    depends_on:
+      - django
+    restart: always
+    volumes:
+      - ./cyberclassroom/static:/var/www/static
+    ports:
+      - "80:80"

@@ -1,0 +1,6 @@
+    <link href="https://vjs.zencdn.net/8.0.4/video-js.css" rel="stylesheet" />
+
+    <video id="my-video{{object.room_name}}" class="video-js vjs-default-skin vjs-matrix" controls autoplay="true" preload="auto" width="250" height="250" data-setup="{}">
+        <source src="{{server}}{{room_server}}/playlist.m3u8" type="application/x-mpegURL" />
+    </video>
+    <script src="https://vjs.zencdn.net/8.0.4/video.min.js"></script>

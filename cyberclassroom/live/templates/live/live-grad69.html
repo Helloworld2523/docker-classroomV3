@@ -1,0 +1,754 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ถ่ายทอดสดพิธีรับปริญญา</title>
+    
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: url("{% static 'bg-notext.png' %}") no-repeat center top;
+            background-size: cover;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            color: white;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        /* ข้อความนอกเวลาถ่ายทอดสด */
+        .offline-message {
+            background: rgba(0, 0, 0, 0.85);
+            border: 3px solid #ffd700;
+            border-radius: 15px;
+            padding: 50px;
+            text-align: center;
+            max-width: 700px;
+            margin: 50px auto;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+        }
+
+        .offline-icon {
+            font-size: 6rem;
+            margin-bottom: 30px;
+            animation: fadeInOut 2s infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .offline-title {
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 25px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .offline-text {
+            font-size: 1.6rem;
+            line-height: 2;
+            margin-bottom: 30px;
+        }
+
+        .schedule-box {
+            background: rgba(255, 215, 0, 0.15);
+            border: 2px solid #ffd700;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 25px;
+        }
+
+        .schedule-title {
+            font-size: 1.6rem;
+            color: #ffd700;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .schedule-time {
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .current-time {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 20px;
+        }
+
+        .fade-transition {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        .content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .banner-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .banner-container img {
+            max-width: 100%;
+            height: auto;
+            max-height: 150px;
+        }
+
+        .video-wrapper {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto 20px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        }
+
+        video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            border: 3px solid white;
+            object-fit: contain; /* เปลี่ยนจาก cover เป็น contain เพื่อไม่ให้วิดีโอถูกครอบ */
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            background: #000; /* เพิ่มพื้นหลังดำ */
+        }
+
+        video.loaded {
+            opacity: 1;
+        }
+
+        .stats-panel {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.95), rgba(200, 35, 51, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 16px 24px;
+            text-align: center;
+            max-width: 380px;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(220, 53, 69, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .live-status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            animation: pulse 2s infinite;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        }
+
+        .current-time-inline {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .viewer-count-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .viewer-icon {
+            font-size: 1.2rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .viewer-info {
+            text-align: left;
+        }
+
+        .viewer-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .viewer-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            line-height: 1.2;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        .youtube-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            text-decoration: none;
+            padding: 12px 28px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .youtube-link:hover {
+            background: linear-gradient(135deg, #c82333, #bd2130);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.6);
+            color: white;
+        }
+
+        .youtube-link:active {
+            transform: translateY(0);
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 10;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .content {
+                padding: 10px;
+                margin-top: 10px;
+            }
+
+            .offline-message {
+                padding: 30px 20px;
+                margin: 20px 10px;
+            }
+
+            .offline-icon {
+                font-size: 4rem;
+            }
+
+            .offline-title {
+                font-size: 1.8rem;
+            }
+
+            .offline-text {
+                font-size: 1.1rem;
+            }
+
+            .schedule-box {
+                padding: 20px;
+            }
+
+            .schedule-title {
+                font-size: 1.2rem;
+            }
+
+            .schedule-time {
+                font-size: 1.4rem;
+            }
+
+            .banner-container img {
+                max-height: 100px;
+            }
+
+            .stats-panel {
+                max-width: 320px;
+                padding: 14px 20px;
+            }
+
+            .viewer-number {
+                font-size: 1.3rem;
+            }
+
+            .live-indicator {
+                font-size: 0.8rem;
+                padding: 5px 10px;
+            }
+
+            .current-time-inline {
+                font-size: 0.75rem;
+            }
+
+            .youtube-link {
+                font-size: 0.95rem;
+                padding: 10px 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .offline-icon {
+                font-size: 3.5rem;
+            }
+
+            .offline-title {
+                font-size: 1.5rem;
+            }
+
+            .offline-text {
+                font-size: 1rem;
+            }
+
+            .schedule-box {
+                padding: 15px;
+            }
+
+            .banner-container img {
+                max-height: 80px;
+            }
+
+            .stats-panel {
+                max-width: 95%;
+                padding: 12px 16px;
+            }
+
+            .live-status-bar {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .viewer-count-row {
+                gap: 6px;
+            }
+
+            .viewer-number {
+                font-size: 1.2rem;
+            }
+
+            .live-indicator {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+
+            .current-time-inline {
+                font-size: 0.7rem;
+            }
+
+            .youtube-link {
+                font-size: 0.9rem;
+                padding: 10px 20px;
+            }
+        }
+
+        /* สำหรับ iPad และ Tablet แนวนอน */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .video-wrapper {
+                max-width: 95%;
+            }
+
+            .stats-panel {
+                max-width: 350px;
+            }
+        }
+
+        /* ปรับแต่งสำหรับ landscape mode บนมือถือ */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .content {
+                margin-top: 10px;
+            }
+
+            .banner-container {
+                margin-bottom: 10px;
+            }
+
+            .banner-container img {
+                max-height: 60px;
+            }
+
+            .stats-panel {
+                padding: 10px 16px;
+                margin-bottom: 10px;
+            }
+
+            .offline-message {
+                padding: 20px;
+                margin: 10px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid content">
+    <!-- ข้อความนอกเวลาถ่ายทอดสด -->
+    <div id="offlineContainer" class="row hidden">
+        <div class="col-12">
+            <div class="offline-message">
+                <div class="offline-title">การถ่ายทอดสดยังไม่เริ่ม</div>
+                <div class="offline-text">
+                    ขณะนี้อยู่นอกเวลาการถ่ายทอดสด<br>
+                    กรุณาเข้าชมในช่วงเวลาที่กำหนด
+                </div>
+                <div class="schedule-box">
+                    <div class="schedule-title">⏰ เวลาถ่ายทอดสด</div>
+                    <div class="schedule-time" id="scheduleTime">--:-- - --:-- น.</div>
+                    <div class="current-time">
+                        เวลาปัจจุบัน: <span id="currentTimeOffline">--:--:--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- เนื้อหาการถ่ายทอดสด -->
+    <div id="liveContainer" class="hidden">
+        <!-- Banner -->
+        <div class="row">
+            <div class="col-12">
+                <div class="banner-container">
+                    <img src="{% static 'hd-bn.png' %}" alt="Banner" onerror="this.style.display='none'">
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Indicator (ย้ายไปอยู่ใน stats-panel) -->
+
+        <!-- Video Player -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="video-wrapper">
+                    <div class="video-container">
+                        <div id="loadingSpinner" class="loading-spinner"></div>
+                        <video id="liveStream" controls autoplay playsinline muted></video>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ข้อมูลผู้ชมและลิงก์ -->
+        <div class="row">
+            <div class="col-12">
+                <!-- แสดงจำนวนผู้ชมและสถานะ -->
+                <div class="stats-panel">
+                    <!-- บรรทัดบน: Live status และเวลา -->
+                    <div class="live-status-bar">
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            <span>LIVE</span>
+                        </div>
+                        <div class="current-time-inline">
+                            <span id="currentTimeLive">--:--:--</span>
+                        </div>
+                    </div>
+
+                    <!-- บรรทัดล่าง: จำนวนผู้ชม -->
+                    <div class="viewer-count-row">
+                        <span class="viewer-icon">👥</span>
+                        <div class="viewer-info">
+                            <div class="viewer-label">ผู้เข้าชม</div>
+                            <div class="viewer-number" id="viewerCount">{{ sessions_total|default:"0" }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ลิงก์ YouTube -->
+                <div class="text-center">
+                    <a href="https://www.youtube.com/live/frzv6b_MynA" target="_blank" class="youtube-link">
+                        ▶️ รับชมผ่าน YouTube
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== การตั้งค่าเวลาถ่ายทอดสด ==========
+    const BROADCAST_START = { hour: 7, minute: 30 };  // 13:30
+    const BROADCAST_END = { hour: 11, minute: 38 };   // 20:30
+
+    // ========== ฟังก์ชันจัดการเวลา ==========
+    
+    // แปลงเวลาเป็นรูปแบบ HH:MM
+    function formatTime(hour, minute) {
+        return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    }
+
+    // อัพเดทเวลาในกล่องแจ้งเตือน
+    function updateScheduleDisplay() {
+        const scheduleTimeElement = document.getElementById('scheduleTime');
+        if (scheduleTimeElement) {
+            const startTime = formatTime(BROADCAST_START.hour, BROADCAST_START.minute);
+            const endTime = formatTime(BROADCAST_END.hour, BROADCAST_END.minute);
+            scheduleTimeElement.textContent = `${startTime} - ${endTime} น.`;
+        }
+    }
+
+    // ตรวจสอบว่าอยู่ในช่วงเวลาถ่ายทอดสดหรือไม่
+    function isLiveTime() {
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const startMinutes = BROADCAST_START.hour * 60 + BROADCAST_START.minute;
+        const endMinutes = BROADCAST_END.hour * 60 + BROADCAST_END.minute;
+        
+        return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+    }
+
+    // แสดงเวลาปัจจุบัน
+    function updateCurrentTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('th-TH', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: false 
+        });
+        
+        const offlineTimeElement = document.getElementById('currentTimeOffline');
+        if (offlineTimeElement) {
+            offlineTimeElement.textContent = timeString;
+        }
+        
+        const liveTimeElement = document.getElementById('currentTimeLive');
+        if (liveTimeElement) {
+            liveTimeElement.textContent = timeString;
+        }
+    }
+
+    // ========== ฟังก์ชันจัดการการแสดงผล ==========
+    
+    let currentState = null; // เก็บสถานะปัจจุบัน
+    
+    function checkSchedule() {
+        const liveContainer = document.getElementById('liveContainer');
+        const offlineContainer = document.getElementById('offlineContainer');
+        
+        updateScheduleDisplay();
+        
+        const isLive = isLiveTime();
+        
+        // ตรวจสอบว่ามีการเปลี่ยนสถานะหรือไม่
+        if (currentState === null || currentState !== isLive) {
+            console.log(`Status changed: ${isLive ? 'Going LIVE' : 'Going OFFLINE'}`);
+            currentState = isLive;
+            
+            if (isLive) {
+                // เปลี่ยนเป็นโหมดถ่ายทอดสด
+                offlineContainer.classList.add('hidden');
+                liveContainer.classList.remove('hidden');
+                liveContainer.classList.add('fade-transition');
+                initializePlayer();
+            } else {
+                // เปลี่ยนเป็นโหมด offline
+                liveContainer.classList.add('hidden');
+                offlineContainer.classList.remove('hidden');
+                offlineContainer.classList.add('fade-transition');
+                updateCurrentTime();
+                
+                // ทำลาย HLS player ถ้ามี
+                if (window.hls) {
+                    console.log('Destroying HLS player...');
+                    window.hls.destroy();
+                    window.hls = null;
+                }
+            }
+        }
+    }
+
+    // ========== HLS Video Player ==========
+    
+    let hls = null;
+
+    function initializePlayer() {
+        if (hls) return; // ถ้ามี player อยู่แล้วไม่ต้องสร้างใหม่
+
+        const video = document.getElementById('liveStream');
+        //const videoSrc = "https://202.41.160.68:8443/live/rucom/playlist.m3u8";
+        const videoSrc = "http://202.41.160.68:1935/live/klb201/playlist.m3u8";
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        if (Hls.isSupported()) {
+            hls = new Hls({
+                debug: false,
+                startLevel: -1,
+                autoStartLoad: true,
+                capLevelToPlayerSize: true,
+                enableWorker: false,
+            });
+
+            hls.loadSource(videoSrc);
+            hls.attachMedia(video);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                loadingSpinner.style.display = 'none';
+                video.muted = true;
+                video.play().catch(error => console.log("Autoplay failed:", error));
+            });
+
+            hls.on(Hls.Events.LEVEL_LOADED, function () {
+                video.classList.add('loaded');
+                loadingSpinner.style.display = 'none';
+            });
+
+            hls.on(Hls.Events.ERROR, function (event, data) {
+                console.error("HLS Error:", data);
+                if (data.fatal) {
+                    loadingSpinner.style.display = 'none';
+                    switch(data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.log("Network error, trying to recover...");
+                            hls.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.log("Media error, trying to recover...");
+                            hls.recoverMediaError();
+                            break;
+                        default:
+                            console.log("Fatal error, destroying HLS...");
+                            hls.destroy();
+                            hls = null;
+                            break;
+                    }
+                }
+            });
+
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Safari support
+            video.src = videoSrc;
+            video.muted = true;
+            video.addEventListener('loadedmetadata', function () {
+                loadingSpinner.style.display = 'none';
+                video.classList.add('loaded');
+                video.play().catch(error => console.log("Autoplay failed:", error));
+            });
+        }
+    }
+
+    // ========== อัพเดทจำนวนผู้ชม (Django API) ==========
+    
+    function updateViewers() {
+        // ตรวจสอบว่ามี URL สำหรับ API หรือไม่
+        {% if request.resolver_match.url_name %}
+        fetch("{% url 'get-live-viewers' %}")
+            .then(response => response.json())
+            .then(data => {
+                const viewerElement = document.getElementById("viewerCount");
+                if (viewerElement && data.sessions_total !== undefined) {
+                    viewerElement.textContent = data.sessions_total.toLocaleString('th-TH');
+                }
+            })
+            .catch(error => console.error("Error fetching viewers:", error));
+        {% else %}
+        // ถ้าไม่มี API ให้ใช้ค่า static จาก context
+        console.log("Using static viewer count from template context");
+        {% endif %}
+    }
+
+    // ========== เริ่มต้นระบบ ==========
+    
+    // อัพเดทเวลาทุกวินาที
+    setInterval(updateCurrentTime, 1000);
+    
+    // ตรวจสอบเวลาทุก 10 วินาที (เพื่อให้ตรวจสอบบ่อยขึ้นและเปลี่ยนหน้าอัตโนมัติ)
+    setInterval(checkSchedule, 10000);
+    
+    // อัพเดทจำนวนผู้ชมทุก 5 วินาที
+    setInterval(updateViewers, 5000);
+    
+    // ตรวจสอบครั้งแรกเมื่อโหลดหน้า
+    checkSchedule();
+    updateViewers();
+
+    // ทำความสะอาดเมื่อออกจากหน้า
+    window.addEventListener('beforeunload', () => {
+        if (hls) {
+            hls.destroy();
+            hls = null;
+        }
+    });
+</script>
+
+</body>
+</html>

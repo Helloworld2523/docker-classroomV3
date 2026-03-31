@@ -1,0 +1,828 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ถ่ายทอดสด พิธีพระราชทานปริญญาบัตร</title>
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="ถ่ายทอดสดพิธีพระราชทานปริญญาบัตร">
+    <meta name="description" content="รับชมการถ่ายทอดสดพิธีพระราชทานปริญญาบัตร ปีการศึกษา 2566 และ 2567 (รุ่น 50) เวลา 07:30 - 16:30 น.">
+    <meta name="keywords" content="ถ่ายทอดสด, พิธีรับปริญญา, พิธีพระราชทานปริญญาบัตร, graduation ceremony, มหาวิทยาลัยรามคำแหง">
+    <meta name="author" content="Ramkhamhaeng University">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="🎓 ถ่ายทอดสดพิธีพระราชทานปริญญาบัตร รุ่น 50">
+    <meta property="og:description" content="📺 รับชมการถ่ายทอดสดพิธีพระราชทานปริญญาบัตร ปีการศึกษา 2566 และ ปีการศึกษา 2567 (รุ่น 50)">
+    <meta property="og:image" content="http://cyberclassroom.ru.ac.th/static/hd-bn.png">
+    <meta property="og:image:secure_url" content="https://cyberclassroom.ru.ac.th/static/hd-bn.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:alt" content="พิธีพระราชทานปริญญาบัตร">
+    <meta property="og:site_name" content="Ramkhamhaeng University">
+    <meta property="og:locale" content="th_TH">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ request.build_absolute_uri }}">
+    <meta name="twitter:title" content="🎓 ถ่ายทอดสดพิธีพระราชทานปริญญาบัตร รุ่น 50">
+    <meta name="twitter:description" content="📺 รับชมการถ่ายทอดสดพิธีพระราชทานปริญญาบัตร ปีการศึกษา 2566 และ ปีการศึกษา 2567 (รุ่น 50)">
+    <meta name="twitter:image" content="http://cyberclassroom.ru.ac.th/static/hd-bn.png">
+    
+    <!-- Additional Meta Tags -->
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#2a2a2a">
+    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+    
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                        url("{% static 'bg-notext.png' %}") no-repeat center top;
+            background-size: cover;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            color: #e0e0e0;
+            font-family: 'Sarabun', sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* ริบบิ้นดำจากภาพ - วางไว้มุมขวาบนของหน้าจอ */
+        .black-ribbon-image {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 120px;
+            height: auto;
+            z-index: 9999;
+            pointer-events: none;
+            filter: 
+                drop-shadow(0 0 3px rgba(255, 255, 255, 0.8))
+                drop-shadow(0 0 6px rgba(255, 255, 255, 0.6))
+                drop-shadow(0 4px 12px rgba(0, 0, 0, 0.9))
+                drop-shadow(0 2px 8px rgba(255, 255, 255, 0.4));
+            animation: fadeInRibbon 1.5s ease-in-out;
+        }
+
+        @keyframes fadeInRibbon {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .black-ribbon-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+            filter: contrast(1.2) brightness(0.95);
+        }
+
+        .offline-message {
+            background: rgba(20, 20, 20, 0.95);
+            border: 3px solid #9e9e9e;
+            border-radius: 15px;
+            padding: 50px;
+            text-align: center;
+            max-width: 700px;
+            margin: 50px auto;
+            box-shadow: 0 0 40px rgba(158, 158, 158, 0.3);
+        }
+
+        .offline-icon {
+            font-size: 6rem;
+            margin-bottom: 30px;
+            animation: fadeInOut 2s infinite;
+            filter: grayscale(100%);
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .offline-title {
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: #e0e0e0;
+            margin-bottom: 25px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        .offline-text {
+            font-size: 1.6rem;
+            line-height: 2;
+            margin-bottom: 30px;
+            color: #b0b0b0;
+        }
+
+        .schedule-box {
+            background: rgba(60, 60, 60, 0.4);
+            border: 2px solid #808080;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 25px;
+        }
+
+        .schedule-title {
+            font-size: 1.6rem;
+            color: #e0e0e0;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .schedule-time {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #f5f5f5;
+        }
+
+        .current-time {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-top: 20px;
+            color: #c0c0c0;
+        }
+
+        .fade-transition {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        .content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .banner-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .banner-container img {
+            max-width: 100%;
+            height: auto;
+            max-height: 150px;
+            filter: brightness(0.9) saturate(0.7);
+        }
+
+        .video-wrapper {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto 20px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+        }
+
+        video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            border: 3px solid #9e9e9e;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            background: #000;
+        }
+
+        video.loaded {
+            opacity: 1;
+        }
+
+        .stats-panel {
+            background: linear-gradient(135deg, rgba(60, 60, 60, 0.95), rgba(40, 40, 40, 0.95));
+            border: 1px solid rgba(200, 200, 200, 0.2);
+            border-radius: 16px;
+            padding: 16px 24px;
+            text-align: center;
+            max-width: 380px;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(100, 100, 100, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .live-status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(200, 200, 200, 0.15);
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(200, 200, 200, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            animation: pulse 2s infinite;
+            border: 1px solid rgba(200, 200, 200, 0.3);
+            color: #e0e0e0;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+            box-shadow: 0 0 8px rgba(224, 224, 224, 0.6);
+        }
+
+        .current-time-inline {
+            font-size: 0.85rem;
+            color: rgba(224, 224, 224, 0.9);
+            font-weight: 500;
+        }
+
+        .viewer-count-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .viewer-icon {
+            font-size: 1.2rem;
+            filter: grayscale(100%) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .viewer-info {
+            text-align: left;
+        }
+
+        .viewer-label {
+            font-size: 0.75rem;
+            color: rgba(224, 224, 224, 0.8);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .viewer-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #f5f5f5;
+            line-height: 1.2;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(200, 200, 200, 0.3);
+            border-top-color: #e0e0e0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 10;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .live-notice {
+            background: linear-gradient(135deg, rgba(40, 40, 40, 0.95), rgba(20, 20, 20, 0.95));
+            border: 2px solid #9e9e9e;
+            border-radius: 12px;
+            padding: 16px 24px;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .live-notice::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #9e9e9e, transparent);
+        }
+
+        .live-notice-icon {
+            display: inline-block;
+            font-size: 1.3rem;
+            margin-right: 10px;
+            animation: shake 3s ease-in-out infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            10%, 30%, 50%, 70%, 90% { transform: rotate(-5deg); }
+            20%, 40%, 60%, 80% { transform: rotate(5deg); }
+        }
+
+        .live-notice-text {
+            display: inline-block;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #f5f5f5;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            letter-spacing: 0.5px;
+        }
+
+        .live-notice-subtext {
+            display: block;
+            font-size: 0.9rem;
+            color: #c0c0c0;
+            margin-top: 6px;
+            font-weight: 400;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .black-ribbon-image {
+                width: 90px;
+                top: 15px;
+            }
+            .live-notice {
+                max-width: 95%;
+                padding: 14px 20px;
+                margin-bottom: 20px;
+            }
+            .content {
+                padding: 10px;
+                margin-top: 10px;
+            }
+            .stats-panel {
+                max-width: 320px;
+                padding: 14px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .black-ribbon-image {
+                width: 70px;
+                top: 10px;
+            }
+            .live-notice {
+                padding: 12px 16px;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="black-ribbon-image">
+    <img src="{% static 'black-ribbon.png' %}" alt="Black Ribbon">
+</div>
+
+<div class="container-fluid content">
+    <div id="offlineContainer" class="row hidden">
+        <div class="col-12">
+            <div class="offline-message">
+                <div class="offline-title">การถ่ายทอดสดยังไม่เริ่ม</div>
+                <div class="offline-text">
+                    ขณะนี้อยู่นอกเวลาการถ่ายทอดสด<br>
+                    กรุณาเข้าชมในช่วงเวลาที่กำหนด
+                </div>
+                <div class="schedule-box">
+                    <div class="schedule-title">⏰ เวลาถ่ายทอดสด</div>
+                    <div class="schedule-time" id="scheduleTime">--:-- - --:-- น.</div>
+                    <div class="current-time">
+                        เวลาปัจจุบัน: <span id="currentTimeOffline">--:--:--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="liveContainer" class="hidden">
+        <div class="row">
+            <div class="col-12">
+                <div class="banner-container">
+                    <img src="{% static 'hd-bn.png' %}" alt="Banner" onerror="this.style.display='none'">
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="video-wrapper">
+                    <div class="video-container">
+                        <div id="loadingSpinner" class="loading-spinner"></div>
+                        <video id="liveStream" controls autoplay playsinline muted></video>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="live-notice">
+                    <span class="live-notice-icon">⚠️</span>
+                    <span class="live-notice-text">
+                        การถ่ายทอดสดนี้ไม่สามารถดูย้อนหลังได้
+                        <span class="live-notice-subtext">กรุณารับชมในช่วงเวลาถ่ายทอดสดเท่านั้น</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="stats-panel">
+                    <div class="live-status-bar">
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            <span>LIVE</span>
+                        </div>
+                        <div class="current-time-inline">
+                            <span id="currentTimeLive">--:--:--</span>
+                        </div>
+                    </div>
+                    <div class="viewer-count-row">
+                        <span class="viewer-icon">👥</span>
+                        <div class="viewer-info">
+                            <div class="viewer-label">ผู้เข้าชม</div>
+                            <div class="viewer-number" id="viewerCount">{{ sessions_total|default:"0" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const BROADCAST_START = { hour: 7, minute: 30 };
+    const BROADCAST_END = { hour: 15, minute: 30 };
+
+    // ============ HLS Player with Low Latency ============
+    let hls = null;
+    let lastActiveTime = Date.now();
+    let visibilityCheckInterval = null;
+
+    function initializePlayer() {
+        if (hls) return;
+
+        const video = document.getElementById('liveStream');
+        const videoSrc = "http://202.41.160.65:1935/live/rucom/playlist.m3u8";
+        //const videoSrc = "http://liveram1.ru.ac.th:1935/live/klb401/playlist.m3u8";
+        //const videoSrc ="http://liveram2.ru.ac.th:1935/live/klb401/playlist.m3u8";
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        if (Hls.isSupported()) {
+            hls = new Hls({
+                debug: false,
+                // ลด latency และ buffering
+                liveSyncDurationCount: 2,        // ลด buffer เหลือ 2 segments
+                liveMaxLatencyDurationCount: 5,  // latency สูงสุด 5 segments
+                maxBufferLength: 10,             // buffer แค่ 10 วินาที
+                maxMaxBufferLength: 20,          // buffer สูงสุด 20 วินาที
+                maxBufferSize: 60 * 1000 * 1000, // 60 MB
+                maxBufferHole: 0.5,
+                
+                // Low latency mode
+                lowLatencyMode: true,
+                backBufferLength: 5,  // เก็บ back buffer แค่ 5 วินาที
+                
+                // Fragment loading
+                manifestLoadingTimeOut: 10000,
+                manifestLoadingMaxRetry: 3,
+                manifestLoadingRetryDelay: 500,
+                levelLoadingTimeOut: 10000,
+                fragLoadingTimeOut: 20000,
+                
+                // Auto level selection
+                startLevel: -1,
+                capLevelToPlayerSize: true,
+                
+                enableWorker: true,
+                enableSoftwareAES: true,
+            });
+
+            hls.loadSource(videoSrc);
+            hls.attachMedia(video);
+
+            // Manifest loaded
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                console.log('✅ Manifest loaded');
+                loadingSpinner.style.display = 'none';
+                video.muted = true;
+                
+                video.play().then(() => {
+                    console.log('▶️ Playing');
+                    setTimeout(() => seekToLiveEdge(), 1000);
+                }).catch(error => {
+                    console.log("⚠️ Autoplay blocked:", error);
+                    video.onclick = function() {
+                        video.play();
+                        video.onclick = null;
+                    };
+                });
+            });
+
+            // Level loaded
+            hls.on(Hls.Events.LEVEL_LOADED, function (event, data) {
+                video.classList.add('loaded');
+                loadingSpinner.style.display = 'none';
+                
+                // ตรวจสอบ latency
+                if (hls.liveSyncPosition && video.currentTime) {
+                    const lag = hls.liveSyncPosition - video.currentTime;
+                    if (lag > 15) {
+                        console.log(`⏩ Lag detected: ${lag.toFixed(1)}s, jumping...`);
+                        seekToLiveEdge();
+                    }
+                }
+            });
+
+            // Error handling
+            hls.on(Hls.Events.ERROR, function (event, data) {
+                console.error("❌ HLS Error:", data.type, data.details);
+                
+                if (data.fatal) {
+                    loadingSpinner.style.display = 'block';
+                    
+                    switch(data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.log("🔄 Network error, retrying...");
+                            setTimeout(() => hls.startLoad(), 1000);
+                            break;
+                            
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.log("🔄 Media error, recovering...");
+                            hls.recoverMediaError();
+                            break;
+                            
+                        default:
+                            console.log("💥 Fatal error, reloading page in 3s...");
+                            setTimeout(() => window.location.reload(), 3000);
+                            break;
+                    }
+                }
+            });
+
+            // Start visibility monitoring
+            startVisibilityMonitoring();
+
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Safari native HLS
+            video.src = videoSrc;
+            video.muted = true;
+            
+            video.addEventListener('loadedmetadata', function () {
+                console.log('✅ Metadata loaded (Safari)');
+                loadingSpinner.style.display = 'none';
+                video.classList.add('loaded');
+                video.play().catch(error => console.log("⚠️ Autoplay blocked:", error));
+            });
+
+            video.addEventListener('error', function(e) {
+                console.error('❌ Video error (Safari):', e);
+                setTimeout(() => window.location.reload(), 3000);
+            });
+        }
+    }
+
+    // กระโดดไป live edge
+    function seekToLiveEdge() {
+        if (!hls || !hls.media) return;
+        
+        try {
+            const liveSyncPosition = hls.liveSyncPosition;
+            if (liveSyncPosition && Math.abs(hls.media.currentTime - liveSyncPosition) > 3) {
+                console.log(`⏭️ Seeking to live: ${liveSyncPosition.toFixed(1)}s`);
+                hls.media.currentTime = liveSyncPosition - 1; // ย้อน 1 วินาที เพื่อความราบรื่น
+            }
+        } catch (e) {
+            console.error('❌ Seek error:', e);
+        }
+    }
+
+    // ตรวจสอบเมื่อผู้ใช้กลับมา
+    function startVisibilityMonitoring() {
+        // Page Visibility API
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                const timeAway = Date.now() - lastActiveTime;
+                console.log(`👁️ Tab visible. Away: ${(timeAway/1000).toFixed(1)}s`);
+                
+                if (timeAway > 30000) {
+                    // ห่างไปนานกว่า 30 วินาที -> reload
+                    console.log('🔄 Reloading for fresh stream...');
+                    window.location.reload();
+                } else if (timeAway > 10000) {
+                    // ห่างไป 10-30 วินาที -> jump to live
+                    console.log('⏩ Jumping to live edge...');
+                    seekToLiveEdge();
+                }
+            } else {
+                lastActiveTime = Date.now();
+            }
+        });
+
+        // ตรวจสอบ lag ทุก 20 วินาที
+        visibilityCheckInterval = setInterval(() => {
+            if (hls && hls.media && !hls.media.paused && hls.liveSyncPosition) {
+                const lag = hls.liveSyncPosition - hls.media.currentTime;
+                
+                if (lag > 20) {
+                    console.log(`⚠️ High lag: ${lag.toFixed(1)}s, jumping...`);
+                    seekToLiveEdge();
+                } else if (lag > 30) {
+                    // lag มากเกินไป -> reload
+                    console.log(`💥 Excessive lag: ${lag.toFixed(1)}s, reloading...`);
+                    window.location.reload();
+                }
+            }
+        }, 20000);
+
+        // Window focus/blur
+        window.addEventListener('focus', function() {
+            const timeAway = Date.now() - lastActiveTime;
+            if (timeAway > 30000 && hls) {
+                console.log('🔄 Window focused, reloading...');
+                window.location.reload();
+            }
+        });
+
+        window.addEventListener('blur', function() {
+            lastActiveTime = Date.now();
+        });
+    }
+
+    // Cleanup
+    function cleanup() {
+        if (visibilityCheckInterval) {
+            clearInterval(visibilityCheckInterval);
+        }
+        if (hls) {
+            hls.destroy();
+            hls = null;
+        }
+    }
+
+    // ============ Schedule & Time Functions ============
+    function formatTime(hour, minute) {
+        return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    }
+
+    function updateScheduleDisplay() {
+        const scheduleTimeElement = document.getElementById('scheduleTime');
+        if (scheduleTimeElement) {
+            const startTime = formatTime(BROADCAST_START.hour, BROADCAST_START.minute);
+            const endTime = formatTime(BROADCAST_END.hour, BROADCAST_END.minute);
+            scheduleTimeElement.textContent = `${startTime} - ${endTime} น.`;
+        }
+    }
+
+    function isLiveTime() {
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const startMinutes = BROADCAST_START.hour * 60 + BROADCAST_START.minute;
+        const endMinutes = BROADCAST_END.hour * 60 + BROADCAST_END.minute;
+        
+        return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+    }
+
+    function updateCurrentTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('th-TH', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: false 
+        });
+        
+        const offlineTimeElement = document.getElementById('currentTimeOffline');
+        if (offlineTimeElement) offlineTimeElement.textContent = timeString;
+        
+        const liveTimeElement = document.getElementById('currentTimeLive');
+        if (liveTimeElement) liveTimeElement.textContent = timeString;
+    }
+
+    let currentState = null;
+    
+    function checkSchedule() {
+        const liveContainer = document.getElementById('liveContainer');
+        const offlineContainer = document.getElementById('offlineContainer');
+        
+        updateScheduleDisplay();
+        const isLive = isLiveTime();
+        
+        if (currentState === null || currentState !== isLive) {
+            console.log(`🔄 Status: ${isLive ? 'LIVE' : 'OFFLINE'}`);
+            currentState = isLive;
+            
+            if (isLive) {
+                offlineContainer.classList.add('hidden');
+                liveContainer.classList.remove('hidden');
+                liveContainer.classList.add('fade-transition');
+                initializePlayer();
+            } else {
+                liveContainer.classList.add('hidden');
+                offlineContainer.classList.remove('hidden');
+                offlineContainer.classList.add('fade-transition');
+                updateCurrentTime();
+                cleanup();
+            }
+        }
+    }
+
+    // ============ Viewer Count ============
+    function updateViewers() {
+        {% if request.resolver_match.url_name %}
+        fetch("{% url 'get-live-viewers' %}")
+            .then(response => response.json())
+            .then(data => {
+                const viewerElement = document.getElementById("viewerCount");
+                if (viewerElement && data.sessions_total !== undefined) {
+                    viewerElement.textContent = data.sessions_total.toLocaleString('th-TH');
+                }
+            })
+            .catch(error => console.error("❌ Viewer fetch error:", error));
+        {% endif %}
+    }
+
+    // ============ Initialize ============
+    setInterval(updateCurrentTime, 1000);
+    setInterval(checkSchedule, 10000);
+    setInterval(updateViewers, 5000);
+    
+    checkSchedule();
+    updateViewers();
+
+    window.addEventListener('beforeunload', cleanup);
+</script>
+
+</body>
+</html>

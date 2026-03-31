@@ -1,0 +1,48 @@
+/* static/css/custom.css */
+body {
+    background-color: #f8f9fa;
+}
+.jumbotron {
+    padding: 4rem 2rem;
+    margin-bottom: 2rem;
+    background-color: #e9ecef;
+    border-radius: .3rem;
+}
+.live-status {
+    font-size: 0.9em;
+    color: #6c757d;
+}
+.btn-custom-color-law {
+    background-color: #dc3545; /* Red */
+    color: white;
+    border-color: #dc3545;
+}
+.btn-custom-color-eco {
+    background-color: #6f42c1; /* Purple */
+    color: white;
+    border-color: #6f42c1;
+}
+.btn-custom-color-human {
+    background-color: #fd7e14; /* Orange */
+    color: white;
+    border-color: #fd7e14;
+}
+.btn-custom-color-law:hover,
+.btn-custom-color-eco:hover,
+.btn-custom-color-human:hover {
+    opacity: 0.9;
+    color: white;
+}
+.footer {
+    background-color: #343a40;
+    color: #f8f9fa;
+    padding: 2rem 0;
+    margin-top: 3rem;
+}
+.footer a {
+    color: #adb5bd;
+    text-decoration: none;
+}
+.footer a:hover {
+    color: #e9ecef;
+}

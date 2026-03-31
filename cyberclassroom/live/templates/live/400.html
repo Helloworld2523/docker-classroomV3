@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>400 — คำขอไม่ถูกต้อง</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Kanit:wght@300;700;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #0f0e17;
+            --surface: #fffffe;
+            --muted: #a7a9be;
+            --accent: #f25f4c;
+            --accent2: #e53170;
+            --sub: #ff8906;
+        }
+
+        body {
+            background-color: var(--surface);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Sarabun', sans-serif;
+            color: var(--ink);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Background geometric noise */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 110% 10%, rgba(242,95,76,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at -10% 90%, rgba(229,49,112,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,137,6,0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* Grid lines background */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(167,169,190,0.07) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(167,169,190,0.07) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 100vh;
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            align-items: center;
+            gap: 4rem;
+        }
+
+        /* Left column */
+        .left {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border: 1px solid rgba(242,95,76,0.3);
+            border-radius: 999px;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            color: var(--accent);
+            text-transform: uppercase;
+            width: fit-content;
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        .error-code {
+            font-family: 'Kanit', sans-serif;
+            font-weight: 900;
+            font-size: clamp(5rem, 12vw, 8rem);
+            line-height: 1;
+            color: var(--ink);
+            letter-spacing: -0.04em;
+            position: relative;
+        }
+
+        .error-code span {
+            color: var(--accent);
+        }
+
+        .headline {
+            font-family: 'Kanit', sans-serif;
+            font-weight: 700;
+            font-size: clamp(1.4rem, 3vw, 2rem);
+            color: var(--ink);
+            line-height: 1.3;
+        }
+
+        .description {
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.8;
+            max-width: 360px;
+            font-weight: 400;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: var(--ink);
+            color: var(--surface);
+            text-decoration: none;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 6px;
+            transition: background 0.2s, transform 0.15s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background: #1a1830;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: transparent;
+            color: var(--muted);
+            text-decoration: none;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            border-radius: 6px;
+            border: 1px solid rgba(167,169,190,0.3);
+            transition: color 0.2s, border-color 0.2s, transform 0.15s;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            color: var(--ink);
+            border-color: rgba(167,169,190,0.6);
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            width: 48px;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        /* Right column — illustration */
+        .right {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .illustration {
+            width: 100%;
+            max-width: 420px;
+            animation: float 5s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+        }
+
+        /* Glow rings */
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid;
+            animation: expand 3s ease-out infinite;
+            opacity: 0;
+        }
+
+        .ring-1 {
+            width: 200px; height: 200px;
+            border-color: rgba(242,95,76,0.2);
+            animation-delay: 0s;
+        }
+        .ring-2 {
+            width: 300px; height: 300px;
+            border-color: rgba(242,95,76,0.12);
+            animation-delay: 0.8s;
+        }
+        .ring-3 {
+            width: 400px; height: 400px;
+            border-color: rgba(242,95,76,0.06);
+            animation-delay: 1.6s;
+        }
+
+        @keyframes expand {
+            0% { opacity: 0.8; transform: scale(0.8); }
+            100% { opacity: 0; transform: scale(1.2); }
+        }
+
+        /* Footer status bar */
+        .statusbar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2), var(--sub));
+        }
+
+        /* Code block */
+        .code-hint {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #f7f5f0;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+            max-width: 380px;
+        }
+
+        .code-hint-label {
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .code-hint-text {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--ink);
+        }
+
+        @media (max-width: 768px) {
+            .wrapper {
+                grid-template-columns: 1fr;
+                padding: 3rem 1.5rem;
+                text-align: center;
+                gap: 2rem;
+            }
+            .right { order: -1; }
+            .badge, .actions { margin: 0 auto; }
+            .description, .code-hint { margin: 0 auto; }
+            .divider { margin: 0 auto; }
+            .illustration { max-width: 280px; }
+            .ring-2, .ring-3 { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="statusbar"></div>
+
+    <div class="wrapper">
+        <div class="left">
+            <div class="badge">
+                <div class="badge-dot"></div>
+                HTTP Error
+            </div>
+
+            <div>
+                <div class="error-code"><span>4</span>00</div>
+                <div class="divider" style="margin-top: 16px;"></div>
+            </div>
+
+            <div>
+                <div class="headline">คำขอไม่ถูกต้อง</div>
+                <div class="headline" style="font-weight: 300; color: var(--muted); font-size: clamp(1rem, 2vw, 1.3rem);">Bad Request</div>
+            </div>
+
+            <div class="description">
+                เซิร์ฟเวอร์ไม่สามารถประมวลผลคำขอของคุณได้ เนื่องจากรูปแบบหรือข้อมูลที่ส่งมาไม่ถูกต้องตามที่ระบบกำหนด
+            </div>
+
+            <div class="code-hint">
+                <span class="code-hint-label">รหัสข้อผิดพลาด</span>
+                <span class="code-hint-text">400 Bad Request</span>
+            </div>
+
+            <div class="actions">
+                <a href="http://cyberclassroom.ru.ac.th/" class="btn-primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+                    กลับหน้าแรก
+                </a>
+                <button class="btn-secondary" onclick="history.back()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+                    ย้อนกลับ
+                </button>
+            </div>
+        </div>
+
+        <div class="right">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+
+            <svg class="illustration" viewBox="0 0 400 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Browser window frame -->
+                <rect x="40" y="30" width="320" height="230" rx="12" fill="#f7f5f0" stroke="#e8e6e0" stroke-width="1.5"/>
+                <!-- Title bar -->
+                <rect x="40" y="30" width="320" height="40" rx="12" fill="#eeeae3"/>
+                <rect x="40" y="50" width="320" height="20" fill="#eeeae3"/>
+                <!-- Traffic lights -->
+                <circle cx="68" cy="50" r="6" fill="#f25f4c"/>
+                <circle cx="88" cy="50" r="6" fill="#f9c74f"/>
+                <circle cx="108" cy="50" r="6" fill="#90be6d"/>
+                <!-- URL bar -->
+                <rect x="128" y="40" width="196" height="20" rx="4" fill="#ddd9d0"/>
+                <text x="148" y="54" font-family="'Courier New', monospace" font-size="9" fill="#a7a9be">/bad-request?err=400</text>
+                <!-- X icon in url bar -->
+                <text x="308" y="54" font-family="sans-serif" font-size="10" fill="#c0bdb6">✕</text>
+
+                <!-- Content area: big 400 -->
+                <text x="200" y="160" font-family="'Kanit', sans-serif" font-weight="900" font-size="90" text-anchor="middle" fill="#f0ede7">400</text>
+                <text x="200" y="190" font-family="'Sarabun', sans-serif" font-size="14" text-anchor="middle" fill="#c0bdb6">Bad Request</text>
+                <line x1="140" y1="205" x2="260" y2="205" stroke="#e0ddd6" stroke-width="1"/>
+                <text x="200" y="225" font-family="'Sarabun', sans-serif" font-size="11" text-anchor="middle" fill="#c0bdb6">กรุณาลองใหม่อีกครั้ง</text>
+
+                <!-- Accent bar at top of error area -->
+                <rect x="180" y="100" width="40" height="3" rx="1.5" fill="#f25f4c"/>
+
+                <!-- Warning triangle icon -->
+                <g transform="translate(188, 78)">
+                    <polygon points="12,2 22,20 2,20" fill="none" stroke="#f25f4c" stroke-width="1.5" stroke-linejoin="round"/>
+                    <line x1="12" y1="9" x2="12" y2="13" stroke="#f25f4c" stroke-width="1.5" stroke-linecap="round"/>
+                    <circle cx="12" cy="17" r="0.8" fill="#f25f4c"/>
+                </g>
+
+                <!-- Floating decorative elements -->
+                <!-- Broken link icon top-right -->
+                <g transform="translate(310, 60)" opacity="0.4">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="#f25f4c" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="#f25f4c" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    <line x1="5" y1="5" x2="8" y2="8" stroke="#e53170" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="19" y1="19" x2="16" y2="16" stroke="#e53170" stroke-width="1.5" stroke-linecap="round"/>
+                </g>
+
+                <!-- Small floating card 1 -->
+                <g transform="translate(20, 100)" opacity="0.7">
+                    <rect width="30" height="22" rx="4" fill="#fff" stroke="#e8e6e0" stroke-width="1"/>
+                    <rect x="5" y="6" width="20" height="2" rx="1" fill="#f25f4c" opacity="0.5"/>
+                    <rect x="5" y="11" width="14" height="2" rx="1" fill="#e0ddd6"/>
+                    <rect x="5" y="16" width="17" height="2" rx="1" fill="#e0ddd6"/>
+                </g>
+
+                <!-- Small floating card 2 -->
+                <g transform="translate(348, 130)" opacity="0.6">
+                    <rect width="26" height="20" rx="4" fill="#fff" stroke="#e8e6e0" stroke-width="1"/>
+                    <rect x="5" y="6" width="16" height="2" rx="1" fill="#e0ddd6"/>
+                    <rect x="5" y="12" width="10" height="2" rx="1" fill="#f25f4c" opacity="0.5"/>
+                </g>
+
+                <!-- Bottom dots decoration -->
+                <circle cx="130" cy="300" r="4" fill="#f25f4c" opacity="0.3"/>
+                <circle cx="148" cy="300" r="4" fill="#f25f4c" opacity="0.15"/>
+                <circle cx="166" cy="300" r="4" fill="#f25f4c" opacity="0.06"/>
+                <circle cx="270" cy="300" r="4" fill="#e53170" opacity="0.06"/>
+                <circle cx="252" cy="300" r="4" fill="#e53170" opacity="0.15"/>
+                <circle cx="234" cy="300" r="4" fill="#e53170" opacity="0.3"/>
+
+                <!-- Horizontal dashes -->
+                <line x1="60" y1="320" x2="100" y2="320" stroke="#e0ddd6" stroke-width="1.5" stroke-dasharray="4 4"/>
+                <line x1="300" y1="320" x2="340" y2="320" stroke="#e0ddd6" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+                <!-- Center label below browser -->
+                <text x="200" y="345" font-family="'Sarabun', sans-serif" font-size="11" text-anchor="middle" fill="#c0bdb6" letter-spacing="0.1em">เซิร์ฟเวอร์ปฏิเสธคำขอ</text>
+            </svg>
+        </div>
+    </div>
+
+</body>
+</html>

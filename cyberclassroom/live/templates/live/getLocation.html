@@ -1,0 +1,77 @@
+{% extends "live/base_moniter.html" %}
+{% load live_extras %}
+{% load static %}
+{% block content %}
+<a class="btn btn-warning mb-2"  role="button" onclick="history.back()"> << Back</a>
+<h2>ตรวจสอบ Live </h2>
+{% comment %} {{data_location}} {% endcomment %}
+<div class="row">
+{% for room in data_classroom %}
+        <div class="col-md-4">
+          <div class="card mb-4 shadow-sm">
+            <svg class="bd-placeholder-img card-img-top" width="100%" height="80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false" role="img" aria-label="Placeholder: Thumbnail"><title>Placeholder</title><rect width="100%" height="100%" fill="#3399ff"/><text x="50%" y="50%" fill="#eceeef" dy=".3em">{{room.room_name}}</text></svg>
+            <div class="card-body">
+              <p class="card-text">{{room.room_name}}
+              {% if room.room_comment %}
+                  <style>
+                  .blink_me {
+                    animation: blinker 1s linear infinite;
+                  }
+
+                  @keyframes blinker {  
+                    50% { opacity: 0; }
+                  }
+                  </style>
+                  {% comment %} {{room_comment|linebreaks}} {% endcomment %}
+                  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                  <strong><h3><span class="blink_me"><span class="badge badge-danger">หมายเหตุ</span></strong></h3>
+                    {{room.room_comment|linebreaks }}</span>
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+              {% endif %}              
+              <span class="badge badge-danger">
+                {{room.room_location.location_name}}</span>
+              </p>
+              <!-- จำนวน {{room.classschedulecenter_set.count}} วิชา -->
+              <br/><span class="blink_me"><span class="badge badge-success">วิชาที่มีเรียนวันนี้คือ</span></span><br/>
+              {% for sub_room in room.classschedulecenter_set.all  %}
+                <ul>
+                {% if IsDayInt == sub_room.course_day%}
+                  <li><span class="fs-6 font-weight-light">{{sub_room.course_no}}({{sub_room.time_start}}-{{sub_room.time_end}})</span></li>
+                {% endif %}  
+                </ul> 
+              {% endfor%}  
+                <!-- player  -->
+                <link href="{% static 'videojs/video-js.css' %}" rel="stylesheet">
+                <script src="{% static 'videojs/video.js' %}"></script>
+                <script src="{% static 'videojs/videojs-contrib-hls.js' %}"></script>
+                <link rel="stylesheet" type="text/css" href="{% static 'videojs/videojs-matrix.css' %}">
+                <!-- end player -->
+                <!-- show player -->
+                <video id="my_video_{{room.room_name}}" class="video-js vjs-default-skin vjs-matrix" data-setup='{}' width="200" height="150" >
+                </video>
+                <script>
+                var player='{{room.room_name}}';
+                player= videojs('my_video_{{room.room_name}}', {
+                    "controls": true,
+                    "autoplay": true,
+                    "preload": false,
+                    "muted": true,
+                });
+                player.src({
+                    src: '{{server}}{{room.room_name|lower}}/playlist.m3u8',
+                    type: 'application/x-mpegURL',
+                });
+                player.fluid(true);
+                //player.aspectRatio('4:3');
+                player.responsive(true);
+            </script>
+            <!-- end show player -->             
+            </div>
+          </div>
+        </div>
+{% endfor %}
+</div>
+{% endblock content %}

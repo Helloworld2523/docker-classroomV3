@@ -1,0 +1,40 @@
+{% extends "live/base.html" %}
+{% load live_extras %}
+{% block content %}
+<div class="alert alert-info" role="alert">
+ค้นหาวิชาเรียน {{subjectCount}} วิชา
+</div>
+<div class="row">
+  {% if q %}
+  &nbsp;<a class="btn btn-warning mb-2" href="{% url 'index'%}" role="button">กลับสู่หน้าหลัก</a>
+  {% endif %}
+<form class="form-inline" action="{% url 'searchSubject' %}" method="GET">
+  <div class="form-group mx-sm-3 mb-2">
+    <label for="inpuSearch" class="sr-only">ค้นหาห้องเรียน</label>
+    <input type="text" class="form-control" id="inpuSearchSubject" name="inpuSearchSubject" placeholder="ค้นหาวิชาเรียน" autocomplete="off">
+  </div>
+  <button type="submit" class="btn btn-success mb-2">ค้นหาวิชาเรียน</button>
+</form>
+</div>
+<div class="row">
+{% for subject in data_subject%}
+        <div class="col-md-4">
+          <div class="card mb-4 shadow-sm">
+            <svg class="bd-placeholder-img card-img-top" width="100%" height="80" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false" role="img" aria-label="Placeholder: Thumbnail"><title>Placeholder</title><rect width="100%" height="100%" fill="#993366"/><text x="50%" y="50%" fill="#eceeef" dy=".3em">{{subject.course_no}}</text></svg>
+            <div class="card-body">
+              <p class="card-text">{{subject.course_no}}
+                <small class="text-muted">{{subject.course_name_thai}}</small>
+              </p>
+              <div class="d-flex justify-content-between align-items-center">
+                {{subject.course_day|ChangDay}}  {{subject.time_start}} - {{subject.time_end}} <br/>
+                {{subject.instructor}}
+              </div>
+                <div class="text-right">
+                    <a href="{% url 'showSubjectInRoom' subject.room_name %}" class="btn btn-outline-primary btn-sm active" role="button" aria-pressed="true">ห้องเรียน {{subject.room_name}}</a>
+                </div>
+            </div>
+          </div>
+        </div>
+{% endfor %}
+</div>
+{% endblock content %}

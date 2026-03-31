@@ -1,0 +1,31 @@
+version: "3.7"
+
+services:
+
+  django_v2:
+    build: ./cyberclassroom
+    container_name: django_v2
+    restart: always
+    # command: python manage.py runserver 0.0.0.0:8080
+    command: uwsgi /app/uwsgi.ini
+    volumes:
+      - ./cyberclassroom:/app            # 🔁 live reload
+    expose:
+      - "8080"
+    environment:
+      - DEBUG=True
+    
+
+  nginx_v2:
+    image: nginx:latest
+    container_name: nginx_v2
+    depends_on:
+      - django_v2
+    restart: always
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./cyberclassroom/staticfiles:/var/www/static
+    ports:
+      - "80:80"
+
+  
