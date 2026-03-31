@@ -30,7 +30,7 @@ ALLOWED_HOSTS = ['*']
 #     'cyberclassroom.ru.ac.th',     # ชื่อโดเมนหลัก
 #     'www.cyberclassroom.ru.ac.th', # เผื่อกรณีคนพิมพ์ www นำหน้า
 # ]
-
+ 
 # Application definition
 
 INSTALLED_APPS = [
