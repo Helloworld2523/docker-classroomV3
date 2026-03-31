@@ -25,11 +25,11 @@ SECRET_KEY = 't2)hn@pv6xglj-x*@c%q2zo_s($dam1@u@3$!5fm1i!f1mmc#o'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-# ALLOWED_HOSTS = ['*','202.41.160.89']
-ALLOWED_HOSTS = [
-    'cyberclassroom.ru.ac.th',     # ชื่อโดเมนหลัก
-    'www.cyberclassroom.ru.ac.th', # เผื่อกรณีคนพิมพ์ www นำหน้า
-]
+ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = [
+#     'cyberclassroom.ru.ac.th',     # ชื่อโดเมนหลัก
+#     'www.cyberclassroom.ru.ac.th', # เผื่อกรณีคนพิมพ์ www นำหน้า
+# ]
 
 # Application definition
 

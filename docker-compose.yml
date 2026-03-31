@@ -23,9 +23,10 @@ services:
       - django_v2
     restart: always
     volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro          # ✅ mount nginx.conf หลัก
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./cyberclassroom/staticfiles:/var/www/static
     ports:
-      - "80:80"
+      - "8849:80"
 
   
