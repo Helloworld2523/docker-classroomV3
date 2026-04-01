@@ -3,282 +3,591 @@
 {% load static %}
 
 {% block content %}
-
 <style>
-    /* ใช้ฟ้อนต์ Poppins จาก Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+/* ══════════════════════════════════════
+   showSubjectInRoom — Page Styles
+══════════════════════════════════════ */
 
-    body {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 400;
-        color: #343a40;
-        background-color: #f8f9fa;
-    }
+/* ── Room Hero ── */
+.room-hero {
+    background: linear-gradient(135deg, #050d1f 0%, #1e3a8a 55%, #1d4ed8 100%);
+    background-size: 200% 200%;
+    animation: heroGradient 10s ease infinite;
+    border-radius: 0;
+    padding: 2.5rem 0 2rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+@keyframes heroGradient {
+    0%,100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+}
+.room-hero::before {
+    content: '';
+    position: absolute; top: -80px; right: -80px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(96,165,250,0.18) 0%, transparent 65%);
+    animation: floatOrb 8s ease-in-out infinite;
+    pointer-events: none;
+}
+.room-hero::after {
+    content: '';
+    position: absolute; bottom: -60px; left: -60px;
+    width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(29,78,216,0.25) 0%, transparent 65%);
+    animation: floatOrb 11s ease-in-out infinite reverse;
+    pointer-events: none;
+}
+@keyframes floatOrb {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%      { transform: translate(20px,-25px) scale(1.06); }
+    66%      { transform: translate(-12px,18px) scale(0.94); }
+}
+.room-hero h1 { color: #fff !important; text-shadow: 0 2px 16px rgba(0,0,0,0.35); }
+.room-hero .lead { color: rgba(255,255,255,0.85); }
 
-    h1, h2 {
-        font-weight: 600;
-        color: #212529;
-    }
+/* Room code pill */
+.room-code-pill {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 50px;
+    padding: 0.3rem 1.2rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    backdrop-filter: blur(12px);
+    color: #fff;
+}
 
-    .table th, .table td {
-        font-size: 0.95rem;
-        padding: 0.75rem;
-        vertical-align: middle;
-    }
+/* Stat pills */
+.hero-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50px;
+    padding: 0.4rem 1rem;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: #fff;
+    backdrop-filter: blur(10px);
+}
 
-    .table-warning.fw-bold td {
-        background-color: #fff3cd !important;
-        color: #212529;
-    }
+/* Viewer count */
+.viewer-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(220,38,38,0.85);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50px;
+    padding: 0.4rem 1.2rem;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(220,38,38,0.4);
+    backdrop-filter: blur(10px);
+    animation: viewerPulse 3s ease-in-out infinite;
+}
+@keyframes viewerPulse {
+    0%,100% { box-shadow: 0 4px 20px rgba(220,38,38,0.4); }
+    50%      { box-shadow: 0 4px 28px rgba(220,38,38,0.7); }
+}
+#viewerCountBadge {
+    font-size: 1.3rem;
+    font-weight: 700;
+    min-width: 2rem;
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+.viewer-count-bounce { animation: countBounce 0.4s ease-in-out; }
+@keyframes countBounce {
+    0%,100% { transform: scale(1); }
+    50%      { transform: scale(1.25); }
+}
 
-    .table-sm td, .table-sm th {
-        padding: 0.5rem !important;
-    }
+/* ── Section heading ── */
+.page-section {
+    padding: 2rem 0 0;
+}
+.section-label {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1.2rem;
+}
+.section-label .label-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.section-label .label-icon.green  { background: rgba(22,163,74,0.12); color: #16a34a; }
+.section-label .label-icon.blue   { background: rgba(29,78,216,0.1);  color: #1d4ed8; }
+.section-label .label-icon.orange { background: rgba(234,88,12,0.1);  color: #ea580c; }
+.section-label h5 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ru-text, #0f172a);
+}
+.section-label small {
+    font-size: 0.8rem;
+    color: var(--ru-text-muted, #64748b);
+    font-weight: 400;
+}
 
-    .video-placeholder {
-        background-color: #343a40;
-        color: #adb5bd;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 400px;
-        border-radius: 0.5rem;
-        text-align: center;
-        flex-direction: column;
-        box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
-    }
+/* ── Today's subjects — Card grid ── */
+.subject-card-today {
+    background: var(--ru-card-bg, #fff);
+    border: 1px solid var(--ru-border, #e2e8f0);
+    border-radius: 14px;
+    padding: 1.2rem 1.3rem;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.28s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 2px 8px rgba(30,58,138,0.06);
+}
+.subject-card-today:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 28px rgba(30,58,138,0.14);
+    border-color: rgba(59,130,246,0.3);
+}
+.subject-card-today .course-num {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1d4ed8;
+    margin-bottom: 0.3rem;
+    letter-spacing: 0.5px;
+}
+.subject-card-today .course-name {
+    font-size: 0.88rem;
+    color: var(--ru-text-muted, #64748b);
+    line-height: 1.45;
+    margin-bottom: 0.8rem;
+    min-height: 2.5rem;
+}
+.subject-card-today .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--ru-text-muted, #64748b);
+    margin-top: 0.3rem;
+}
+.subject-card-today .meta-row i {
+    width: 14px; color: #94a3b8; flex-shrink: 0;
+}
+.time-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(29,78,216,0.09);
+    color: #1d4ed8;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 0.7rem;
+}
+.live-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(220,38,38,0.1);
+    color: #dc2626;
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: 0.4rem;
+    animation: livePulse 1.8s ease-in-out infinite;
+}
+.live-chip .dot {
+    width: 7px; height: 7px;
+    background: #dc2626;
+    border-radius: 50%;
+    animation: blinker 1s linear infinite;
+}
+@keyframes livePulse {
+    0%,100% { box-shadow: 0 0 0 rgba(220,38,38,0); }
+    50%      { box-shadow: 0 0 8px rgba(220,38,38,0.35); }
+}
+@keyframes blinker {
+    0%,100% { opacity: 1; } 50% { opacity: 0.15; }
+}
 
-    .video-placeholder .fas {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-    }
+/* Corner accent */
+.subject-card-today::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: linear-gradient(180deg, #1d4ed8, #3b82f6);
+    border-radius: 4px 0 0 4px;
+}
 
-    .blink_me {
-        animation: blinker 1s linear infinite;
-    }
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--ru-text-muted, #64748b);
+}
+.empty-state .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.35;
+}
 
-    @keyframes blinker {
-        50% { opacity: 0; }
-    }
+/* ── All subjects table ── */
+.all-subjects-table {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(30,58,138,0.08);
+}
+.all-subjects-table table { margin-bottom: 0; }
+.all-subjects-table thead th {
+    background: linear-gradient(135deg, #0f172a, #1e3a8a);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 0.9rem 1rem;
+    border: none;
+    white-space: nowrap;
+}
+.all-subjects-table tbody tr {
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid var(--ru-border, #f1f5f9);
+}
+.all-subjects-table tbody tr:last-child { border-bottom: none; }
+.all-subjects-table tbody td {
+    padding: 0.8rem 1rem;
+    font-size: 0.88rem;
+    vertical-align: middle;
+    color: var(--ru-text, #1e293b);
+    border: none;
+}
+.all-subjects-table tbody tr:hover td { background: rgba(59,130,246,0.05); }
 
-    #viewerCountBadge {
-        font-size: 1.8rem;
-        font-weight: 600;
-        padding: 0.4rem 0.8rem;
-        border-radius: 0.5rem;
-        transition: transform 0.3s ease, background-color 0.3s ease;
-        min-width: 60px;
-        display: inline-block;
-        background-color: #198754;
-        color: white;
-    }
+/* Today row highlight */
+.all-subjects-table tbody tr.today-row td { background: rgba(29,78,216,0.06); }
+.all-subjects-table tbody tr.today-row { border-left: 3px solid #1d4ed8; }
+.all-subjects-table tbody tr.today-row td:first-child { padding-left: 0.75rem; }
 
-    .viewer-count-bounce {
-        animation: bounceEffect 0.5s ease-in-out;
-    }
+/* Day chip inside table */
+.day-chip {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.day-chip.today { background: rgba(29,78,216,0.12); color: #1d4ed8; }
+.day-chip.other { background: #f1f5f9; color: #64748b; }
 
-    @keyframes bounceEffect {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); background-color: #ffc107; color: #000; }
-        100% { transform: scale(1); }
-    }
+/* Course code in table */
+.code-badge {
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1d4ed8;
+    background: rgba(29,78,216,0.07);
+    padding: 0.15rem 0.5rem;
+    border-radius: 5px;
+}
 
-    @media (max-width: 768px) {
-        table {
-            font-size: 0.85rem;
-        }
-        h2 {
-            font-size: 1.2rem !important;
-        }
-    }
+/* Row number */
+.row-num {
+    width: 28px; height: 28px;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.today-row .row-num {
+    background: rgba(29,78,216,0.12);
+    color: #1d4ed8;
+}
 
-    /* ปรับปุ่มกลับหน้าหลัก ให้สอดคล้องกับ theme */
-    a.btn-warning {
-        background-color: #ffc107;
-        color: #212529;
-        font-weight: 600;
-        transition: background-color 0.3s ease;
-        border: none;
-        box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
-    }
-    a.btn-warning:hover, a.btn-warning:focus {
-        background-color: #e0a800;
-        color: #212529;
-    }
+/* ── Video section ── */
+.video-section-wrapper {
+    background: var(--ru-card-bg, #fff);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(30,58,138,0.1);
+    border: 1px solid var(--ru-border, #e2e8f0);
+}
+.video-no-live {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(135deg, #050d1f, #1e3a8a);
+    min-height: 280px;
+    text-align: center;
+    color: #94a3b8;
+}
+.video-no-live .no-live-icon { font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.4; }
+.video-no-live h5 { color: #cbd5e1; font-weight: 600; }
+.video-no-live p  { font-size: 0.9rem; color: #64748b; }
 
-    /* ปรับ card container */
-    .p-4.bg-light.rounded-3.shadow-sm {
-        background-color: #fff !important;
-        box-shadow: 0 4px 12px rgb(0 0 0 / 0.05);
-    }
+/* ── Dark mode overrides ── */
+.dark-mode .subject-card-today {
+    background: rgba(17,28,53,0.9);
+    border-color: rgba(59,130,246,0.15);
+}
+.dark-mode .subject-card-today .course-name,
+.dark-mode .subject-card-today .meta-row { color: #94a3b8; }
+.dark-mode .time-chip { background: rgba(59,130,246,0.15); }
+.dark-mode .all-subjects-table tbody td { color: #e2e8f0; }
+.dark-mode .all-subjects-table tbody tr { border-bottom-color: rgba(255,255,255,0.06); }
+.dark-mode .all-subjects-table tbody tr:hover td { background: rgba(59,130,246,0.08); }
+.dark-mode .all-subjects-table tbody tr.today-row td { background: rgba(59,130,246,0.1); }
+.dark-mode .day-chip.other { background: rgba(255,255,255,0.06); color: #94a3b8; }
+.dark-mode .code-badge { background: rgba(59,130,246,0.12); }
+.dark-mode .row-num { background: rgba(255,255,255,0.06); color: #94a3b8; }
+.dark-mode .video-section-wrapper { background: rgba(17,28,53,0.9); border-color: rgba(59,130,246,0.15); }
 </style>
 
-<div class="container-fluid py-4">
+<!-- ══════════════ ROOM HERO ══════════════ -->
+<div class="room-hero">
+    <div class="container text-center position-relative" style="z-index:1;">
 
-    <a href="/" class="btn btn-warning mb-4">
-        <i class="fas fa-arrow-left me-2"></i> กลับหน้าหลัก
-    </a>
+        <div class="mb-3">
+            <div class="room-code-pill mb-2">{{ q|upper }}</div>
+            <h1 class="h2 fw-bold mb-1">ห้องเรียน {{ q|upper }}</h1>
+            <p class="lead mb-3">
+                <i class="fas fa-calendar-day me-1"></i> วันนี้ ({{ IsDayString }})
+            </p>
+        </div>
 
-    <div class="p-4 mb-4 bg-light rounded-3 text-center shadow-sm">
-        <h1 class="display-5 fw-bold text-primary mb-3">ห้องเรียน {{ q|upper }}</h1>
-        <p class="lead">
-            <i class="fas fa-calendar-day me-2"></i> วันนี้ ({{ IsDayString }}) มีบรรยาย 
-            <span class="badge bg-info fs-5 px-3 py-2">{{ data_subject|length }}</span> วิชา
-        </p>
-        <p>
-            <span id="contentSpan" class="badge" style="
-            background-color: #dc3545; /* สีแดง Bootstrap danger */
-            color: white;
-            font-weight: 600;
-            font-size: 1.1rem;
-            padding: 0.5rem 0.8rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            border-radius: 0.5rem;
-        ">
-            <strong>ผู้รับชมขณะนี้</strong>
-            <span id="viewerCountBadge" data-viewer-count="0" style="font-size: 1.6rem; font-weight: 700;">...</span>
-            <span id="updateTime" class="text-light small ms-2"></span>
-        </span>
-        </p>
+        <div class="d-flex flex-wrap justify-content-center gap-2 mb-3" style="row-gap:0.5rem;">
+            <span class="hero-stat">
+                <i class="fas fa-book-open"></i>
+                <span>บรรยายวันนี้ <strong>{{ data_subject|length }}</strong> วิชา</span>
+            </span>
+            <span class="viewer-badge">
+                <i class="fas fa-users"></i>
+                <span>ผู้ชม <span id="viewerCountBadge" data-viewer-count="0">…</span> คน</span>
+                <span id="updateTime" style="font-size:0.7rem;opacity:0.65;"></span>
+            </span>
+        </div>
+
+        <a href="/" class="btn-hero" style="display:inline-flex;">
+            <i class="fas fa-arrow-left"></i> กลับหน้าหลัก
+        </a>
     </div>
+</div>
+
+<!-- ══════════════ MAIN CONTENT ══════════════ -->
+<div class="container py-4">
 
     {% if room_comment %}
-    <div class="alert alert-warning alert-dismissible fade show shadow-sm">
-        <strong class="blink_me"><i class="fas fa-exclamation-triangle me-2"></i> หมายเหตุ</strong>
-        <p class="mb-0">{{ room_comment|linebreaks }}</p>
+    <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert"
+        style="border-left:4px solid #f59e0b;background:rgba(245,158,11,0.09);border-radius:10px;">
+        <strong><i class="fas fa-exclamation-triangle me-2 blink_me"></i>หมายเหตุ</strong>
+        <p class="mb-0 mt-1">{{ room_comment|linebreaks }}</p>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     {% endif %}
 
-    <h2 class="text-center text-secondary mb-3">การถ่ายทอดสด</h2>
+    <!-- ─── LIVE VIDEO ─── -->
+    <div class="page-section">
+        <div class="section-label">
+            <div class="label-icon orange">
+                <i class="fas fa-broadcast-tower"></i>
+            </div>
+            <div>
+                <h5>การถ่ายทอดสด</h5>
+                <small>Live Streaming</small>
+            </div>
+        </div>
 
-    <div class="row justify-content-center mb-5">
-        <div class="col-lg-10 col-md-12">
+        <div class="video-section-wrapper mb-5">
             {% if location in valid_locations %}
-                <video id="my_video" class="video-js vjs-default-skin rounded shadow-lg w-100" controls autoplay muted preload="auto" height="400" data-setup='{}'>
+                <video id="my_video" class="video-js vjs-default-skin w-100"
+                    controls autoplay muted preload="auto" style="min-height:380px;" data-setup='{}'>
                     <source src="{{ server }}{{ q|lower }}/playlist.m3u8" type="application/x-mpegURL">
                     <p class="vjs-no-js">เบราว์เซอร์ของคุณไม่รองรับ HTML5</p>
                 </video>
                 <script src="https://unpkg.com/hls.js@latest"></script>
                 <script>
                     const video = document.getElementById('my_video');
-                    if (Hls.isSupported()) {
+                    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
                         const hls = new Hls();
                         hls.loadSource('{{ server }}{{ q|lower }}/playlist.m3u8');
                         hls.attachMedia(video);
-                        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        video.src = '{{ server }}{{ q|lower }}/playlist.m3u8';
                     }
                 </script>
             {% else %}
-                <div class="video-placeholder">
-                    <i class="fas fa-video-slash"></i>
-                    <h4>ไม่มีการถ่ายทอดสด</h4>
-                    <p>โปรดกลับมาใหม่ในภายหลัง</p>
+                <div class="video-no-live">
+                    <div class="no-live-icon"><i class="fas fa-video-slash"></i></div>
+                    <h5>ไม่มีการถ่ายทอดสดในขณะนี้</h5>
+                    <p class="mb-0">โปรดกลับมาตรวจสอบใหม่ในช่วงเวลาบรรยาย</p>
                 </div>
             {% endif %}
         </div>
     </div>
 
-    <h2 class="mb-3 text-center text-success">📅 รายวิชาที่มีสอนวันนี้ ({{ IsDayString }})</h2>
-
-    {% if subjectCount == 0 %}
-        <div class="alert alert-info text-center">วันนี้ไม่มีการเรียนในห้องนี้</div>
-    {% else %}
-        <div class="table-responsive mb-5">
-            <table class="table table-bordered table-striped table-sm shadow-sm">
-                <thead class="table-success text-center">
-                    <tr>
-                        <th>#</th>
-                        <th>เวลา</th>
-                        <th>รหัสวิชา</th>
-                        <th>ชื่อวิชา</th>
-                        <th>อาจารย์</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for s in data_subject %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ s.time_start }} - {{ s.time_end }}</td>
-                        <td>{{ s.course_no }}</td>
-                        <td>{{ s.course_name_thai }}</td>
-                        <td>{{ s.instructor }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- ─── TODAY'S SUBJECTS ─── -->
+    <div class="page-section">
+        <div class="section-label">
+            <div class="label-icon green">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div>
+                <h5>รายวิชาที่สอนวันนี้ ({{ IsDayString }})</h5>
+                <small>{{ subjectCount }} วิชา</small>
+            </div>
         </div>
-    {% endif %}
 
-    <h2 class="mb-4 text-center text-dark">🗂️ รายวิชาทั้งหมดในห้อง {{ q|upper }}</h2>
+        {% if subjectCount == 0 %}
+            <div class="empty-state mb-5">
+                <div class="empty-icon"><i class="fas fa-calendar-times"></i></div>
+                <p class="fw-semibold mb-1">วันนี้ไม่มีการเรียนในห้องนี้</p>
+                <p class="small mb-0">ลองดูตารางรายวิชาทั้งหมดด้านล่าง</p>
+            </div>
+        {% else %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-5">
+                {% for s in data_subject %}
+                <div class="col">
+                    <div class="subject-card-today">
+                        <div class="d-flex align-items-start justify-content-between mb-2">
+                            <span class="time-chip">
+                                <i class="fas fa-clock"></i>
+                                {{ s.time_start }} – {{ s.time_end }}
+                            </span>
+                            <span class="badge" style="background:rgba(30,58,138,0.08);color:#1e3a8a;font-size:0.72rem;">
+                                #{{ forloop.counter }}
+                            </span>
+                        </div>
+                        <div class="course-num">{{ s.course_no }}</div>
+                        <div class="course-name">{{ s.course_name_thai }}</div>
+                        <div class="meta-row">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <span>{{ s.instructor }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
 
-    {% if subjectCount_out == 0 %}
-        <div class="alert alert-warning text-center">ไม่พบรายวิชาในห้องนี้</div>
-    {% else %}
-        <div class="table-responsive">
-            <table class="table table-hover table-bordered table-sm shadow-sm">
-                <thead class="table-dark text-center">
-                    <tr>
-                        <th>#</th>
-                        <th>วัน</th>
-                        <th>เวลา</th>
-                        <th>รหัสวิชา</th>
-                        <th>ชื่อวิชา</th>
-                        <th>อาจารย์</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for subject in data_subjec_out %}
-                    <tr class="{% if subject.course_day|ChangDay == IsDayString %}table-warning fw-bold{% endif %}">
-                        <td>{{ forloop.counter }}</td>
-                        <td><span class="text-primary">{{ subject.course_day|ChangDay }}</span></td>
-                        <td>{{ subject.time_start }} - {{ subject.time_end }}</td>
-                        <td>{{ subject.course_no }}</td>
-                        <td>{{ subject.course_name_thai }}</td>
-                        <td>{{ subject.instructor }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- ─── ALL SUBJECTS ─── -->
+    <div class="page-section pb-4">
+        <div class="section-label">
+            <div class="label-icon blue">
+                <i class="fas fa-list-ul"></i>
+            </div>
+            <div>
+                <h5>รายวิชาทั้งหมดในห้อง {{ q|upper }}</h5>
+                <small>{{ subjectCount_out }} วิชา · วันที่มีบรรยายไฮไลต์สีน้ำเงิน</small>
+            </div>
         </div>
-    {% endif %}
+
+        {% if subjectCount_out == 0 %}
+            <div class="empty-state">
+                <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+                <p class="fw-semibold mb-1">ไม่พบรายวิชาในห้องนี้</p>
+            </div>
+        {% else %}
+            <div class="all-subjects-table table-responsive mb-2">
+                <table class="table table-hover w-100 mobile-card-table">
+                    <thead>
+                        <tr class="text-center">
+                            <th style="width:48px;">#</th>
+                            <th>วัน</th>
+                            <th>เวลา</th>
+                            <th>รหัสวิชา</th>
+                            <th>ชื่อวิชา</th>
+                            <th>อาจารย์</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subject in data_subjec_out %}
+                        {% with is_today=subject.course_day|ChangDay %}
+                        <tr class="{% if is_today == IsDayString %}today-row{% endif %}">
+                            <td class="text-center" data-label="#">
+                                <span class="row-num">{{ forloop.counter }}</span>
+                            </td>
+                            <td data-label="วัน">
+                                <span class="day-chip {% if is_today == IsDayString %}today{% else %}other{% endif %}">
+                                    {% if is_today == IsDayString %}
+                                        <i class="fas fa-star me-1" style="font-size:0.65rem;"></i>
+                                    {% endif %}
+                                    {{ is_today }}
+                                </span>
+                            </td>
+                            <td data-label="เวลา" style="white-space:nowrap;">
+                                <i class="fas fa-clock me-1" style="color:#94a3b8;font-size:0.75rem;"></i>
+                                {{ subject.time_start }} – {{ subject.time_end }}
+                            </td>
+                            <td data-label="รหัสวิชา"><span class="code-badge">{{ subject.course_no }}</span></td>
+                            <td data-label="ชื่อวิชา" style="font-size:0.86rem;">{{ subject.course_name_thai }}</td>
+                            <td data-label="อาจารย์" style="font-size:0.85rem; color:var(--text-muted,#64748b);">{{ subject.instructor }}</td>
+                        </tr>
+                        {% endwith %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p style="font-size:0.78rem;color:var(--text-muted,#64748b);">
+                <i class="fas fa-info-circle me-1"></i>
+                แถวสีน้ำเงิน = วิชาที่มีสอนวันนี้ ({{ IsDayString }})
+            </p>
+        {% endif %}
+    </div>
 
 </div>
 
+<!-- ════════════════ SCRIPTS ════════════════ -->
 <script>
+    /* Viewer count updater */
     function updateSessionsCount() {
-        const roomName = "{{ q|lower|escapejs }}";
-        const apiUrl = `/get-live-viewers/${roomName}/`;
-        fetch(apiUrl)
-            .then(response => response.json())
-            .then(data => {
-                const newViewerCount = data.sessions_total;
-                const viewerCountBadge = document.getElementById("viewerCountBadge");
-                const updateTimeSpan = document.getElementById("updateTime");
-                const oldViewerCount = parseInt(viewerCountBadge.getAttribute('data-viewer-count') || '0');
+        const roomName  = "{{ q|lower|escapejs }}";
+        const apiUrl    = `/get-live-viewers/${roomName}/`;
+        const badge     = document.getElementById("viewerCountBadge");
+        const timeSpan  = document.getElementById("updateTime");
 
-                viewerCountBadge.textContent = newViewerCount;
-                if (newViewerCount !== oldViewerCount) {
-                    viewerCountBadge.classList.add('viewer-count-bounce');
-                    viewerCountBadge.addEventListener('animationend', () => {
-                        viewerCountBadge.classList.remove('viewer-count-bounce');
-                    }, { once: true });
+        fetch(apiUrl)
+            .then(r => r.json())
+            .then(data => {
+                const newCount = data.sessions_total;
+                const oldCount = parseInt(badge.getAttribute('data-viewer-count') || '0');
+                badge.textContent = newCount;
+                if (newCount !== oldCount) {
+                    badge.classList.add('viewer-count-bounce');
+                    badge.addEventListener('animationend', () =>
+                        badge.classList.remove('viewer-count-bounce'), { once: true });
                 }
-                viewerCountBadge.setAttribute('data-viewer-count', newViewerCount);
-                updateTimeSpan.textContent = ` (${new Date().toLocaleTimeString('th-TH')})`;
+                badge.setAttribute('data-viewer-count', newCount);
+                timeSpan.textContent = `อัปเดต ${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`;
             })
-            .catch(err => {
-                const viewerCountBadge = document.getElementById("viewerCountBadge");
-                viewerCountBadge.textContent = 'N/A';
-                viewerCountBadge.classList.remove('bg-success');
-                viewerCountBadge.classList.add('bg-secondary');
-                document.getElementById("updateTime").textContent = " (ข้อมูลผิดพลาด)";
+            .catch(() => {
+                badge.textContent = '—';
+                timeSpan.textContent = 'ไม่สามารถดึงข้อมูลได้';
             });
     }
 
-    setInterval(updateSessionsCount, 10000 );
+    setInterval(updateSessionsCount, 10000);
     updateSessionsCount();
 </script>
 

@@ -11,282 +11,248 @@
     <meta property="og:url" content="http://cyberclassroom.ru.ac.th" />
     <meta property="og:site_name" content="cyberclassroom.ru.ac.th" />
     <meta property="og:image" content="http://cyberclassroom.ru.ac.th/static/cyberclassroom.png" />
-    <title>Cyber Classroom RU</title>
+    <title>Cyber Classroom RU — Live Learning</title>
 
-    <!-- Google Fonts: Poppins -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
-
-    <!-- Bootstrap CSS -->
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
-
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+    <!-- Custom CSS -->
     <link href="{% static 'css/custom.css' %}" rel="stylesheet" />
-
-    <style>
-        /* ใช้ฟ้อนต์ Google Poppins */
-        body, button, input, select, textarea {
-            font-family: 'Poppins', sans-serif;
-            font-weight: 400;
-            font-size: 1rem;
-            line-height: 1.5;
-            color: #343a40;
-            background-color: #f8f9fa;
-        }
-
-        h1, h2, h3, h4, h5, h6, .navbar-brand, .card-title {
-            font-weight: 600;
-        }
-
-        /* Jumbotron ปรับให้ดูโมเดิร์นขึ้น */
-        .jumbotron {
-            padding: 3rem 2rem;
-            margin-bottom: 2rem;
-            background-color: #ffffff;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 12px rgb(0 0 0 / 0.05);
-        }
-
-        .live-status {
-            font-size: 0.9em;
-            color: #6c757d;
-        }
-
-        /* ปรับปุ่มสี custom ให้ดูทันสมัย */
-        .btn-custom-color-law {
-            background-color: #0d6efd;
-            color: #fff;
-            transition: background-color 0.3s ease;
-        }
-        .btn-custom-color-law:hover, .btn-custom-color-law:focus {
-            background-color: #084cd6;
-            color: #fff;
-            opacity: 1;
-        }
-
-        .btn-custom-color-eco {
-            background-color: #198754;
-            color: #fff;
-            transition: background-color 0.3s ease;
-        }
-        .btn-custom-color-eco:hover, .btn-custom-color-eco:focus {
-            background-color: #12693c;
-            color: #fff;
-            opacity: 1;
-        }
-
-        .btn-custom-color-human {
-            background-color: #ffc107;
-            color: #212529;
-            transition: background-color 0.3s ease;
-        }
-        .btn-custom-color-human:hover, .btn-custom-color-human:focus {
-            background-color: #d39e00;
-            color: #212529;
-            opacity: 1;
-        }
-
-        /* Footer */
-        .footer {
-            background-color: #212529;
-            color: #adb5bd;
-            padding: 2rem 0;
-            margin-top: 4rem;
-            font-size: 0.9rem;
-        }
-        .footer a {
-            color: #adb5bd;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        .footer a:hover {
-            color: #fff;
-            text-decoration: underline;
-        }
-
-        /* ปรับขนาดปุ่มให้พอดี */
-        .btn-sm {
-            font-size: 0.875rem;
-            padding: 0.375rem 0.75rem;
-        }
-
-        /* ปรับ layout ปุ่มส่วนคณะให้ responsive */
-        .faculty-buttons {
-            gap: 0.5rem;
-            justify-content: center;
-            display: flex;
-            flex-wrap: wrap;
-            margin-top: 1rem;
-        }
-    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-            <div class="container">
-                <a href="{% url 'index' %}" class="navbar-brand d-flex align-items-center">
-                    <i class="fas fa-satellite-dish me-2"></i>
-                    <strong>Cyber Classroom RU</strong>
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item"><a class="nav-link" href="#about">เกี่ยวกับเรา</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#contact">ติดต่อเรา</a></li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="https://www.facebook.com/rucyberclassroomfanpage/" target="_blank">
-                                <i class="fab fa-facebook me-1"></i> Facebook
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
 
-    <main>
-        <section class="jumbotron text-center">
-            <div class="container">
-                <h1 class="display-4 mb-4">Cyber Classroom RU</h1>
-                <p class="lead text-muted">
-                    ระบบถ่ายทอดสดการเรียนการสอน เพื่อให้นักศึกษามหาวิทยาลัยรามคำแหงสามารถเข้าถึงการบรรยายได้ทุกที่ทุกเวลา
-                </p>
-                <div class="card p-4 mb-4 shadow-sm">
-                    <h5 class="card-title mb-3">กำหนดการบรรยาย:</h5>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="border rounded p-3 h-100 bg-light">
-                                <h6><span class="badge bg-primary me-2">ส่วนกลาง</span> บรรยาย 2/2568</h6>
-                                <p class="mb-1">📅 17 พ.ย. 2568-9 มี.ค. 2569</p>
-                                <p class="live-status mb-0">🎬 ย้อนหลัง: <a href="https://m-learning.ru.ac.th/" target="_blank">www.m-learning.ru.ac.th</a></p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="border rounded p-3 h-100 bg-light">
-                                <h6><span class="badge bg-success me-2">ส่วนภูมิภาค</span> บรรยาย 2/2568</h6>
-                                <p class="mb-1">📅 19 พ.ย. 2568-3 มี.ค. 2569</p>
-                                <p class="live-status mb-0">🎬 ย้อนหลัง: <a href="https://m-learning.ru.ac.th/" target="_blank">www.m-learning.ru.ac.th</a></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-
-                <div class="container">
-
-                    <div class="card p-4 shadow-sm mb-4">
-                        <div class="row">
-                          <!-- 🔹 คอลัมน์ลิงก์สำคัญ -->
-                          <div class="col-md-6 mb-4 mb-md-0 text-center border-end">
-                            <h5 class="mb-3 text-primary"><i class="fas fa-link me-2"></i> ลิงก์สำคัญ</h5>
-                            <div class="d-grid gap-2">
-                              <a href="https://forms.gle/jkU3JRvV6x43UjKv7" target="_blank" class="btn btn-outline-primary px-4 py-2">
-                                <i class="fas fa-poll me-2"></i> แบบประเมินความพึงพอใจ
-                              </a>
-                              <a href="{% url 'searchRoom' %}?inpuSearch=campus" target="_blank" class="btn btn-outline-info px-4 py-2">
-                                <i class="fas fa-map-marker-alt me-2"></i> สำหรับส่วนภูมิภาค
-                              </a>
-                            </div>
-                          </div>
-                      
-                          <!-- 🔸 คอลัมน์ปุ่มคณะ -->
-                          <div class="col-md-6 text-center">
-                            <h5 class="mb-3 text-success"><i class="fas fa-university me-2"></i> คณะต่าง ๆ</h5>
-                            <div class="d-grid gap-2">
-                              <a href="{% url 'searchRoom' %}?inpuSearch=lob" target="_blank" class="btn btn-custom-color-law px-3 py-2">
-                                <i class="fas fa-gavel me-1"></i> คณะนิติศาสตร์
-                              </a>
-                              <a href="{% url 'searchRoom' %}?inpuSearch=ecb" target="_blank" class="btn btn-custom-color-eco px-3 py-2">
-                                <i class="fas fa-chart-line me-1"></i> คณะเศรษฐศาสตร์
-                              </a>
-                              <a href="{% url 'searchRoom' %}?inpuSearch=hub" target="_blank" class="btn btn-custom-color-human px-3 py-2">
-                                <i class="fas fa-user-graduate me-1"></i> คณะมนุษยศาสตร์
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                  
-                </div>
-                  
-                  
-            </div>
-        </section>
-
-            <div class="container">
-                {% block content %}
-                {% endblock content %}
-            </div>
-       
-
-    </main>
-
-    <footer class="footer">
+<!-- ═══ NAVBAR ═══ -->
+<header>
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <div class="row">
-                <div class="col-md-6 mb-3 mb-md-0" id="about">
-                    <h5>เกี่ยวกับเรา</h5>
-                    <p>ให้บริการเกี่ยวกับการบรรยายสดผ่านห้องเรียน ทั้งรามคำแหง (หัวหมาก) วิทยาเขตบางนา ส่วนภูมิภาค และห้องเรียนที่มีอุปกรณ์ในการถ่ายทอดสด</p>
-                </div>
-                <div class="col-md-4 offset-md-2" id="contact">
-                    <h5>ติดต่อเรา</h5>
-                    <ul class="list-unstyled">
-                      <li><i class="fas fa-phone-alt me-2"></i> แจ้งปัญหาในการรับชมได้ที่ 02-310-8849</li>
-                      <li><i class="fab fa-facebook-square me-2"></i> 
-                        <a href="https://www.facebook.com/rucyberclassroomfanpage/" target="_blank">Rucyberclassroom Fanpage</a>
-                      </li>
-                    </ul>
-                  
-                    <!-- 🔹 ปุ่ม LINE -->
-                    <div class="mt-3">
-                      <p class="mb-2"><i class="fab fa-line me-2"></i> ติดต่อเจ้าหน้าที่ผ่าน LINE</p>
-                      <a href="https://lin.ee/BNqViwp" target="_blank" class="btn btn-success btn-sm mb-2">
-                        <i class="fab fa-line me-1"></i> เพิ่มเพื่อนผ่าน LINE
-                      </a>
-                      <br />
-                      <button type="button" class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#myModal">
-                        หรือสแกน QR Code
-                      </button>
-                    </div>
-                  </div>
-                  
+            <!-- Brand -->
+            <a href="{% url 'index' %}" class="navbar-brand">
+                <i class="fas fa-satellite-dish brand-icon"></i>
+                <span>Cyber Classroom <strong>RU</strong></span>
+            </a>
+
+            <!-- Mobile toggle -->
+            <button class="navbar-toggler" type="button"
+                data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Nav links -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">
+                            <i class="fas fa-info-circle me-1"></i>เกี่ยวกับเรา
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">
+                            <i class="fas fa-headset me-1"></i>ติดต่อเรา
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://www.facebook.com/rucyberclassroomfanpage/" target="_blank">
+                            <i class="fab fa-facebook me-1"></i>Facebook
+                        </a>
+                    </li>
+                    <!-- Dark Mode Toggle -->
+                    <li class="nav-item ms-lg-2">
+                        <button id="darkModeToggle" title="เปลี่ยนเป็น Dark Mode">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </li>
+                </ul>
             </div>
-            <hr class="my-4 border-secondary" />
-            <p class="text-center mb-0">
-                &copy; 2025 Computer Institute of Ramkhamhaeng University
-                <span class="float-md-end">
-                    <a href="#" class="text-decoration-none">กลับสู่ด้านบน <i class="fas fa-arrow-circle-up ms-1"></i></a>
-                </span>
-            </p>
         </div>
-    </footer>
+    </nav>
+</header>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script type="text/javascript" src="//player.wowza.com/player/latest/wowzaplayer.min.js"></script>
+<!-- ═══ HERO ═══ -->
+<main>
+    <section class="jumbotron">
+        <!-- Background orb 3 -->
+        <div class="hero-orb-3"></div>
 
-    <script>
-        (function (i, s, o, g, r, a, m) {
-            i['GoogleAnalyticsObject'] = r;
-            i[r] =
-                i[r] ||
-                function () {
-                    (i[r].q = i[r].q || []).push(arguments);
-                };
-            i[r].l = 1 * new Date();
-            a = s.createElement(o);
-            m = s.getElementsByTagName(o)[0];
-            a.async = 1;
-            a.src = g;
-            m.parentNode.insertBefore(a, m);
-        })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+        <div class="container position-relative" style="z-index:1;">
+            <div class="row align-items-center">
+                <!-- Left: Title block -->
+                <div class="col-lg-6 text-white mb-4 mb-lg-0">
+                    <!-- ON AIR badge -->
+                    <div class="on-air-badge">
+                        <span class="live-dot"></span> ON AIR — ถ่ายทอดสด
+                    </div>
 
-        ga('create', 'UA-71702042-1', 'auto');
-        ga('send', 'pageview');
-    </script>
+                    <h1 class="display-4 mb-3">
+                        <span id="hero-typewriter"></span>
+                    </h1>
+                    <p class="lead mb-4">
+                        ระบบถ่ายทอดสดการเรียนการสอน เพื่อให้นักศึกษามหาวิทยาลัยรามคำแหง
+                        สามารถเข้าถึงการบรรยายได้ทุกที่ทุกเวลา
+                    </p>
+
+                    <!-- Quick stats -->
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="btn-hero" style="pointer-events:none;">
+                            <i class="fas fa-broadcast-tower" style="color:#60a5fa;"></i>
+                            Live Streaming
+                        </span>
+                        <span class="btn-hero" style="pointer-events:none;">
+                            <i class="fas fa-mobile-alt" style="color:#34d399;"></i>
+                            ทุกอุปกรณ์
+                        </span>
+                        <span class="btn-hero" style="pointer-events:none;">
+                            <i class="fas fa-university" style="color:#fbbf24;"></i>
+                            ม.รามคำแหง
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Right: Info card -->
+                <div class="col-lg-6">
+                    <div class="hero-info-card">
+                        <div class="row g-0">
+
+                            <!-- กำหนดการบรรยาย -->
+                            <div class="col-12 col-lg-4">
+                                <div class="hero-col-label">
+                                    <i class="fas fa-calendar-alt"></i> กำหนดการ
+                                </div>
+                                <div class="schedule-box">
+                                    <h6><span class="badge bg-primary me-1" style="font-size:0.7rem;">ส่วนกลาง</span> ภาค 2/2568</h6>
+                                    <p class="mb-1" style="font-size:0.82rem;"><i class="fas fa-calendar-day me-1" style="color:#60a5fa;"></i> 17 พ.ย. 68 – 9 มี.ค. 69</p>
+                                    <p class="mb-0" style="font-size:0.8rem;"><i class="fas fa-film me-1" style="color:#60a5fa;"></i> <a href="https://m-learning.ru.ac.th/" target="_blank">m-learning.ru.ac.th</a></p>
+                                </div>
+                                <div class="schedule-box regional">
+                                    <h6><span class="badge bg-success me-1" style="font-size:0.7rem;">ภูมิภาค</span> ภาค 2/2568</h6>
+                                    <p class="mb-1" style="font-size:0.82rem;"><i class="fas fa-calendar-day me-1" style="color:#34d399;"></i> 19 พ.ย. 68 – 3 มี.ค. 69</p>
+                                    <p class="mb-0" style="font-size:0.8rem;"><i class="fas fa-film me-1" style="color:#34d399;"></i> <a href="https://m-learning.ru.ac.th/" target="_blank">m-learning.ru.ac.th</a></p>
+                                </div>
+                            </div>
+
+                            <!-- ลิงก์สำคัญ -->
+                            <div class="col-12 col-lg-4 hero-col-divider">
+                                <div class="hero-col-label">
+                                    <i class="fas fa-link"></i> ลิงก์สำคัญ
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <a href="https://forms.gle/jkU3JRvV6x43UjKv7" target="_blank" class="btn-hero">
+                                        <i class="fas fa-poll" style="color:#818cf8;"></i>
+                                        <span>แบบประเมิน</span>
+                                    </a>
+                                    <a href="{% url 'searchRoom' %}?inpuSearch=campus" target="_blank" class="btn-hero">
+                                        <i class="fas fa-map-marker-alt" style="color:#34d399;"></i>
+                                        <span>ห้องส่วนภูมิภาค</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- ค้นหาตามคณะ -->
+                            <div class="col-12 col-lg-4 hero-col-divider">
+                                <div class="hero-col-label">
+                                    <i class="fas fa-university"></i> ค้นหาตามคณะ
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'searchRoom' %}?inpuSearch=lob" target="_blank" class="btn-custom-color-law">
+                                        <i class="fas fa-gavel"></i>
+                                        <span>คณะนิติศาสตร์</span>
+                                    </a>
+                                    <a href="{% url 'searchRoom' %}?inpuSearch=ecb" target="_blank" class="btn-custom-color-eco">
+                                        <i class="fas fa-chart-line"></i>
+                                        <span>คณะเศรษฐศาสตร์</span>
+                                    </a>
+                                    <a href="{% url 'searchRoom' %}?inpuSearch=hub" target="_blank" class="btn-custom-color-human">
+                                        <i class="fas fa-user-graduate"></i>
+                                        <span>คณะมนุษยศาสตร์</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Page content -->
+    <div class="container mt-4 mb-5">
+        {% block content %}
+        {% endblock content %}
+    </div>
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 mb-4 mb-md-0" id="about">
+                <h5><i class="fas fa-broadcast-tower me-2" style="color:var(--accent);"></i>เกี่ยวกับเรา</h5>
+                <p>ให้บริการเกี่ยวกับการบรรยายสดผ่านห้องเรียน ทั้งรามคำแหง (หัวหมาก) วิทยาเขตบางนา ส่วนภูมิภาค และห้องเรียนที่มีอุปกรณ์ในการถ่ายทอดสด</p>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <span class="badge" style="background:rgba(59,130,246,0.14);color:#93c5fd;border:1px solid rgba(59,130,246,0.25);padding:0.4em 0.8em;">
+                        <i class="fas fa-satellite-dish me-1"></i> Live Streaming
+                    </span>
+                    <span class="badge" style="background:rgba(34,197,94,0.12);color:#6ee7b7;border:1px solid rgba(34,197,94,0.22);padding:0.4em 0.8em;">
+                        <i class="fas fa-university me-1"></i> ม.รามคำแหง
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-4 offset-md-2" id="contact">
+                <h5><i class="fas fa-headset me-2" style="color:var(--accent);"></i>ติดต่อเรา</h5>
+                <ul class="list-unstyled mb-3">
+                    <li class="mb-2">
+                        <i class="fas fa-phone-alt me-2" style="color:var(--accent);"></i>
+                        แจ้งปัญหาได้ที่ 02-310-8849
+                    </li>
+                    <li>
+                        <i class="fab fa-facebook-square me-2" style="color:var(--accent);"></i>
+                        <a href="https://www.facebook.com/rucyberclassroomfanpage/" target="_blank">Rucyberclassroom Fanpage</a>
+                    </li>
+                </ul>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="https://lin.ee/BNqViwp" target="_blank" class="btn btn-success btn-sm">
+                        <i class="fab fa-line me-1"></i> เพิ่มเพื่อน LINE
+                    </a>
+                    <button type="button" class="btn btn-outline-light btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#myModal">
+                        <i class="fas fa-qrcode me-1"></i> QR Code
+                    </button>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <p class="text-center mb-0" style="font-size:0.8rem; color:var(--text-muted);">
+            &copy; 2025 Computer Institute of Ramkhamhaeng University
+        </p>
+    </div>
+</footer>
+
+<!-- Back-to-top -->
+<button id="backToTop" aria-label="กลับสู่ด้านบน">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script type="text/javascript" src="//player.wowza.com/player/latest/wowzaplayer.min.js"></script>
+<script src="{% static 'js/custom.js' %}"></script>
+
+<script>
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () { (i[r].q = i[r].q || []).push(arguments); };
+        i[r].l = 1 * new Date();
+        a = s.createElement(o);
+        m = s.getElementsByTagName(o)[0];
+        a.async = 1; a.src = g;
+        m.parentNode.insertBefore(a, m);
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-71702042-1', 'auto');
+    ga('send', 'pageview');
+</script>
 </body>
 </html>

@@ -3,64 +3,105 @@
 {% load custom_filters %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="alert alert-info text-center" role="alert">
-        ค้นหาวิชาเรียน <span class="badge bg-info">{{ subjectCount }}</span> วิชา
+
+<div class="container-fluid px-0">
+
+    <!-- ── Header banner ── -->
+    <div class="alert alert-info text-center mb-4" role="alert">
+        <i class="fas fa-book-open me-2" style="color:var(--accent);"></i>
+        ผลการค้นหาวิชาเรียน&nbsp;
+        <span class="count-badge">
+            <i class="fas fa-list"></i>
+            {{ subjectCount }} วิชา
+        </span>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <!-- ── Search bar + back button ── -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         {% if q %}
-        <a href="{% url 'index' %}" role="button" class="btn btn-warning btn-lg shadow-sm d-inline-flex align-items-center">
-            <i class="fas fa-arrow-left me-2"></i> กลับสู่หน้าหลัก
+        <a href="{% url 'index' %}" role="button" class="btn btn-warning d-inline-flex align-items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            <span class="btn-text-hide">กลับหน้าหลัก</span>
         </a>
         {% endif %}
 
-        <form class="d-flex flex-grow-1 flex-md-grow-0" action="{% url 'searchSubject' %}" method="GET" role="search">
-            <input type="text" class="form-control me-2" id="inpuSearchSubject" name="inpuSearchSubject" placeholder="ค้นหาวิชาเรียน" autocomplete="off" value="{{ q|default_if_none:'' }}">
-            <button type="submit" class="btn btn-success">
-                <i class="fas fa-search me-1"></i> ค้นหาวิชาเรียน
-            </button>
+        <form class="d-flex flex-grow-1" action="{% url 'searchSubject' %}" method="GET" role="search"
+            style="max-width:480px;">
+            <div class="input-group">
+                <input type="text" class="form-control" id="inpuSearchSubject" name="inpuSearchSubject"
+                    placeholder="ค้นหาวิชา เช่น LAW1001, นิติ..." autocomplete="off"
+                    value="{{ q|default_if_none:'' }}">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-search"></i>
+                    <span class="btn-text-hide ms-1">ค้นหา</span>
+                </button>
+            </div>
         </form>
     </div>
 
-    <div class="row">
+    <!-- ── Section title ── -->
+    <div class="stream-section-title">
+        <div class="section-icon green">
+            <i class="fas fa-book-open"></i>
+        </div>
+        <div>
+            <h4>รายวิชาที่พบ
+                <span class="section-spacer ms-2">·</span>
+                <span class="section-sub d-inline ms-1">คลิกเพื่อเข้าชมห้องเรียน</span>
+            </h4>
+        </div>
+    </div>
+
+    <!-- ── Subject cards ── -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for subject in data_subject %}
-        <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
-                <svg class="bd-placeholder-img card-img-top" width="100%" height="80"
-                xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"
-                focusable="false" role="img" aria-label="Placeholder: Thumbnail">
-                <title>{{ subject.course_no }}</title>
-                <rect width="100%" height="100%" fill="#993366" />
-                <text x="50%" y="50%" fill="#ffffff" text-anchor="middle" dominant-baseline="middle" font-size="18" font-family="Arial, sans-serif">
-                {{ subject.course_no }}
-                </text>
-                </svg>
-                <div class="card-body">
-                    <p class="card-text mb-2 text-center">
-                        <strong>{{ subject.course_no }}</strong><br>
-                        <small class="text-muted">{{ subject.course_name_thai }}</small>
-                    </p>
-                    
-                    <div class="mb-3">
-                        {{ subject.course_day|ChangDay }} {{ subject.time_start }} - {{ subject.time_end }}
-                        {% if subject|is_current_class_time %} {# เรียกใช้ filter #}
-                        <span class="badge bg-danger ms-2">
-                            <i class="fas fa-circle text-white me-1"></i> LIVE
-                        </span>
-                        {% endif %} 
-                        <br/>
-                        {{ subject.instructor }}
-                    </div>
-                    <div class="text-end">
-                        <a href="{% url 'showSubjectInRoom' subject.room_name %}" class="btn btn-outline-primary btn-sm active" role="button" aria-pressed="true">
-                            ห้องเรียน {{ subject.room_name }}
-                        </a>
+        <div class="col reveal">
+            <div class="subject-card">
+
+                <!-- Thumbnail -->
+                <div class="subject-thumb">
+                    <span class="course-code-big">{{ subject.course_no }}</span>
+                    <i class="fas fa-graduation-cap thumb-icon"></i>
+                </div>
+
+                <div class="subject-card-body">
+                    <div class="course-num">{{ subject.course_no }}</div>
+                    <div class="subject-name">{{ subject.course_name_thai }}</div>
+
+                    <div class="subject-meta">
+                        <div class="mb-1 d-flex align-items-center gap-2 flex-wrap">
+                            <span>
+                                <i class="fas fa-calendar-day me-1"></i>
+                                {{ subject.course_day|ChangDay }}
+                            </span>
+                            <span>
+                                <i class="fas fa-clock me-1"></i>
+                                {{ subject.time_start }} – {{ subject.time_end }}
+                            </span>
+                            {% if subject|is_current_class_time %}
+                            <span class="live-badge">
+                                <span class="ld"></span> LIVE
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <i class="fas fa-chalkboard-teacher me-1"></i>
+                            {{ subject.instructor }}
+                        </div>
                     </div>
                 </div>
+
+                <a href="{% url 'showSubjectInRoom' subject.room_name %}" class="btn-watch">
+                    <i class="fas fa-door-open"></i>
+                    <span>ห้องเรียน {{ subject.room_name }}</span>
+                    <i class="fas fa-chevron-right" style="font-size:0.75rem;opacity:0.7;"></i>
+                </a>
+
             </div>
         </div>
         {% endfor %}
     </div>
+
 </div>
+
 {% endblock content %}

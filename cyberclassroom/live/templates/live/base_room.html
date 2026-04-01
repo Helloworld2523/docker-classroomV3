@@ -1,100 +1,128 @@
 {% load static %}
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="ถ่ายทอดสดการบรรยายจากห้องเรียน มหาวิทยาลัยรามคำแหง">
-    <meta name="author" content="สถาบันคอมพิวเตอร์มหาวิทยาลัยรามคำแหง">
-    <meta name="generator" content="ถ่ายทอดสดการบรรยายจากห้องเรียน มหาวิทยาลัยรามคำแหง วิทยาเขตบางนา และส่วนภูมิภาค">
-    <meta property="og:locale" content="th_TH"/>
-    <meta property="og:title" content="ถ่ายทอดสดการบรรยายจากห้องเรียน มหาวิทยาลัยรามคำแหง"/>
-    <meta property="og:url" content="http://cyberclassroom.ru.ac.th"/>
-    <meta property="og:site_name" content="cyberclassroom.ru.ac.th"/>
-    <meta property="og:image" content="http://cyberclassroom.ru.ac.th/static/cyberclassroom.png"/>
+<html lang="th">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="ถ่ายทอดสดการบรรยายจากห้องเรียน มหาวิทยาลัยรามคำแหง" />
+    <meta name="author" content="สถาบันคอมพิวเตอร์มหาวิทยาลัยรามคำแหง" />
+    <meta property="og:locale" content="th_TH" />
+    <meta property="og:title" content="ถ่ายทอดสดการบรรยายจากห้องเรียน มหาวิทยาลัยรามคำแหง" />
+    <meta property="og:url" content="http://cyberclassroom.ru.ac.th" />
+    <meta property="og:site_name" content="cyberclassroom.ru.ac.th" />
+    <meta property="og:image" content="http://cyberclassroom.ru.ac.th/static/cyberclassroom.png" />
     <title>Cyber Classroom RU</title>
 
-    <link rel="canonical" href="https://getbootstrap.com/docs/4.5/examples/album/">
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Video.js (HLS player) -->
+    <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link href="{% static 'css/custom.css' %}" rel="stylesheet" />
+</head>
+<body>
 
-<!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-    <script type="text/javascript" src="//player.wowza.com/player/latest/wowzaplayer.min.js"></script>
-    <style>
-      .bd-placeholder-img {
-        font-size: 1.125rem;
-        text-anchor: middle;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-      }
+    <!-- ═══ NAVBAR ═══ -->
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a href="{% url 'index' %}" class="navbar-brand d-flex align-items-center gap-2">
+                    <i class="fas fa-satellite-dish" style="color:#60a5fa;font-size:1.2rem;"></i>
+                    <strong>Cyber Classroom RU</strong>
+                </a>
+                <button class="navbar-toggler border-0" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#navbarRoomHeader"
+                    aria-controls="navbarRoomHeader" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarRoomHeader">
+                    <ul class="navbar-nav ms-auto align-items-center gap-1">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'index' %}">
+                                <i class="fas fa-home me-1"></i> หน้าหลัก
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="https://www.facebook.com/rucyberclassroomfanpage/" target="_blank">
+                                <i class="fab fa-facebook me-1"></i> Facebook
+                            </a>
+                        </li>
+                        <!-- Dark Mode Toggle -->
+                        <li class="nav-item ms-2">
+                            <button id="darkModeToggle" title="เปลี่ยนเป็น Dark Mode">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
 
-      @media (min-width: 768px) {
-        .bd-placeholder-img-lg {
-          font-size: 3.5rem;
-        }
-      }
-    </style>
-    <!-- Custom styles for this template -->
-    <link href="{% static 'album.css' %}" rel="stylesheet">
-  </head>
-  <body>
-<header>
-  <div class="collapse bg-dark" id="navbarHeader">
-    <div class="container">
-      <div class="row">
-        <div class="col-sm-8 col-md-7 py-4">
-          <h4 class="text-white">เกี่ยวกับเรา</h4>
-          <p class="text-muted">ให้บริการ เกี่ยวกับการบรรยายสด ผ่านห้องเรียน ทั้งรามคำแหง(หัวหมาก) วิทยาเขตบางนา ส่วนภูมิภาค และ ห้องเรียนที่มีอุปกรณ์ในการถ่ายทอดสด</p>
+    <!-- Page content -->
+    <main style="min-height: calc(100vh - 140px);">
+        <div class="py-4">
+            {% block content %}
+            {% endblock content %}
         </div>
-        <div class="col-sm-4 offset-md-1 py-4">
-          <h4 class="text-white">ติดต่อเรา</h4>
-          <ul class="list-unstyled">
-            <li class="text-white">แจ้งปัญหาในการรับชมได้ที่ 023108849</li>
-            <li>
-              <a href="https://lin.ee/BNqViwp" target="_blank" class="text-white d-inline-flex align-items-center">
-                <img src="https://scdn.line-apps.com/n/line_add_friends/btn/en.png" alt="Add LINE" style="height: 30px; margin-right: 8px;">
-                ติดต่อเจ้าหน้าที่ผ่าน LINE
-              </a>
-            </li>
-          </ul>
+    </main>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <p class="mb-1" style="font-size:0.88rem;">
+                        <i class="fas fa-university me-2" style="color:#60a5fa;"></i>
+                        Computer Institute of Ramkhamhaeng University — สถาบันคอมพิวเตอร์ มหาวิทยาลัยรามคำแหง
+                    </p>
+                    <p class="mb-0" style="font-size:0.82rem; color:#64748b;">
+                        <i class="fas fa-phone-alt me-2" style="color:#60a5fa;"></i>
+                        แจ้งปัญหาในการรับชม: 02-310-8849
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <a href="https://lin.ee/BNqViwp" target="_blank" class="btn btn-success btn-sm me-2">
+                        <i class="fab fa-line me-1"></i> LINE
+                    </a>
+                    <a href="https://www.facebook.com/rucyberclassroomfanpage/" target="_blank"
+                        class="btn btn-outline-light btn-sm">
+                        <i class="fab fa-facebook me-1"></i> Facebook
+                    </a>
+                </div>
+            </div>
+            <hr />
+            <p class="text-center mb-0" style="font-size:0.8rem; color:#475569;">
+                &copy; 2025 Ramkhamhaeng University &nbsp;|&nbsp;
+                <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;"
+                    style="color:#64748b;">
+                    <i class="fas fa-chevron-up me-1"></i>กลับสู่ด้านบน
+                </a>
+            </p>
         </div>
-      </div>
-    </div>
-  </div>
-  <div class="navbar navbar-dark bg-dark shadow-sm">
-    <div class="container d-flex justify-content-between">
-      <a href="{% url 'index' %}" class="navbar-brand d-flex align-items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" aria-hidden="true" class="mr-2" viewBox="0 0 24 24" focusable="false"><path d="M15.684,16.959L10.879,8.52c0.886-0.343,1.517-1.193,1.517-2.186c0-1.296-1.076-2.323-2.396-2.323S7.604,5.037,7.604,6.333c0,0.993,0.63,1.843,1.517,2.186l-4.818,8.439c-0.189,0.311,0.038,0.708,0.412,0.708h10.558C15.645,17.667,15.871,17.27,15.684,16.959 M8.562,6.333c0-0.778,0.645-1.382,1.438-1.382s1.438,0.604,1.438,1.382c0,0.779-0.645,1.412-1.438,1.412S8.562,7.113,8.562,6.333 M5.55,16.726L10,8.91l4.435,7.815H5.55z M15.285,9.62c1.26-2.046,1.26-4.525,0-6.572c-0.138-0.223-0.064-0.512,0.162-0.646c0.227-0.134,0.521-0.063,0.658,0.16c1.443,2.346,1.443,5.2,0,7.546c-0.236,0.382-0.641,0.17-0.658,0.159C15.221,10.131,15.147,9.842,15.285,9.62 M13.395,8.008c0.475-1.063,0.475-2.286,0-3.349c-0.106-0.238,0.004-0.515,0.246-0.62c0.242-0.104,0.525,0.004,0.632,0.242c0.583,1.305,0.583,2.801,0,4.106c-0.214,0.479-0.747,0.192-0.632,0.242C13.398,8.523,13.288,8.247,13.395,8.008 M3.895,10.107c-1.444-2.346-1.444-5.2,0-7.546c0.137-0.223,0.431-0.294,0.658-0.16c0.226,0.135,0.299,0.424,0.162,0.646c-1.26,2.047-1.26,4.525,0,6.572c0.137,0.223,0.064,0.512-0.162,0.646C4.535,10.277,4.131,10.489,3.895,10.107 M5.728,8.387c-0.583-1.305-0.583-2.801,0-4.106c0.106-0.238,0.39-0.346,0.631-0.242c0.242,0.105,0.353,0.382,0.247,0.62c-0.475,1.063-0.475,2.286,0,3.349c0.106,0.238-0.004,0.515-0.247,0.62c-0.062,0.027-0.128,0.04-0.192,0.04C5.982,8.668,5.807,8.563,5.728,8.387"/></svg>
-        <strong>Cyber Classroom RU</strong>
-      </a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-    </div>
-  </div>
-</header>
+    </footer>
 
-<main role="main">
-  <div class="album py-5 bg-light">
-    <div class="container">
-        {% block content %}
-        
-        {% endblock content %}
+    <!-- Back to top -->
+    <button id="backToTop" aria-label="กลับสู่ด้านบน"
+        style="position:fixed;bottom:1.5rem;right:1.5rem;width:44px;height:44px;background:linear-gradient(135deg,#1d4ed8,#1e3a8a);color:#fff;border:none;border-radius:50%;cursor:pointer;box-shadow:0 4px 20px rgba(29,78,216,0.45);opacity:0;transform:translateY(16px);transition:all 0.28s ease;z-index:998;display:flex;align-items:center;justify-content:center;font-size:1rem;">
+        <i class="fas fa-chevron-up"></i>
+    </button>
 
-    </div>
-  </div>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="{% static 'js/custom.js' %}"></script>
 
-</main>
-
-<footer class="text-muted">
-  <div class="container">
-    <p class="float-right">
-      <a href="#">Back to top</a>
-    </p>
-    <p>Computer Institute of Ramkhamhaeng University : สถาบันคอมพิวเตอร์ มหาวิทยาลัยรามคำแหง.</p>
-  </div>
-</footer>
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-      <script>window.jQuery || document.write('<script src="{% static '/dist/js/vendor/jquery.slim.min.js' %}"><\/script>')</script><script src="{% static '/dist/js/bootstrap.bundle.js' %}"></script></body>
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create','UA-71702042-1','auto');
+        ga('send','pageview');
+    </script>
+</body>
 </html>

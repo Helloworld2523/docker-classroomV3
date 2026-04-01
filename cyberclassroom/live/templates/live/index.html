@@ -1,250 +1,228 @@
 {% extends "live/base.html" %}
 {% load static %}
-{% load schedule_tags %} {# โหลด template tag ที่สร้างขึ้น #}
+{% load schedule_tags %}
 {% load custom_filters %}
 {% block content %}
-<!--ตั้งค่าให้หน้าแรก รีเฟสหน้าใหม่ทุกๆ60 วินาที เฉพาะหน้านี้เท่านั้น-->
+
 <script>
-    setTimeout(function() {
-      location.reload(); // โหลดหน้าใหม่ทั้งหมด
-    }, 60000); // 60000 = 60 วินาที
-  </script>
-<style>
-    /* ใช้ CSS Variable ของ Bootstrap 5 หรือกำหนดสีเองได้ */
-    .card-header-bg-primary {
-        background-color: var(--bs-primary);
-        color: var(--bs-white);
-    }
-    .card-header-text-center {
-        text-align: center;
-    }
-    /* แยก blink_me CSS ไปไว้ใน custom.css หรือ CSS global ของคุณ ถ้าใช้หลายที่ */
-    .blink_me {
-        animation: blinker 1s linear infinite;
-    }
-    @keyframes blinker {
-        50% { opacity: 0; }
-    }
-    .blink {
-        animation: blinkAnim 1s linear infinite;
-      }
-    
-      @keyframes blinkAnim {
-        50% { opacity: 0; }
-      }
-    
-      .pulse-text {
-        animation: pulseAnim 1.5s infinite;
-      }
-    
-      @keyframes pulseAnim {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.08); }
-        100% { transform: scale(1); }
-      }
-</style>
+    setTimeout(function() { location.reload(); }, 60000);
+</script>
 
-<div class="container-fluid py-4"> {# ใช้ container-fluid เพื่อให้ content กว้างขึ้น #}
-    <div class="alert alert-info text-center" role="alert">
-        <h4 class="alert-heading mb-0">จำนวนห้องเรียนที่มีการถ่ายทอดสดทั้งหมด <span class="badge bg-info fs-4">{{ roomCount }}</span> ห้องเรียน</h4>
-    </div>
+<!-- ── Channel count banner ── -->
+<div class="alert alert-info text-center mb-4" role="alert">
+    <h4 class="alert-heading mb-0" style="font-size:clamp(1rem,3vw,1.25rem);">
+        <i class="fas fa-broadcast-tower me-2" style="color:var(--accent);"></i>
+        ช่องถ่ายทอดสดทั้งหมด&nbsp;
+        <span class="count-badge">
+            <i class="fas fa-door-open"></i>
+            <span data-count="{{ roomCount }}">{{ roomCount }}</span> ห้อง
+        </span>
+    </h4>
+</div>
 
-    {# --- ส่วนฟอร์มค้นหา --- #}
-    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-center mb-4 gap-2">
-        {% if q %}
-        <a href="{% url 'index' %}" role="button" class="btn btn-warning btn-lg shadow-sm mb-4 d-inline-flex align-items-center">
-          <i class="fas fa-arrow-left me-2"></i> 
-        </a>
-        {% endif %}
-
-        <div class="d-flex flex-column flex-md-row gap-2 w-100 w-md-auto"> {# ใช้ w-100 เพื่อให้ฟอร์มเต็มความกว้างบนมือถือ #}
-            <form class="d-flex flex-grow-1" action="{% url 'searchRoom' %}" method="GET">
-                <div class="input-group">
-                    <label for="inpuSearch" class="visually-hidden">ค้นหาห้องเรียน</label>
-                    <input type="text" class="form-control" id="inpuSearch" name="inpuSearch" placeholder="ระบุห้องเรียน" autocomplete="off" value="{{ q|default_if_none:'' }}">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search me-1"></i> ค้นหาห้องเรียน
-                    </button>
-                </div>
-            </form>
-            <form class="d-flex flex-grow-1" action="{% url 'searchSubject' %}" method="GET">
-                <div class="input-group">
-                    <label for="inpuSearchSubject" class="visually-hidden">ค้นหาวิชาเรียน</label>
-                    <input type="text" class="form-control" id="inpuSearchSubject" name="inpuSearchSubject" placeholder="ค้นหาวิชาเรียน" autocomplete="off" value="{{ q_subject|default_if_none:'' }}">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-book-open me-1"></i> ค้นหาวิชาเรียน
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    {# --- ส่วน Pagination ด้านบน --- #}
-    {% if classroom_p.has_other_pages %}
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-end mb-4"> {# margin-bottom #}
-            {% if classroom_p.has_previous %} {# ใช้ classroom_p แทน users #}
-                <li class="page-item"><a class="page-link" href="?page={{ classroom_p.previous_page_number }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">&laquo;</a></li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
-            {% endif %}
-            {% for i in classroom_p.paginator.page_range %}
-                {% if classroom_p.number == i %} {# ใช้ classroom_p.number แทน users.number #}
-                    <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
-                {% else %}
-                    <li class="page-item"><a class="page-link" href="?page={{ i }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">{{ i }}</a></li>
-                {% endif %}
-            {% endfor %}
-            {% if classroom_p.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ classroom_p.next_page_number }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">&raquo;</a></li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
-            {% endif %}
-        </ul>
-    </nav>
+<!-- ── Search bars ── -->
+<div class="d-flex flex-column flex-md-row justify-content-md-between align-items-stretch mb-4 gap-2">
+    {% if q %}
+    <a href="{% url 'index' %}" role="button" class="btn btn-warning d-inline-flex align-items-center gap-2 align-self-start">
+        <i class="fas fa-arrow-left"></i>
+        <span class="btn-text-hide">ล้างการค้นหา</span>
+    </a>
     {% endif %}
 
-    {# --- ส่วนแสดงรายการห้องเรียน --- #}
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"> {# ใช้ g-4 สำหรับ gap ระหว่าง card #}
-        {% for room in classroom_p %}
-        <div class="col">
-            <div class="card h-100 shadow-sm"> {# ใช้ h-100 เพื่อให้ card มีความสูงเท่ากัน #}
-                <div class="card-header card-header-bg-primary card-header-text-center">
-                    <h5 class="my-0">{{ room.room_name }}</h5>
+    <div class="d-flex flex-column flex-sm-row gap-2 flex-grow-1">
+        <!-- ค้นหาห้องเรียน -->
+        <form class="d-flex flex-grow-1" action="{% url 'searchRoom' %}" method="GET">
+            <div class="input-group">
+                <label for="inpuSearch" class="visually-hidden">ค้นหาห้องเรียน</label>
+                <input type="text" class="form-control" id="inpuSearch" name="inpuSearch"
+                    placeholder="ระบุชื่อห้องเรียน..." autocomplete="off"
+                    value="{{ q|default_if_none:'' }}">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                    <span class="btn-text-hide ms-1">ค้นหาห้อง</span>
+                </button>
+            </div>
+        </form>
+        <!-- ค้นหาวิชา -->
+        <form class="d-flex flex-grow-1" action="{% url 'searchSubject' %}" method="GET">
+            <div class="input-group">
+                <label for="inpuSearchSubject" class="visually-hidden">ค้นหาวิชาเรียน</label>
+                <input type="text" class="form-control" id="inpuSearchSubject" name="inpuSearchSubject"
+                    placeholder="ค้นหาวิชา เช่น LAW1001..." autocomplete="off"
+                    value="{{ q_subject|default_if_none:'' }}">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-book-open"></i>
+                    <span class="btn-text-hide ms-1">ค้นหาวิชา</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── Section title ── -->
+<div class="stream-section-title">
+    <div class="section-icon">
+        <i class="fas fa-th-large"></i>
+    </div>
+    <div>
+        <h4>ห้องเรียนทั้งหมด
+            <span class="section-spacer ms-2">·</span>
+            <span class="section-sub d-inline ms-1">เลือกห้องเพื่อเข้าชมการถ่ายทอดสด</span>
+        </h4>
+    </div>
+</div>
+
+<!-- ── Pagination top ── -->
+{% if classroom_p.has_other_pages %}
+<nav aria-label="Page navigation" class="mb-3">
+    <ul class="pagination justify-content-end mb-0">
+        {% if classroom_p.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ classroom_p.previous_page_number }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">&laquo;</a></li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        {% endif %}
+        {% for i in classroom_p.paginator.page_range %}
+            {% if classroom_p.number == i %}
+                <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{ i }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">{{ i }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if classroom_p.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ classroom_p.next_page_number }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">&raquo;</a></li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- ── Channel grid ── -->
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for room in classroom_p %}
+    <div class="col reveal">
+        <div class="channel-card">
+
+            <!-- Channel header -->
+            <div class="channel-header">
+                <h5>
+                    <span class="ch-icon"><i class="fas fa-tv"></i></span>
+                    {{ room.room_name }}
+                </h5>
+            </div>
+
+            <!-- Channel body -->
+            <div class="channel-body">
+                {% if room.room_comment %}
+                <div class="alert alert-warning alert-dismissible fade show mb-3 py-2" role="alert" style="font-size:0.84rem;">
+                    <i class="fas fa-exclamation-triangle me-1 blink_me"></i>
+                    <strong>หมายเหตุ:</strong> {{ room.room_comment }}
+                    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                <!-- Meta -->
+                <div class="channel-meta">
+                    <span class="badge bg-danger" style="font-size:0.72rem;">
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ room.room_location.location_name }}
+                    </span>
+                    <span class="badge" style="background:rgba(59,130,246,0.15);color:#93c5fd;font-size:0.72rem;">
+                        <i class="fas fa-book me-1"></i>{{ room.classschedulecenter_set.count }} วิชา
+                    </span>
                 </div>
 
-                <div class="card-body d-flex flex-column"> {# ใช้ flex-column เพื่อจัดเนื้อหาภายใน card #}
-                    {% if room.room_comment %}
-                        <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
-                            <h5 class="alert-heading mb-1"><span class="badge bg-danger blink_me"><i class="fas fa-exclamation-triangle me-2"></i> หมายเหตุ</span></h5>
-                            <p class="mb-0">{{ room.room_comment|linebreaks }}</p>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endif %}
+                <!-- Today's schedule -->
+                <div class="mb-1" style="font-size:0.74rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem !important;">
+                    <i class="fas fa-calendar-day me-1"></i>วิชาวันนี้
+                </div>
 
-                    <p class="card-text mb-2">
-                        <span class="badge bg-danger"><i class="fas fa-map-marker-alt me-1"></i> {{ room.room_location.location_name }}</span>
-                    </p>
-                    <p class="mb-2">
-                        <i class="fas fa-chalkboard me-1"></i> จำนวน <strong class="text-primary">{{ room.classschedulecenter_set.count }}</strong> วิชา
-                    </p>
-
-                    <div class="mt-auto"> {# ใช้ mt-auto เพื่อดันปุ่มไปด้านล่างสุด #}
-                        {% comment %} <p class="mb-2"><span class="badge bg-success blink_me"><i class="fas fa-calendar-check me-2"></i> วิชาที่มีเรียนวันนี้:</span></p>
-                        <ul class="list-unstyled mb-3"> {# ใช้ list-unstyled เพื่อเอา bullet point ออก #}
-                            {% for sub_room in room.classschedulecenter_set.all %}
-                                {% if IsDayInt == sub_room.course_day %}
-                                    <li><i class="far fa-dot-circle text-info me-2"></i> {{ sub_room.course_no }} ({{ sub_room.time_start }}-{{ sub_room.time_end}})</li>
-                                {% endif %}
-                            {% endfor %}
-                        </ul> {% endcomment %}
-                        <ul class="list-unstyled mb-3">
-                          {% get_room_schedule room %} {# เรียกใช้ tag โดยส่ง room object เข้าไป  room จะเป็นชื่อห้องเรียน#}
-                      
-                          {% if is_today_schedule_empty %}
-                              <li><span class="badge bg-warning"><i class="fas fa-calendar-check me-2"></i>วันนี้ห้องนี้ไม่มีเรียน</span></li>
-                          {% else %}
-                            <li><span class="badge bg-success"><i class="fas fa-calendar-check me-2"></i>วิชาที่มีเรียนวันนี้</span></li>
-                              {% for schedule in today_schedules %}
-                                    <li>
-                                        <i class="far fa-dot-circle text-info me-2"></i> {{ schedule.course_no }} ({{ schedule.time_start }}-{{ schedule.time_end}})
-                                        {% if schedule|is_current_class_time %} {# เรียกใช้ filter #}
-                                        <a href="{% url 'showSubjectInRoom' room=room.room_name %}" 
-                                        class="btn btn-outline-primary d-inline-flex align-items-center" 
-                                        role="button" aria-pressed="true" style="gap: 0.5rem;">
-                                       <span class="badge bg-danger blink">
-                                         <i class="fas fa-circle text-white me-1" style="font-size: 0.6rem;"></i> LIVE
-                                       </span>
-                                       <span class="pulse-text">เข้าชมเลย</span>
-                                     </a>
-                                     
-                                     
-                                        {% endif %} 
-                                    </li>
-                              {% endfor %}
-                          {% endif %}
-                      </ul>
-                        <div class="d-grid"> {# ใช้ d-grid เพื่อให้ปุ่มเต็มความกว้าง #}
-                            <a href="{% url 'showSubjectInRoom' room=room.room_name %}" class="btn btn-outline-primary" role="button" aria-pressed="true">
-                                <i class="fas fa-list me-2"></i> ดูรายวิชาในห้อง {{ room.room_name }} ทั้งหมด
-                            </a>
-                        </div>
+                {% get_room_schedule room %}
+                {% if is_today_schedule_empty %}
+                    <div class="no-today">
+                        <i class="fas fa-calendar-times"></i>
+                        วันนี้ไม่มีตารางบรรยาย
                     </div>
-                </div>
+                {% else %}
+                    <ul class="schedule-list">
+                        {% for schedule in today_schedules %}
+                        <li class="schedule-item {% if schedule|is_current_class_time %}is-live{% endif %}">
+                            <i class="fas fa-circle si-dot"></i>
+                            <div class="flex-grow-1">
+                                <div>{{ schedule.course_no }}</div>
+                                <div style="font-size:0.77rem;color:var(--text-muted);">{{ schedule.time_start }}–{{ schedule.time_end }}</div>
+                            </div>
+                            {% if schedule|is_current_class_time %}
+                                <span class="on-air-dot flex-shrink-0">
+                                    <span class="dot"></span>LIVE
+                                </span>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                <!-- Watch button -->
+                <a href="{% url 'showSubjectInRoom' room=room.room_name %}" class="btn-watch mt-auto">
+                    <i class="fas fa-play-circle"></i>
+                    <span>เข้าชมห้อง {{ room.room_name }}</span>
+                    <i class="fas fa-chevron-right" style="font-size:0.75rem;opacity:0.7;"></i>
+                </a>
+            </div>
+
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ── Pagination bottom ── -->
+{% if classroom_p.has_other_pages %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-end">
+        {% if classroom_p.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ classroom_p.previous_page_number }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">&laquo;</a></li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        {% endif %}
+        {% for i in classroom_p.paginator.page_range %}
+            {% if classroom_p.number == i %}
+                <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{ i }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">{{ i }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if classroom_p.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ classroom_p.next_page_number }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">&raquo;</a></li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- ── QR Code Modal ── -->
+{% if not q and not q_subject and not classroom_p.number > 1 %}
+<div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content rounded-4 shadow">
+            <div class="modal-header" style="background:linear-gradient(135deg,#0f172a,#1e3a8a);">
+                <h5 class="modal-title text-white" id="myModalLabel">
+                    <i class="fas fa-qrcode me-2"></i>
+                    ช่องทางการสอบถามและแจ้งปัญหา
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <img src="{% static 'qr_cyberclassroom.png' %}" class="img-fluid rounded mb-3" alt="QR Code Cyber Classroom RU" style="max-height:280px;">
+                <p class="mb-0" style="font-size:0.92rem; color:var(--text-secondary);">
+                    สแกน QR Code เพื่อสอบถามหรือแจ้งปัญหาเกี่ยวกับการรับชม
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary px-4" data-bs-dismiss="modal">ปิด</button>
             </div>
         </div>
-        {% endfor %}
     </div>
-
-    {# --- ส่วน Pagination ด้านล่าง --- #}
-    {% if classroom_p.has_other_pages %}
-    <nav aria-label="Page navigation" class="mt-4"> {# margin-top #}
-        <ul class="pagination justify-content-end">
-            {% if classroom_p.has_previous %} {# ใช้ classroom_p แทน users #}
-                <li class="page-item"><a class="page-link" href="?page={{ classroom_p.previous_page_number }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">&laquo;</a></li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
-            {% endif %}
-            {% for i in classroom_p.paginator.page_range %}
-                {% if classroom_p.number == i %} {# ใช้ classroom_p.number แทน users.number #}
-                    <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
-                {% else %}
-                    <li class="page-item"><a class="page-link" href="?page={{ i }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">{{ i }}</a></li>
-                {% endif %}
-            {% endfor %}
-            {% if classroom_p.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ classroom_p.next_page_number }}{% if q %}&inpuSearch={{q}}{% endif %}{% if q_subject %}&inpuSearchSubject={{q_subject}}{% endif %}">&raquo;</a></li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-
-    {# --- Modal สำหรับ QR Code --- #}
-    {# ใช้ data-bs-toggle และ data-bs-target แทน data-toggle และ data-target #}
-    {% if not q and not q_subject and not classroom_p.number > 1 %}
-    <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-md"> <!-- กำหนดขนาด modal-md กว้างกำลังดี -->
-        <div class="modal-content rounded-4 shadow">
-          <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title" id="myModalLabel">
-              ช่องทางการสอบถามและแจ้งปัญหาเกี่ยวกับการรับชม Cyber Classroom RU
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button> <!-- ปุ่ม close สีขาว -->
-          </div>
-          <div class="modal-body text-center p-4">
-            <img src="{% static 'qr_cyberclassroom.png' %}" class="img-fluid rounded mb-3" alt="ช่องทางการสอบถามและแจ้งปัญหาเกี่ยวกับการรับชม Cyber Classroom RU" style="max-height: 300px;">
-            <p class="mb-0 fs-5 text-secondary">
-              สแกน QR Code นี้เพื่อเข้าถึงช่องทางการสอบถามหรือแจ้งปัญหาเกี่ยวกับการรับชม Cyber Classroom RU ได้อย่างรวดเร็วและสะดวกสบาย
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-primary px-4" data-bs-dismiss="modal">ปิด</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    {% endif %}
-
-</div> {# ปิด container-fluid #}
-
-<script>
-    // Bootstrap 5 ใช้ JS ปกติ หรือ Vanilla JS ในการเรียก Modal
-    // ถ้าคุณใช้ jQuery ใน base.html แล้ว ก็ยังคงใช้ได้
-    // แต่ถ้าใช้ Bootstrap 5 แบบ Vanilla JS จะเป็นแบบนี้
-    /*document.addEventListener('DOMContentLoaded', function() {
-        var myModal = new bootstrap.Modal(document.getElementById('myModal'), {
-            keyboard: false
-        });
-        myModal.show(); // ❌ ตัวนี้แหละที่เรียก modal อัตโนมัติ
-    });*/
-
-    // ถ้ายังใช้ jQuery อยู่ และมั่นใจว่า jQuery โหลดแล้ว
-    // $(document).ready(function(){
-    //    $("#myModal").modal('show');
-    // });
-</script>
+</div>
+{% endif %}
 
 {% endblock content %}
