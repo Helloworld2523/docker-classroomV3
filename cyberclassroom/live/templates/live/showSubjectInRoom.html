@@ -393,6 +393,205 @@
     </div>
 </div>
 
+<!-- ══════════════ NOW ON AIR BANNER ══════════════ -->
+<div id="nowOnAirBanner" style="display:none;">
+    <div class="now-on-air-wrap">
+        <div class="now-on-air-inner container">
+
+            <!-- Left: Live signal -->
+            <div class="noa-signal">
+                <div class="noa-ring"></div>
+                <div class="noa-ring noa-ring-2"></div>
+                <i class="fas fa-broadcast-tower noa-icon"></i>
+            </div>
+
+            <!-- Center: Subject info -->
+            <div class="noa-info">
+                <div class="noa-label">
+                    <span class="noa-live-dot"></span>
+                    กำลังเรียนอยู่ขณะนี้
+                </div>
+                <div class="noa-course-num" id="noaCourseNum">—</div>
+                <div class="noa-course-name" id="noaCourseName">—</div>
+                <div class="noa-meta">
+                    <span id="noaInstructor"><i class="fas fa-chalkboard-teacher me-1"></i>—</span>
+                    <span class="noa-divider">·</span>
+                    <span id="noaTime"><i class="fas fa-clock me-1"></i>—</span>
+                </div>
+            </div>
+
+            <!-- Right: Time remaining -->
+            <div class="noa-countdown">
+                <div class="noa-countdown-label">เหลืออีก</div>
+                <div class="noa-countdown-val" id="noaTimeLeft">—</div>
+                <div class="noa-countdown-unit">นาที</div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+/* ══════════════════════════════════════
+   NOW ON AIR BANNER
+══════════════════════════════════════ */
+.now-on-air-wrap {
+    background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 35%, #dc2626 70%, #ef4444 100%);
+    background-size: 200% 200%;
+    animation: heroGradient 8s ease infinite;
+    padding: 1.5rem 0;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 32px rgba(220,38,38,0.35);
+}
+.now-on-air-wrap::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 60px,
+        rgba(255,255,255,0.025) 60px,
+        rgba(255,255,255,0.025) 61px
+    );
+    pointer-events: none;
+}
+.now-on-air-inner {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* Signal animation */
+.noa-signal {
+    position: relative;
+    width: 64px; height: 64px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+}
+.noa-ring {
+    position: absolute;
+    border: 2px solid rgba(255,255,255,0.5);
+    border-radius: 50%;
+    animation: noa-expand 2s ease-out infinite;
+}
+.noa-ring-2 { animation-delay: 1s; }
+@keyframes noa-expand {
+    0%   { width:20px; height:20px; opacity:0.9; }
+    100% { width:64px; height:64px; opacity:0; }
+}
+.noa-icon {
+    color: #fff;
+    font-size: 1.6rem;
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));
+    animation: satellitePulse 2s ease-in-out infinite;
+    position: relative; z-index: 1;
+}
+
+/* Info block */
+.noa-info { flex: 1; min-width: 0; }
+.noa-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    border-radius: 20px;
+    padding: 0.18rem 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+.noa-live-dot {
+    width: 7px; height: 7px;
+    background: #fff;
+    border-radius: 50%;
+    animation: blinker 0.9s linear infinite;
+    flex-shrink: 0;
+}
+.noa-course-num {
+    font-size: clamp(1rem, 3vw, 1.35rem);
+    font-weight: 800;
+    color: #fecaca;
+    letter-spacing: 1px;
+    margin-bottom: 0.2rem;
+    line-height: 1.2;
+}
+.noa-course-name {
+    font-size: clamp(1.1rem, 4vw, 1.85rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.25;
+    margin-bottom: 0.45rem;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    /* ตัดข้อความยาวเกินไป */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.noa-meta {
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+.noa-divider { opacity: 0.5; }
+
+/* Countdown block */
+.noa-countdown {
+    text-align: center;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 14px;
+    padding: 0.7rem 1.2rem;
+    flex-shrink: 0;
+    backdrop-filter: blur(10px);
+    min-width: 90px;
+}
+.noa-countdown-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 0.15rem;
+}
+.noa-countdown-val {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease;
+}
+.noa-countdown-val.bump {
+    animation: countBounce 0.35s ease;
+}
+.noa-countdown-unit {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.65);
+    font-weight: 600;
+    margin-top: 0.1rem;
+}
+
+/* Mobile */
+@media (max-width: 575px) {
+    .now-on-air-inner { flex-wrap: wrap; gap: 1rem; }
+    .noa-signal { width: 48px; height: 48px; }
+    .noa-icon { font-size: 1.2rem; }
+    .noa-countdown { width: 100%; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; }
+    .noa-countdown-val { font-size: 1.8rem; }
+    .noa-countdown-label, .noa-countdown-unit { font-size: 0.72rem; }
+}
+</style>
+
 <!-- ══════════════ MAIN CONTENT ══════════════ -->
 <div class="container py-4">
 
@@ -419,11 +618,15 @@
 
         <div class="video-section-wrapper mb-5">
             {% if location in valid_locations %}
-                <video id="my_video" class="video-js vjs-default-skin w-100"
-                    controls autoplay muted preload="auto" style="min-height:380px;" data-setup='{}'>
-                    <source src="{{ server }}{{ q|lower }}/playlist.m3u8" type="application/x-mpegURL">
-                    <p class="vjs-no-js">เบราว์เซอร์ของคุณไม่รองรับ HTML5</p>
-                </video>
+                <!-- 16:9 responsive wrapper — จำกัดความกว้างสูงสุด ไม่ใหญ่เกินไป -->
+                <div style="position:relative; width:100%; max-width:860px; margin:0 auto; aspect-ratio:16/9; background:#000;">
+                    <video id="my_video" class="video-js vjs-default-skin"
+                        controls autoplay muted preload="auto" data-setup='{}'
+                        style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain;">
+                        <source src="{{ server }}{{ q|lower }}/playlist.m3u8" type="application/x-mpegURL">
+                        <p class="vjs-no-js">เบราว์เซอร์ของคุณไม่รองรับ HTML5</p>
+                    </video>
+                </div>
                 <script src="https://unpkg.com/hls.js@latest"></script>
                 <script>
                     const video = document.getElementById('my_video');
@@ -468,15 +671,16 @@
             <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-5">
                 {% for s in data_subject %}
                 <div class="col">
-                    <div class="subject-card-today">
+                    <div class="subject-card-today"
+                         data-time-start="{{ s.time_start }}"
+                         data-time-end="{{ s.time_end }}">
                         <div class="d-flex align-items-start justify-content-between mb-2">
                             <span class="time-chip">
                                 <i class="fas fa-clock"></i>
                                 {{ s.time_start }} – {{ s.time_end }}
                             </span>
-                            <span class="badge" style="background:rgba(30,58,138,0.08);color:#1e3a8a;font-size:0.72rem;">
-                                #{{ forloop.counter }}
-                            </span>
+                            <!-- status badge — JS จะเติมเนื้อหา -->
+                            <span class="class-status-badge"></span>
                         </div>
                         <div class="course-num">{{ s.course_no }}</div>
                         <div class="course-name">{{ s.course_name_thai }}</div>
@@ -489,6 +693,207 @@
                 {% endfor %}
             </div>
         {% endif %}
+
+<style>
+/* ══════════════════════════════════════
+   สถานะการ์ดวิชาวันนี้
+══════════════════════════════════════ */
+
+/* ── จบแล้ว (เทา) ── */
+.subject-card-today.status-done {
+    opacity: 0.55;
+    filter: grayscale(40%);
+    background: #f8fafc !important;
+}
+.subject-card-today.status-done::before {
+    background: linear-gradient(180deg, #94a3b8, #cbd5e1) !important;
+}
+.subject-card-today.status-done .course-num { color: #94a3b8 !important; }
+.subject-card-today.status-done .time-chip  {
+    background: rgba(148,163,184,0.12) !important;
+    color: #94a3b8 !important;
+}
+
+/* ── กำลังสอน (แดง) ── */
+.subject-card-today.status-live {
+    border-color: rgba(220,38,38,0.4) !important;
+    box-shadow: 0 4px 24px rgba(220,38,38,0.15), 0 0 0 2px rgba(220,38,38,0.1) !important;
+    background: #fff8f8 !important;
+}
+.subject-card-today.status-live::before {
+    background: linear-gradient(180deg, #dc2626, #ef4444) !important;
+}
+.subject-card-today.status-live .course-num { color: #dc2626 !important; }
+.subject-card-today.status-live .time-chip  {
+    background: rgba(220,38,38,0.1) !important;
+    color: #dc2626 !important;
+}
+
+/* ── ยังไม่ถึงเวลา (เขียว) ── */
+.subject-card-today.status-upcoming {
+    border-color: rgba(22,163,74,0.3) !important;
+    background: #f0fdf4 !important;
+}
+.subject-card-today.status-upcoming::before {
+    background: linear-gradient(180deg, #16a34a, #22c55e) !important;
+}
+.subject-card-today.status-upcoming .course-num { color: #15803d !important; }
+.subject-card-today.status-upcoming .time-chip  {
+    background: rgba(22,163,74,0.1) !important;
+    color: #15803d !important;
+}
+
+/* ── Badges ── */
+.badge-done {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    background: rgba(148,163,184,0.14);
+    color: #94a3b8;
+    border: 1px solid rgba(148,163,184,0.28);
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem; font-weight: 600;
+    white-space: nowrap;
+}
+.badge-live {
+    display: inline-flex; align-items: center; gap: 0.32rem;
+    background: rgba(220,38,38,0.1);
+    color: #dc2626;
+    border: 1px solid rgba(220,38,38,0.3);
+    border-radius: 20px;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.7rem; font-weight: 800;
+    white-space: nowrap;
+    animation: livePulse 2s ease-in-out infinite;
+}
+.badge-live .ld {
+    width: 6px; height: 6px;
+    background: #dc2626;
+    border-radius: 50%;
+    animation: blinker 1s linear infinite;
+    flex-shrink: 0;
+}
+.badge-upcoming {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    background: rgba(22,163,74,0.1);
+    color: #15803d;
+    border: 1px solid rgba(22,163,74,0.28);
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem; font-weight: 600;
+    white-space: nowrap;
+}
+</style>
+
+<!-- ข้อมูลวิชาวันนี้ฝังเป็น JSON สำหรับ JS -->
+<script id="todaySubjectsData" type="application/json">
+[{% for s in data_subject %}{"course_no":"{{ s.course_no|escapejs }}","course_name":"{{ s.course_name_thai|escapejs }}","instructor":"{{ s.instructor|escapejs }}","time_start":"{{ s.time_start|escapejs }}","time_end":"{{ s.time_end|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
+</script>
+
+<script>
+(function () {
+    /* ── แปลงเวลา "07.30" หรือ "07:30" → นาทีนับจากเที่ยงคืน ── */
+    function toMinutes(t) {
+        if (!t) return null;
+        const p = t.replace('.', ':').split(':');
+        return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10);
+    }
+
+    /* ── โหลดข้อมูลวิชา ── */
+    var subjects = [];
+    try {
+        subjects = JSON.parse(document.getElementById('todaySubjectsData').textContent);
+    } catch(e) {}
+
+    /* ── Banner elements ── */
+    var banner     = document.getElementById('nowOnAirBanner');
+    var elNum      = document.getElementById('noaCourseNum');
+    var elName     = document.getElementById('noaCourseName');
+    var elInst     = document.getElementById('noaInstructor');
+    var elTime     = document.getElementById('noaTime');
+    var elLeft     = document.getElementById('noaTimeLeft');
+    var prevMin    = -1;
+
+    /* ── อัปเดต Banner ── */
+    function updateBanner(nowMins) {
+        var active = null;
+        for (var i = 0; i < subjects.length; i++) {
+            var s = subjects[i];
+            var st = toMinutes(s.time_start);
+            var en = toMinutes(s.time_end);
+            if (st !== null && en !== null && nowMins >= st && nowMins <= en) {
+                active = s;
+                break;
+            }
+        }
+
+        if (!banner) return;
+
+        if (active) {
+            var remaining = toMinutes(active.time_end) - nowMins;
+            banner.style.display = 'block';
+            elNum.textContent  = active.course_no;
+            elName.textContent = active.course_name;
+            elInst.innerHTML   = '<i class="fas fa-chalkboard-teacher me-1"></i>' + active.instructor;
+            elTime.innerHTML   = '<i class="fas fa-clock me-1"></i>' + active.time_start + ' – ' + active.time_end;
+
+            /* อัปเดต countdown พร้อม bump animation */
+            var newMin = remaining;
+            if (elLeft) {
+                if (newMin !== prevMin) {
+                    elLeft.textContent = newMin;
+                    elLeft.classList.remove('bump');
+                    void elLeft.offsetWidth; /* reflow */
+                    elLeft.classList.add('bump');
+                    prevMin = newMin;
+                }
+            }
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    /* ── อัปเดต Card Status badges ── */
+    function updateCardStatus(nowMins) {
+        document.querySelectorAll('.subject-card-today[data-time-start]').forEach(function (card) {
+            var st = toMinutes(card.dataset.timeStart);
+            var en = toMinutes(card.dataset.timeEnd);
+            if (st === null || en === null) return;
+
+            var badge = card.querySelector('.class-status-badge');
+            if (!badge) return;
+
+            card.classList.remove('status-done', 'status-live', 'status-upcoming');
+
+            if (nowMins > en) {
+                card.classList.add('status-done');
+                badge.innerHTML = '<span class="badge-done"><i class="fas fa-check-circle"></i> สอนไปแล้ว</span>';
+
+            } else if (nowMins >= st) {
+                card.classList.add('status-live');
+                badge.innerHTML = '<span class="badge-live"><span class="ld"></span> กำลังสอน</span>';
+
+            } else {
+                card.classList.add('status-upcoming');
+                var diff = st - nowMins;
+                var h = Math.floor(diff / 60), m = diff % 60;
+                var label = h > 0 ? ('อีก ' + h + ' ชม. ' + m + ' นาที') : ('อีก ' + m + ' นาที');
+                badge.innerHTML = '<span class="badge-upcoming"><i class="fas fa-hourglass-half"></i> ' + label + '</span>';
+            }
+        });
+    }
+
+    /* ── Main update loop ── */
+    function tick() {
+        var now     = new Date();
+        var nowMins = now.getHours() * 60 + now.getMinutes();
+        updateBanner(nowMins);
+        updateCardStatus(nowMins);
+    }
+
+    tick();
+    setInterval(tick, 30000); /* ทุก 30 วินาที */
+})();
+</script>
     </div>
 
     <!-- ─── ALL SUBJECTS ─── -->
