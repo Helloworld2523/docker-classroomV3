@@ -1,6 +1,244 @@
-{% extends "admin/index.html" %}
-555555
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "admin/css/dashboard.css" %}">
+<style>
+  /* ===== Live Monitor Banner ===== */
+  .monitor-shortcut-wrap {
+    margin: 0 0 24px 0;
+  }
+  .monitor-shortcut-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #1e3a5f 100%);
+    border-radius: 10px;
+    padding: 20px 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    flex-wrap: wrap;
+  }
+  .monitor-shortcut-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .monitor-icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(239,68,68,0.15);
+    border: 2px solid rgba(239,68,68,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .monitor-icon-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(239,68,68,0.2);
+    animation: mon-pulse 2s ease-in-out infinite;
+  }
+  @keyframes mon-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50%       { transform: scale(1.15); opacity: 0; }
+  }
+  .monitor-shortcut-text h3 {
+    margin: 0 0 3px 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: 0.3px;
+  }
+  .monitor-shortcut-text p {
+    margin: 0;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .monitor-live-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.35);
+    border-radius: 20px;
+    padding: 2px 10px 2px 7px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ef4444;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .monitor-live-dot::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: blink-dot 1.2s ease-in-out infinite;
+    display: inline-block;
+  }
+  @keyframes blink-dot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.2; }
+  }
+  .monitor-shortcut-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 11px 24px;
+    border-radius: 8px;
+    text-decoration: none !important;
+    box-shadow: 0 4px 14px rgba(239,68,68,0.4);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .monitor-shortcut-btn:hover {
+    background: linear-gradient(135deg, #f87171, #ef4444);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239,68,68,0.5);
+  }
+  .monitor-shortcut-btn:active { transform: translateY(0); }
+  @media (max-width: 600px) {
+    .monitor-shortcut-card { flex-direction: column; align-items: flex-start; padding: 16px 18px; }
+    .monitor-shortcut-btn  { width: 100%; justify-content: center; }
+  }
+</style>
+{% endblock %}
+
 {% block extrahead %}
-    {{ block.super }}
-     <script type="text/javascript" src="//player.wowza.com/player/latest/wowzaplayer.min.js"></script>
+{{ block.super }}
+<script type="text/javascript" src="//player.wowza.com/player/latest/wowzaplayer.min.js"></script>
+{% endblock %}
+
+{% block coltype %}colMS{% endblock %}
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+
+  {# ===== Live Monitor Shortcut Banner ===== #}
+  <div class="monitor-shortcut-wrap">
+    <div class="monitor-shortcut-card">
+      <div class="monitor-shortcut-left">
+        <div class="monitor-icon-wrap">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+               xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="12" cy="12" rx="10" ry="7" stroke="#ef4444" stroke-width="2"
+                     stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="3" fill="#ef4444"/>
+          </svg>
+        </div>
+        <div class="monitor-shortcut-text">
+          <h3>
+            Live Monitor
+            <span class="monitor-live-dot">LIVE</span>
+          </h3>
+          <p>ตรวจสอบจำนวนผู้ชมแต่ละห้องเรียนแบบเรียลไทม์</p>
+        </div>
+      </div>
+      <a href="/live-monitor/" class="monitor-shortcut-btn" target="_blank">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 19H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4"
+                stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <polyline points="16 3 21 3 21 8"
+                    stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                    fill="none"/>
+          <line x1="10" y1="14" x2="21" y2="3"
+                stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+        เปิด Live Monitor
+      </a>
+    </div>
+  </div>
+
+  {# ===== App list (default Django admin content) ===== #}
+  {% if app_list %}
+    {% for app in app_list %}
+      <div class="app-{{ app.app_label }} module">
+      <table>
+      <caption>
+        <a href="{{ app.app_url }}" class="section"
+           title="{% blocktrans with name=app.name %}Models in the {{ name }} application{% endblocktrans %}">
+          {{ app.name }}
+        </a>
+      </caption>
+      {% for model in app.models %}
+        <tr class="model-{{ model.object_name|lower }}">
+          {% if model.admin_url %}
+            <th scope="row"><a href="{{ model.admin_url }}">{{ model.name }}</a></th>
+          {% else %}
+            <th scope="row">{{ model.name }}</th>
+          {% endif %}
+          {% if model.add_url %}
+            <td><a href="{{ model.add_url }}" class="addlink">{% trans 'Add' %}</a></td>
+          {% else %}
+            <td>&nbsp;</td>
+          {% endif %}
+          {% if model.admin_url %}
+            {% if model.view_only %}
+            <td><a href="{{ model.admin_url }}" class="viewlink">{% trans 'View' %}</a></td>
+            {% else %}
+            <td><a href="{{ model.admin_url }}" class="changelink">{% trans 'Change' %}</a></td>
+            {% endif %}
+          {% else %}
+            <td>&nbsp;</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </table>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>{% trans "You don't have permission to view or edit anything." %}</p>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block sidebar %}
+<div id="content-related">
+  <div class="module" id="recent-actions-module">
+    <h2>{% trans 'Recent actions' %}</h2>
+    <h3>{% trans 'My actions' %}</h3>
+    {% load log %}
+    {% get_admin_log 10 as admin_log for_user user %}
+    {% if not admin_log %}
+      <p>{% trans 'None available' %}</p>
+    {% else %}
+      <ul class="actionlist">
+      {% for entry in admin_log %}
+        <li class="{% if entry.is_addition %}addlink{% endif %}{% if entry.is_change %}changelink{% endif %}{% if entry.is_deletion %}deletelink{% endif %}">
+          {% if entry.is_deletion or not entry.get_admin_url %}
+            {{ entry.object_repr }}
+          {% else %}
+            <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+          {% endif %}
+          <br>
+          {% if entry.content_type %}
+            <span class="mini quiet">{% filter capfirst %}{{ entry.content_type.name }}{% endfilter %}</span>
+          {% else %}
+            <span class="mini quiet">{% trans 'Unknown content' %}</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}
