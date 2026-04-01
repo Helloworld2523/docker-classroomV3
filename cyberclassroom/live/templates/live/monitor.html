@@ -2,122 +2,637 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>ถ่ายทอดสดทั้งหมด</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="120">
+  <title>Live Monitor — Cyber Classroom RU</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    body {
-      background-color: #f0f2f5;
-      font-size: 0.85rem;
-    }
-    .viewer-count {
-      font-size: 0.9rem;
-      color: #198754;
-      font-weight: 600;
-    }
-    .card-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 0.25rem;
-    }
-    .stream-url {
-      font-size: 0.75rem;
-      color: #666;
-      word-break: break-word;
-      margin-bottom: 0.5rem;
-    }
-    .card-body {
-      padding: 0.75rem;
-    }
-    @media (min-width: 1200px) {
-      .col-xl-8col {
-        flex: 0 0 auto;
-        width: 12.5%;
-      }
+    /* ══════════════════════════════════════
+       MONITOR DASHBOARD — Dark Theme
+    ══════════════════════════════════════ */
+    :root {
+      --bg:         #080c18;
+      --bg-surface: #0d1226;
+      --bg-card:    #111827;
+      --border:     rgba(255,255,255,0.07);
+      --accent:     #3b82f6;
+      --text:       #f1f5f9;
+      --muted:      #64748b;
+
+      /* Tier colors */
+      --tier-high:   #22c55e;
+      --tier-mid:    #f59e0b;
+      --tier-low:    #64748b;
+      --tier-zero:   #374151;
+      --tier-peak:   #8b5cf6;
     }
 
-    .flash-transition {
-      transition: background-color 0.8s ease;
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      font-family: 'Poppins', 'Sarabun', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
     }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .topbar-brand i { color: var(--accent); font-size: 1.1rem; }
+
+    /* ON AIR indicator */
+    .on-air-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5;
+      border-radius: 50px;
+      padding: 0.28rem 0.85rem;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      animation: livePulse 2s ease-in-out infinite;
+    }
+    .on-air-pill .dot {
+      width: 6px; height: 6px;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: blink 1s linear infinite;
+    }
+
+    /* Clock */
+    .topbar-clock {
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+    .topbar-clock span { color: var(--text); font-weight: 600; }
+
+    /* Update indicator */
+    .update-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .update-pulse {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .update-pulse.active { opacity: 1; animation: pulseOnce 0.8s ease; }
+
+    /* ── KPI CARDS ── */
+    .kpi-bar {
+      padding: 1.2rem 1.5rem 0.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+    }
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .kpi-card.blue::before  { background: var(--accent); }
+    .kpi-card.green::before { background: var(--tier-high); }
+    .kpi-card.amber::before { background: var(--tier-mid); }
+    .kpi-card.purple::before{ background: var(--tier-peak); }
+
+    .kpi-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+
+    /* ── SECTION HEADER ── */
+    .section-head {
+      padding: 1rem 1.5rem 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-head h6 {
+      font-weight: 700;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .sort-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    /* ── ROOM GRID ── */
+    .room-grid {
+      padding: 0.75rem 1.5rem 2rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+
+    /* ── ROOM CARD ── */
+    .room-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .room-card:hover {
+      border-color: rgba(59,130,246,0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    }
+    .room-card.flash-up   { animation: flashUp   0.6s ease; }
+    .room-card.flash-down { animation: flashDown 0.6s ease; }
+
+    /* Left accent bar — color by tier */
+    .room-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+    }
+    .room-card.tier-peak::before  { background: var(--tier-peak);  }
+    .room-card.tier-high::before  { background: var(--tier-high);  }
+    .room-card.tier-mid::before   { background: var(--tier-mid);   }
+    .room-card.tier-low::before   { background: var(--tier-low);   }
+    .room-card.tier-zero::before  { background: var(--tier-zero);  }
+
+    /* Card header */
+    .rc-head {
+      padding: 0.7rem 0.85rem 0.5rem 1rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.4rem;
+    }
+    .rc-name {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--text);
+      line-height: 1.25;
+      letter-spacing: 0.3px;
+    }
+    .rc-rank {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--muted);
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 0.12rem 0.4rem;
+      flex-shrink: 0;
+    }
+
+    /* Viewer count */
+    .rc-viewers {
+      padding: 0.2rem 0.85rem 0.3rem 1rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.3rem;
+    }
+    .rc-count {
+      font-size: 1.7rem;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.3s ease;
+    }
+    .rc-unit { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+
+    /* Tier color for count */
+    .tier-peak  .rc-count { color: #c4b5fd; }
+    .tier-high  .rc-count { color: var(--tier-high); }
+    .tier-mid   .rc-count { color: var(--tier-mid); }
+    .tier-low   .rc-count { color: #94a3b8; }
+    .tier-zero  .rc-count { color: #4b5563; }
+
+    /* Trend arrow */
+    .rc-trend {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.12rem 0.35rem;
+      border-radius: 4px;
+      margin-left: 0.2rem;
+    }
+    .trend-up   { color: var(--tier-high);  background: rgba(34,197,94,0.12); }
+    .trend-down { color: #ef4444;           background: rgba(239,68,68,0.12); }
+    .trend-same { color: var(--muted);      background: rgba(255,255,255,0.05); }
+
+    /* Progress bar */
+    .rc-bar-wrap {
+      padding: 0.2rem 1rem 0.7rem;
+    }
+    .rc-bar-bg {
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .rc-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+    .tier-peak  .rc-bar-fill { background: var(--tier-peak); }
+    .tier-high  .rc-bar-fill { background: var(--tier-high); }
+    .tier-mid   .rc-bar-fill { background: var(--tier-mid); }
+    .tier-low   .rc-bar-fill { background: var(--tier-low); }
+    .tier-zero  .rc-bar-fill { background: var(--tier-zero); width: 2px !important; }
+
+    /* Tier badge */
+    .rc-badge {
+      margin: 0 1rem 0.7rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      border-radius: 20px;
+      padding: 0.18rem 0.6rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+    .tier-peak  .rc-badge { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+    .tier-high  .rc-badge { background: rgba(34,197,94,0.12);  color: #86efac; }
+    .tier-mid   .rc-badge { background: rgba(245,158,11,0.12); color: #fcd34d; }
+    .tier-low   .rc-badge { background: rgba(100,116,139,0.1); color: #94a3b8; }
+    .tier-zero  .rc-badge { background: rgba(55,65,81,0.3);    color: #4b5563; }
+
+    /* Empty state */
+    .empty-state {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--muted);
+    }
+    .empty-state i { font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.3; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes blink    { 0%,100%{opacity:1;} 50%{opacity:0.1;} }
+    @keyframes livePulse{ 0%,100%{box-shadow:0 0 0 rgba(239,68,68,0);} 50%{box-shadow:0 0 14px rgba(239,68,68,0.28);} }
+    @keyframes pulseOnce{ 0%{opacity:0;transform:scale(0.5);} 50%{opacity:1;transform:scale(1.4);} 100%{opacity:0;transform:scale(1);} }
+    @keyframes flashUp  { 0%{background:rgba(34,197,94,0.08);}  100%{background:transparent;} }
+    @keyframes flashDown{ 0%{background:rgba(239,68,68,0.08);} 100%{background:transparent;} }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar       { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
   </style>
 </head>
 <body>
-  <div class="container-fluid py-3">
-    <h5 class="text-center mb-3">📺 ถ่ายทอดสดทั้งหมด (เฉพาะ Staff/Admin)</h5>
 
-    <div class="row">
-      {% for room in live_classrooms %}
-        <div class="col-sm-6 col-md-4 col-lg-3 col-xl-8col mb-3">
-          <div class="card shadow-sm h-80 flash-transition">
-            <div class="card-body">
-              <h6 class="card-title">
-                <a href="{% url 'showSubjectInRoom' room=room.room_name %}" class="text-decoration-none text-primary fw-semibold" role="button" aria-pressed="true" target="_blank">
-                  {{ room.room_name }}
-                </a>
-                <span class="viewer-count" id="viewer-{{ room.room_name|slugify }}">
-                  👥 {{ room.viewer_count }} คน
-                </span>
-              </h6>
-            </div>
-          </div>
-        </div>
-      {% empty %}
-        <p class="text-center">ไม่มีห้องถ่ายทอดสดในขณะนี้</p>
-      {% endfor %}
+<!-- ════ TOP BAR ════ -->
+<div class="topbar">
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <div class="topbar-brand">
+      <i class="fas fa-satellite-dish"></i>
+      <span>Cyber Classroom RU</span>
+      <span style="opacity:0.3; margin:0 0.2rem;">|</span>
+      <span style="color:var(--muted); font-weight:500; font-size:0.88rem;">Live Monitor</span>
+    </div>
+    <div class="on-air-pill">
+      <span class="dot"></span> ON AIR
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    function slugify(text) {
-      return text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
-    }
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <div class="update-pill">
+      <span class="update-pulse" id="updatePulse"></span>
+      <span id="lastUpdate" style="font-size:0.75rem;">รอการอัปเดต...</span>
+    </div>
+    <div class="topbar-clock">
+      <i class="fas fa-clock me-1" style="color:var(--accent);"></i>
+      <span id="clockDisplay">--:--:--</span>
+    </div>
+  </div>
+</div>
 
-    function getRandomFlashColor() {
-      const colors = ['#ffe8a1', '#d1e7dd', '#f8d7da', '#cff4fc', '#fff3cd', '#e2e3e5'];
-      return colors[Math.floor(Math.random() * colors.length)];
-    }
+<!-- ════ KPI BAR ════ -->
+<div class="kpi-bar">
 
-    function flashCard(cardEl) {
-      if (!cardEl) return;
-      const originalBg = cardEl.style.backgroundColor;
-      const newColor = getRandomFlashColor();
-      cardEl.style.backgroundColor = newColor;
+  <div class="kpi-card blue">
+    <div class="kpi-label"><i class="fas fa-door-open"></i> ห้องทั้งหมด</div>
+    <div class="kpi-value" id="kpiRooms">{{ live_classrooms|length }}</div>
+    <div class="kpi-sub">ห้องที่เปิดให้บริการ</div>
+  </div>
 
-      setTimeout(() => {
-        cardEl.style.backgroundColor = '';
-      }, 800);
-    }
+  <div class="kpi-card green">
+    <div class="kpi-label"><i class="fas fa-users"></i> ผู้ชมรวม</div>
+    <div class="kpi-value" id="kpiTotal">
+      {% with total=0 %}
+        {% for r in live_classrooms %}{% if forloop.first %}{{ live_classrooms|length }}{% endif %}{% endfor %}
+        0
+      {% endwith %}
+    </div>
+    <div class="kpi-sub">คนกำลังรับชมอยู่</div>
+  </div>
 
-    async function updateViewerCounts() {
-      try {
-        const response = await fetch("{% url 'live_viewer_data' %}");
-        const json = await response.json();
+  <div class="kpi-card purple">
+    <div class="kpi-label"><i class="fas fa-trophy"></i> ห้องยอดนิยม</div>
+    <div class="kpi-value" id="kpiPeakRoom" style="font-size:1.2rem; line-height:1.4;">
+      {% if live_classrooms %}{{ live_classrooms.0.room_name }}{% else %}—{% endif %}
+    </div>
+    <div class="kpi-sub" id="kpiPeakCount">
+      {% if live_classrooms %}{{ live_classrooms.0.viewer_count }} คน{% else %}ไม่มีข้อมูล{% endif %}
+    </div>
+  </div>
 
-        json.data.forEach(room => {
-          const viewerEl = document.querySelector(`#viewer-${slugify(room.room_name)}`);
-          const cardEl = viewerEl?.closest('.card');
+  <div class="kpi-card amber">
+    <div class="kpi-label"><i class="fas fa-broadcast-tower"></i> ห้องที่มีผู้ชม</div>
+    <div class="kpi-value" id="kpiActive">
+      {% with c=0 %}0{% endwith %}
+    </div>
+    <div class="kpi-sub">ห้องที่มีผู้ชม > 0</div>
+  </div>
 
-          if (viewerEl && cardEl) {
-            const currentText = viewerEl.textContent.trim();
-            const newText = `👥 ${room.viewer_count} คน`;
+</div>
 
-            if (currentText !== newText) {
-              viewerEl.textContent = newText;
-              flashCard(cardEl);
-            }
-          }
-        });
-      } catch (err) {
-        console.error('Failed to update viewer counts', err);
+<!-- ════ SECTION HEAD ════ -->
+<div class="section-head">
+  <h6><i class="fas fa-th-large"></i> รายการห้องถ่ายทอดสด</h6>
+  <div class="sort-label">
+    <i class="fas fa-sort-amount-down me-1"></i> เรียงจากผู้ชมมากสุด · อัปเดตทุก 5 วินาที
+  </div>
+</div>
+
+<!-- ════ ROOM GRID ════ -->
+<div class="room-grid" id="roomGrid">
+  {% for room in live_classrooms %}
+  {% with vc=room.viewer_count %}
+  <a href="{% url 'showSubjectInRoom' room=room.room_name %}" target="_blank"
+     class="room-card {% if vc >= 50 %}tier-peak{% elif vc >= 15 %}tier-high{% elif vc >= 5 %}tier-mid{% elif vc >= 1 %}tier-low{% else %}tier-zero{% endif %}"
+     id="card-{{ room.room_name|slugify }}"
+     data-room="{{ room.room_name }}"
+     data-count="{{ vc }}">
+
+    <div class="rc-head">
+      <div class="rc-name">{{ room.room_name }}</div>
+      <div class="rc-rank">#{{ forloop.counter }}</div>
+    </div>
+
+    <div class="rc-viewers">
+      <div class="rc-count" id="count-{{ room.room_name|slugify }}">{{ vc }}</div>
+      <div class="rc-unit">คน</div>
+      <span class="rc-trend trend-same" id="trend-{{ room.room_name|slugify }}">—</span>
+    </div>
+
+    <div class="rc-bar-wrap">
+      <div class="rc-bar-bg">
+        <div class="rc-bar-fill"
+             id="bar-{{ room.room_name|slugify }}"
+             style="width: {{ vc }}%;"></div>
+      </div>
+    </div>
+
+    <div class="rc-badge"
+         id="badge-{{ room.room_name|slugify }}">
+      {% if vc >= 50 %}
+        <i class="fas fa-fire"></i> สูงมาก
+      {% elif vc >= 15 %}
+        <i class="fas fa-arrow-up"></i> มาก
+      {% elif vc >= 5 %}
+        <i class="fas fa-minus"></i> ปานกลาง
+      {% elif vc >= 1 %}
+        <i class="fas fa-arrow-down"></i> น้อย
+      {% else %}
+        <i class="fas fa-circle-xmark"></i> ไม่มีผู้ชม
+      {% endif %}
+    </div>
+
+  </a>
+  {% endwith %}
+  {% empty %}
+  <div class="empty-state">
+    <i class="fas fa-tv-slash"></i>
+    <p>ไม่มีห้องถ่ายทอดสดในขณะนี้</p>
+  </div>
+  {% endfor %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ══════════════════════════════════════
+   MONITOR DASHBOARD — Live Updater
+══════════════════════════════════════ */
+
+/* ── Clock ── */
+function updateClock() {
+  document.getElementById('clockDisplay').textContent =
+    new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ── Slugify (match Django's |slugify) ── */
+function slugify(text) {
+  return text.toString().toLowerCase().trim()
+    .replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-');
+}
+
+/* ── Tier class ── */
+function tierClass(n) {
+  if (n >= 50) return 'tier-peak';
+  if (n >= 15) return 'tier-high';
+  if (n >= 5)  return 'tier-mid';
+  if (n >= 1)  return 'tier-low';
+  return 'tier-zero';
+}
+
+/* ── Badge label ── */
+function badgeHTML(n) {
+  if (n >= 50) return '<i class="fas fa-fire"></i> สูงมาก';
+  if (n >= 15) return '<i class="fas fa-arrow-up"></i> มาก';
+  if (n >= 5)  return '<i class="fas fa-minus"></i> ปานกลาง';
+  if (n >= 1)  return '<i class="fas fa-arrow-down"></i> น้อย';
+  return '<i class="fas fa-circle-xmark"></i> ไม่มีผู้ชม';
+}
+
+/* ── Bar width (cap at 100%) ── */
+function barWidth(n, max) {
+  if (!max || max === 0) return 2;
+  return Math.min(Math.round((n / max) * 100), 100);
+}
+
+/* ── Update all cards ── */
+async function updateViewerCounts() {
+  try {
+    const res  = await fetch("{% url 'live_viewer_data' %}");
+    const json = await res.json();
+    const rooms = json.data;
+
+    /* คำนวณ max สำหรับ bar width */
+    const max = Math.max(...rooms.map(r => r.viewer_count), 1);
+
+    /* KPI totals */
+    let total  = 0;
+    let active = 0;
+    let peak   = { room_name: '—', viewer_count: 0 };
+
+    rooms.forEach(room => {
+      total += room.viewer_count;
+      if (room.viewer_count > 0) active++;
+      if (room.viewer_count > peak.viewer_count) peak = room;
+    });
+
+    /* อัปเดต KPI */
+    document.getElementById('kpiTotal').textContent    = total.toLocaleString('th-TH');
+    document.getElementById('kpiActive').textContent   = active;
+    document.getElementById('kpiPeakRoom').textContent = peak.room_name;
+    document.getElementById('kpiPeakCount').textContent = peak.viewer_count + ' คน';
+
+    /* อัปเดต Cards */
+    rooms.forEach(room => {
+      const sl    = slugify(room.room_name);
+      const card  = document.getElementById('card-' + sl);
+      const cntEl = document.getElementById('count-' + sl);
+      const barEl = document.getElementById('bar-' + sl);
+      const trendEl= document.getElementById('trend-' + sl);
+      const bdgEl = document.getElementById('badge-' + sl);
+      if (!card || !cntEl) return;
+
+      const oldCount = parseInt(card.dataset.count || '0', 10);
+      const newCount = room.viewer_count;
+
+      /* Trend arrow */
+      if (trendEl) {
+        if (newCount > oldCount) {
+          trendEl.className = 'rc-trend trend-up';
+          trendEl.innerHTML = '<i class="fas fa-caret-up"></i> +' + (newCount - oldCount);
+        } else if (newCount < oldCount) {
+          trendEl.className = 'rc-trend trend-down';
+          trendEl.innerHTML = '<i class="fas fa-caret-down"></i> ' + (newCount - oldCount);
+        } else {
+          trendEl.className = 'rc-trend trend-same';
+          trendEl.innerHTML = '—';
+        }
       }
-    }
 
-    updateViewerCounts();
-    setInterval(updateViewerCounts, 5000);
-  </script>
+      /* Flash animation */
+      if (newCount !== oldCount) {
+        card.classList.remove('flash-up', 'flash-down');
+        void card.offsetWidth; /* reflow */
+        card.classList.add(newCount > oldCount ? 'flash-up' : 'flash-down');
+      }
+
+      /* Update values */
+      cntEl.textContent = newCount;
+      card.dataset.count = newCount;
+      if (barEl) barEl.style.width = barWidth(newCount, max) + '%';
+      if (bdgEl) bdgEl.innerHTML = badgeHTML(newCount);
+
+      /* Update tier class */
+      card.classList.remove('tier-peak','tier-high','tier-mid','tier-low','tier-zero');
+      card.classList.add(tierClass(newCount));
+    });
+
+    /* Pulse indicator */
+    const pulse = document.getElementById('updatePulse');
+    pulse.classList.remove('active');
+    void pulse.offsetWidth;
+    pulse.classList.add('active');
+    document.getElementById('lastUpdate').textContent =
+      'อัปเดต ' + new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+
+  } catch(err) {
+    console.error('Monitor update error:', err);
+    document.getElementById('lastUpdate').textContent = '⚠️ ไม่สามารถดึงข้อมูลได้';
+  }
+}
+
+/* Init bar widths (first load from server data) */
+(function initBars() {
+  const cards = document.querySelectorAll('.room-card');
+  const counts = Array.from(cards).map(c => parseInt(c.dataset.count || '0', 10));
+  const max = Math.max(...counts, 1);
+  let total = 0, active = 0;
+  cards.forEach(card => {
+    const n  = parseInt(card.dataset.count || '0', 10);
+    const sl = slugify(card.dataset.room || '');
+    const bar = document.getElementById('bar-' + sl);
+    if (bar) bar.style.width = barWidth(n, max) + '%';
+    total += n;
+    if (n > 0) active++;
+  });
+  document.getElementById('kpiTotal').textContent  = total.toLocaleString('th-TH');
+  document.getElementById('kpiActive').textContent = active;
+})();
+
+/* Run */
+updateViewerCounts();
+setInterval(updateViewerCounts, 5000);
+</script>
 </body>
 </html>
