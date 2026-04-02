@@ -1,9 +1,11 @@
 import datetime
+import json
+import os
 from urllib import request
 
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import HttpResponse,JsonResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
@@ -19,6 +21,18 @@ from django.views.decorators.cache import cache_page
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_GET
 #from django.db.models import Q
+
+# --- helper: path to schedule JSON ---
+SCHEDULE_JSON_PATH = os.path.join(os.path.dirname(__file__), 'data', 'schedule.json')
+
+def _load_schedule():
+    """โหลด schedule.json และคืนค่า dict ถ้าไม่มีไฟล์คืน default เปล่า"""
+    try:
+        with open(SCHEDULE_JSON_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {"central": [], "regional": []}
+
 # Create your views here.
 def index(request):
     now = datetime.now()
@@ -36,22 +50,58 @@ def index(request):
         users = paginator.page(1)
         classroom_p = paginator.page(1)
     except EmptyPage:
-        users = paginator.page(paginator.num_pages) 
-        classroom_p = paginator.page(paginator.num_pages)   
-    # data_classroom= ClassScheduleCenter.objects.annotate(room_name=Count('classrooms'))
-    #print(data_classroom)
-    # y = config.x + 20
-    # my_title = config.my_string
-    
+        users = paginator.page(paginator.num_pages)
+        classroom_p = paginator.page(paginator.num_pages)
+
+    schedule = _load_schedule()
+
     context = {
         'data_classroom': data_classroom,
         'roomCount':roomCount,
         'users': users ,
         'classroom_p': classroom_p,
-        'IsDayInt':IsDayInt, 
-        'offline':'true',      
+        'IsDayInt':IsDayInt,
+        'offline':'true',
+        'schedule_central':  schedule.get('central', []),
+        'schedule_regional': schedule.get('regional', []),
     }
     return render(request,'live/index.html',context=context)
+
+
+# ─── Admin: Schedule Editor ────────────────────────────────────────────────────
+@staff_member_required
+def schedule_editor(request):
+    """Admin-only view: อ่าน / บันทึก schedule.json"""
+    message = None
+    error   = None
+    raw_json = ''
+
+    if request.method == 'POST':
+        raw_json = request.POST.get('json_content', '')
+        try:
+            parsed = json.loads(raw_json)
+            # ตรวจว่ามี key ที่ถูกต้อง
+            if not isinstance(parsed, dict):
+                raise ValueError("ต้องเป็น JSON object ระดับบนสุด")
+            with open(SCHEDULE_JSON_PATH, 'w', encoding='utf-8') as f:
+                json.dump(parsed, f, ensure_ascii=False, indent=2)
+            message = "บันทึกสำเร็จแล้ว"
+            raw_json = json.dumps(parsed, ensure_ascii=False, indent=2)
+        except (json.JSONDecodeError, ValueError) as e:
+            error = f"JSON ไม่ถูกต้อง: {e}"
+    else:
+        try:
+            with open(SCHEDULE_JSON_PATH, 'r', encoding='utf-8') as f:
+                raw_json = f.read()
+        except Exception:
+            raw_json = json.dumps({"central": [], "regional": []}, ensure_ascii=False, indent=2)
+
+    return render(request, 'admin/schedule_editor.html', {
+        'raw_json': raw_json,
+        'message': message,
+        'error':   error,
+        'title':   'แก้ไขกำหนดการ',
+    })
 
 def alert(request):
     return render(request,'live/refrain.html')

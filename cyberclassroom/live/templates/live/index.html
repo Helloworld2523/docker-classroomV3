@@ -199,6 +199,193 @@
 </nav>
 {% endif %}
 
+<!-- ══════════════════════════════════════════════════════════
+     กำหนดการ — ส่วนกลาง & ส่วนภูมิภาค (อ่านจาก schedule.json)
+     ══════════════════════════════════════════════════════════ -->
+{% if schedule_central or schedule_regional %}
+<section class="schedule-section mt-5" id="scheduleSection">
+
+  <style>
+    /* ── Schedule Section ───────────────────────────── */
+    .schedule-section { padding-bottom: 20px; }
+
+    .sch-heading {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 24px;
+    }
+    .sch-heading-icon {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: linear-gradient(135deg,#1d4ed8,#3b82f6);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 18px; flex-shrink: 0;
+    }
+    .sch-heading h2 {
+      margin: 0; font-size: clamp(1rem,2.5vw,1.25rem);
+      font-weight: 800; color: var(--text-primary);
+    }
+    .sch-heading p {
+      margin: 2px 0 0; font-size: 0.85rem; color: var(--text-secondary);
+    }
+
+    /* ── Two column grid ─────────────────────────────── */
+    .sch-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 767px) { .sch-cols { grid-template-columns: 1fr; } }
+
+    /* ── Card ───────────────────────────────────────── */
+    .sch-col-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,.05);
+    }
+    .sch-col-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 18px;
+      font-weight: 800; font-size: 0.95rem;
+      letter-spacing: 0.3px;
+    }
+    .sch-col-head.central  { background: linear-gradient(135deg,#1e3a8a,#1d4ed8); color:#fff; }
+    .sch-col-head.regional { background: linear-gradient(135deg,#14532d,#16a34a); color:#fff; }
+    .sch-col-head i { font-size: 1rem; opacity: .9; }
+
+    /* ── Item rows ───────────────────────────────────── */
+    .sch-item {
+      display: flex; gap: 14px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .sch-item:last-child { border-bottom: none; }
+    .sch-item:hover { background: rgba(59,130,246,.04); }
+
+    .sch-date-box {
+      min-width: 52px; text-align: center;
+      background: rgba(59,130,246,.08);
+      border-radius: 8px; padding: 6px 4px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .sch-col-head.regional ~ .sch-body .sch-date-box {
+      background: rgba(22,163,74,.08);
+    }
+    .sch-date-day  { font-size: 1.3rem; font-weight: 900; color: var(--accent); line-height: 1; }
+    .sch-date-mon  { font-size: 0.65rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-top: 2px; }
+
+    .sch-item-info { flex: 1; min-width: 0; }
+    .sch-item-title {
+      font-weight: 700; font-size: 0.9rem;
+      color: var(--text-primary); margin-bottom: 4px;
+      line-height: 1.35;
+    }
+    .sch-item-meta {
+      font-size: 0.78rem; color: var(--text-secondary);
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .sch-item-meta span { display: inline-flex; align-items: center; gap: 4px; }
+    .sch-item-note {
+      margin-top: 4px; font-size: 0.75rem;
+      color: #d97706; font-style: italic;
+    }
+
+    .sch-empty {
+      padding: 28px 18px; text-align: center;
+      color: var(--text-secondary); font-size: 0.88rem;
+    }
+    .sch-empty i { display: block; font-size: 1.8rem; margin-bottom: 8px; opacity: .4; }
+  </style>
+
+  <!-- Heading -->
+  <div class="sch-heading">
+    <div class="sch-heading-icon"><i class="fas fa-calendar-alt"></i></div>
+    <div>
+      <h2>กำหนดการ</h2>
+      <p>ส่วนกลาง และ สาขาวิทยบริการ (ภูมิภาค)</p>
+    </div>
+  </div>
+
+  <!-- Two columns -->
+  <div class="sch-cols">
+
+    <!-- ส่วนกลาง -->
+    <div class="sch-col-card">
+      <div class="sch-col-head central">
+        <i class="fas fa-university"></i> ส่วนกลาง
+      </div>
+      <div class="sch-body">
+        {% if schedule_central %}
+          {% for item in schedule_central %}
+          <div class="sch-item">
+            <div class="sch-date-box">
+              <span class="sch-date-day">{{ item.date|slice:"8:10" }}</span>
+              <span class="sch-date-mon">{{ item.date|slice:"5:7" }}/{{ item.date|slice:"0:4" }}</span>
+            </div>
+            <div class="sch-item-info">
+              <div class="sch-item-title">{{ item.title }}</div>
+              <div class="sch-item-meta">
+                {% if item.time %}
+                <span><i class="fas fa-clock"></i>{{ item.time }}</span>
+                {% endif %}
+                {% if item.location and item.location != '-' %}
+                <span><i class="fas fa-map-marker-alt"></i>{{ item.location }}</span>
+                {% endif %}
+              </div>
+              {% if item.note %}
+              <div class="sch-item-note"><i class="fas fa-info-circle me-1"></i>{{ item.note }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="sch-empty"><i class="fas fa-calendar-times"></i>ยังไม่มีกำหนดการ</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ส่วนภูมิภาค -->
+    <div class="sch-col-card">
+      <div class="sch-col-head regional">
+        <i class="fas fa-map-marked-alt"></i> สาขาวิทยบริการ (ภูมิภาค)
+      </div>
+      <div class="sch-body">
+        {% if schedule_regional %}
+          {% for item in schedule_regional %}
+          <div class="sch-item">
+            <div class="sch-date-box" style="background:rgba(22,163,74,.08);">
+              <span class="sch-date-day" style="color:#16a34a;">{{ item.date|slice:"8:10" }}</span>
+              <span class="sch-date-mon">{{ item.date|slice:"5:7" }}/{{ item.date|slice:"0:4" }}</span>
+            </div>
+            <div class="sch-item-info">
+              <div class="sch-item-title">{{ item.title }}</div>
+              <div class="sch-item-meta">
+                {% if item.time %}
+                <span><i class="fas fa-clock"></i>{{ item.time }}</span>
+                {% endif %}
+                {% if item.location and item.location != '-' %}
+                <span><i class="fas fa-map-marker-alt"></i>{{ item.location }}</span>
+                {% endif %}
+              </div>
+              {% if item.note %}
+              <div class="sch-item-note"><i class="fas fa-info-circle me-1"></i>{{ item.note }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="sch-empty"><i class="fas fa-calendar-times"></i>ยังไม่มีกำหนดการ</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>{# end sch-cols #}
+</section>
+{% endif %}
+
 <!-- ── QR Code Modal ── -->
 {% if not q and not q_subject and not classroom_p.number > 1 %}
 <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -217,12 +404,18 @@
                     สแกน QR Code เพื่อสอบถามหรือแจ้งปัญหาเกี่ยวกับการรับชม
                 </p>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-primary px-4" data-bs-dismiss="modal">ปิด</button>
+            <div class="modal-footer justify-content-center border-0 pt-0">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">ปิด</button>
             </div>
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var myModal = new bootstrap.Modal(document.getElementById('myModal'), { backdrop: true });
+        setTimeout(function() { myModal.show(); }, 1500);
+    });
+</script>
 {% endif %}
 
-{% endblock content %}
+{% endblock %}

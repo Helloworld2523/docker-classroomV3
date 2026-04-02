@@ -116,20 +116,21 @@
                     <div class="hero-info-card">
                         <div class="row g-0">
 
-                            <!-- กำหนดการบรรยาย -->
+                            <!-- กำหนดการบรรยาย (อ่านจาก schedule.json) -->
+                            {% get_hero_schedule as hero %}
                             <div class="col-12 col-lg-4">
                                 <div class="hero-col-label">
                                     <i class="fas fa-calendar-alt"></i> กำหนดการ
                                 </div>
                                 <div class="schedule-box">
-                                    <h6><span class="badge bg-primary me-1" style="font-size:0.7rem;">ส่วนกลาง</span> ภาค 2/2568</h6>
-                                    <p class="mb-1" style="font-size:0.82rem;"><i class="fas fa-calendar-day me-1" style="color:#60a5fa;"></i> 17 พ.ย. 68 – 9 มี.ค. 69</p>
-                                    <p class="mb-0" style="font-size:0.8rem;"><i class="fas fa-film me-1" style="color:#60a5fa;"></i> <a href="https://m-learning.ru.ac.th/" target="_blank">m-learning.ru.ac.th</a></p>
+                                    <h6><span class="badge bg-primary me-1" style="font-size:0.7rem;">ส่วนกลาง</span> {{ hero.central.term }}</h6>
+                                    <p class="mb-1" style="font-size:0.82rem;"><i class="fas fa-calendar-day me-1" style="color:#60a5fa;"></i> {{ hero.central.date_range }}</p>
+                                    <p class="mb-0" style="font-size:0.8rem;"><i class="fas fa-film me-1" style="color:#60a5fa;"></i> <a href="{{ hero.central.link }}" target="_blank">{{ hero.central.link_text }}</a></p>
                                 </div>
                                 <div class="schedule-box regional">
-                                    <h6><span class="badge bg-success me-1" style="font-size:0.7rem;">ภูมิภาค</span> ภาค 2/2568</h6>
-                                    <p class="mb-1" style="font-size:0.82rem;"><i class="fas fa-calendar-day me-1" style="color:#34d399;"></i> 19 พ.ย. 68 – 3 มี.ค. 69</p>
-                                    <p class="mb-0" style="font-size:0.8rem;"><i class="fas fa-film me-1" style="color:#34d399;"></i> <a href="https://m-learning.ru.ac.th/" target="_blank">m-learning.ru.ac.th</a></p>
+                                    <h6><span class="badge bg-success me-1" style="font-size:0.7rem;">ภูมิภาค</span> {{ hero.regional.term }}</h6>
+                                    <p class="mb-1" style="font-size:0.82rem;"><i class="fas fa-calendar-day me-1" style="color:#34d399;"></i> {{ hero.regional.date_range }}</p>
+                                    <p class="mb-0" style="font-size:0.8rem;"><i class="fas fa-film me-1" style="color:#34d399;"></i> <a href="{{ hero.regional.link }}" target="_blank">{{ hero.regional.link_text }}</a></p>
                                 </div>
                             </div>
 
@@ -248,11 +249,4 @@
         i[r].l = 1 * new Date();
         a = s.createElement(o);
         m = s.getElementsByTagName(o)[0];
-        a.async = 1; a.src = g;
-        m.parentNode.insertBefore(a, m);
-    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
-    ga('create', 'UA-71702042-1', 'auto');
-    ga('send', 'pageview');
-</script>
-</body>
-</html>
+     

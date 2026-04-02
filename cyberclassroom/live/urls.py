@@ -13,8 +13,9 @@ urlpatterns = [
     path('getLocation/<location>/',views.getLocation,name='getLocation'),
     path('get-live-viewers/<str:room_name>/', views.get_live_room_viewers, name='get-live-viewers'),
     # path('not-available/', views.not_available, name='not_available'),
-    path('live-monitor/', views.live_monitor_view, name='live_monitor'),  
+    path('live-monitor/', views.live_monitor_view, name='live_monitor'),
     path('viewer-data/', views.live_viewer_data, name='live_viewer_data'),
+    path('schedule-editor/', views.schedule_editor, name='schedule_editor'),
     
     # สำหรับงานถ่ายทอดสด
     # path('live', views.live, name='live'),

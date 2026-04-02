@@ -1,0 +1,289 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+.sch-wrap   { max-width: 960px; margin: 0 auto; padding: 0 0 60px; }
+.sch-header { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+.sch-header h1 { margin:0; font-size:21px; font-weight:700; color:#1e293b; }
+.sch-badge {
+  background:#dbeafe; color:#1d4ed8; border-radius:20px;
+  padding:3px 12px; font-size:11px; font-weight:700; letter-spacing:.5px;
+}
+
+/* alerts */
+.sch-alert { border-radius:8px; padding:11px 16px; margin-bottom:18px;
+  font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:8px; }
+.sch-alert.success { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+.sch-alert.error   { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+
+/* card */
+.sch-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px;
+  overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.05); margin-bottom:20px; }
+.sch-card-head { background:#f8fafc; border-bottom:1px solid #e2e8f0;
+  padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
+.sch-card-head h2 { margin:0; font-size:14px; font-weight:700; color:#334155; }
+.sch-card-body { padding:18px 20px; }
+
+/* hero quick-edit grid */
+.hero-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media(max-width:680px){ .hero-grid{ grid-template-columns:1fr; } }
+
+.hero-block { background:#f8fafc; border:1px solid #e2e8f0;
+  border-radius:8px; padding:14px 16px; }
+.hero-block-title {
+  font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+  margin-bottom:12px; display:flex; align-items:center; gap:6px;
+}
+.hero-block-title.central  { color:#1d4ed8; }
+.hero-block-title.regional { color:#16a34a; }
+
+.fld { margin-bottom:10px; }
+.fld label { display:block; font-size:11.5px; font-weight:700;
+  color:#475569; margin-bottom:4px; }
+.fld input { width:100%; border:1px solid #cbd5e1; border-radius:6px;
+  padding:7px 10px; font-size:13px; color:#1e293b;
+  background:#fff; box-sizing:border-box; outline:none;
+  transition:border-color .15s; }
+.fld input:focus { border-color:#3b82f6; }
+
+/* buttons */
+.btn-save {
+  display:inline-flex; align-items:center; gap:7px;
+  background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff;
+  font-weight:700; font-size:13.5px; padding:10px 22px;
+  border:none; border-radius:8px; cursor:pointer;
+  box-shadow:0 3px 10px rgba(29,78,216,.3);
+  transition:transform .15s,box-shadow .15s;
+}
+.btn-save:hover { transform:translateY(-1px); box-shadow:0 5px 16px rgba(29,78,216,.4); }
+
+.btn-secondary {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#f1f5f9; color:#475569; font-weight:600; font-size:12.5px;
+  padding:9px 16px; border:1px solid #cbd5e1; border-radius:7px;
+  cursor:pointer; transition:background .15s;
+}
+.btn-secondary:hover { background:#e2e8f0; }
+
+/* raw json toggle */
+.json-toggle-wrap { margin-top:8px; }
+.json-toggle-btn {
+  background:none; border:none; color:#3b82f6; font-size:12.5px;
+  font-weight:600; cursor:pointer; padding:0; text-decoration:underline;
+}
+#rawJsonSection { display:none; margin-top:14px; }
+#rawJsonSection.open { display:block; }
+
+#jsonEditor {
+  width:100%; min-height:340px; resize:vertical;
+  font-family:'Courier New',monospace; font-size:12.5px; line-height:1.65;
+  background:#0f172a; color:#e2e8f0;
+  border:1px solid #334155; border-radius:8px;
+  padding:14px; box-sizing:border-box; outline:none;
+  transition:border-color .2s;
+}
+#jsonEditor:focus { border-color:#3b82f6; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="/admin/">หน้าแรก Admin</a> › แก้ไขกำหนดการ
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="sch-wrap">
+
+  <div class="sch-header">
+    <h1>📅 แก้ไขกำหนดการ</h1>
+    <span class="sch-badge">schedule.json</span>
+  </div>
+
+  {% if message %}
+  <div class="sch-alert success"><span>✅</span> {{ message }}</div>
+  {% endif %}
+  {% if error %}
+  <div class="sch-alert error"><span>❌</span> {{ error }}</div>
+  {% endif %}
+
+  <form method="post" id="scheduleForm">
+    {% csrf_token %}
+    {# hidden field ที่ JS จะ sync ก่อน submit #}
+    <input type="hidden" name="json_content" id="jsonHidden">
+
+    <!-- ══ ส่วนที่ 1: กำหนดการหน้าหลัก (hero card) ══ -->
+    <div class="sch-card">
+      <div class="sch-card-head">
+        <h2>🏠 กำหนดการหน้าหลัก <small style="font-weight:400;color:#94a3b8;">(ข้อมูลที่แสดงใน banner ด้านบน)</small></h2>
+      </div>
+      <div class="sch-card-body">
+        <div class="hero-grid">
+
+          <!-- ส่วนกลาง -->
+          <div class="hero-block">
+            <div class="hero-block-title central">
+              <span style="background:#dbeafe;border-radius:4px;padding:1px 7px;">ส่วนกลาง</span>
+            </div>
+            <div class="fld">
+              <label>ชื่อภาค (เช่น ภาค 2/2568)</label>
+              <input type="text" id="c_term" placeholder="ภาค 2/2568">
+            </div>
+            <div class="fld">
+              <label>ช่วงวันที่ (เช่น 17 พ.ย. 68 – 9 มี.ค. 69)</label>
+              <input type="text" id="c_date" placeholder="17 พ.ย. 68 – 9 มี.ค. 69">
+            </div>
+            <div class="fld">
+              <label>ลิ้งก์ URL</label>
+              <input type="text" id="c_link" placeholder="https://m-learning.ru.ac.th/">
+            </div>
+            <div class="fld">
+              <label>ชื่อแสดงลิ้งก์</label>
+              <input type="text" id="c_link_text" placeholder="m-learning.ru.ac.th">
+            </div>
+          </div>
+
+          <!-- ส่วนภูมิภาค -->
+          <div class="hero-block">
+            <div class="hero-block-title regional">
+              <span style="background:#dcfce7;border-radius:4px;padding:1px 7px;">สาขาวิทยบริการ (ภูมิภาค)</span>
+            </div>
+            <div class="fld">
+              <label>ชื่อภาค (เช่น ภาค 2/2568)</label>
+              <input type="text" id="r_term" placeholder="ภาค 2/2568">
+            </div>
+            <div class="fld">
+              <label>ช่วงวันที่ (เช่น 19 พ.ย. 68 – 3 มี.ค. 69)</label>
+              <input type="text" id="r_date" placeholder="19 พ.ย. 68 – 3 มี.ค. 69">
+            </div>
+            <div class="fld">
+              <label>ลิ้งก์ URL</label>
+              <input type="text" id="r_link" placeholder="https://m-learning.ru.ac.th/">
+            </div>
+            <div class="fld">
+              <label>ชื่อแสดงลิ้งก์</label>
+              <input type="text" id="r_link_text" placeholder="m-learning.ru.ac.th">
+            </div>
+          </div>
+
+        </div>{# end hero-grid #}
+      </div>
+    </div>
+
+    <!-- ══ ส่วนที่ 2: JSON Editor (สำหรับขั้นสูง) ══ -->
+    <div class="sch-card">
+      <div class="sch-card-head">
+        <h2>⚙️ แก้ไข JSON ขั้นสูง <small style="font-weight:400;color:#94a3b8;">(ส่วนเต็มของไฟล์ schedule.json)</small></h2>
+        <button type="button" class="btn-secondary" onclick="toggleRaw()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          </svg>
+          <span id="rawToggleLabel">แสดง JSON Editor</span>
+        </button>
+      </div>
+      <div class="sch-card-body">
+        <p style="font-size:12.5px;color:#64748b;margin:0 0 10px;">
+          แก้ไขค่าจากช่องด้านบนแล้วกด "บันทึก" ก็พอสำหรับงานปกติ — JSON editor ใช้เมื่อต้องการเพิ่ม/ลบรายการกำหนดการด้านล่าง
+        </p>
+        <div id="rawJsonSection">
+          <textarea id="jsonEditor" spellcheck="false">{{ raw_json }}</textarea>
+          <div style="margin-top:8px;">
+            <button type="button" class="btn-secondary" onclick="formatJSON()">จัดรูปแบบ JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save button -->
+    <div style="display:flex;gap:12px;align-items:center;">
+      <button type="submit" class="btn-save" onclick="syncBeforeSubmit()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+        </svg>
+        บันทึกทั้งหมด
+      </button>
+      <span style="font-size:12px;color:#94a3b8;">ข้อมูลจะแสดงบนเว็บทันที ไม่ต้อง restart server</span>
+    </div>
+
+  </form>
+</div>
+
+<script>
+// ── โหลด JSON และ populate ช่อง input ────────────────────────────────
+let currentData = {};
+
+try {
+  currentData = JSON.parse(document.getElementById('jsonEditor').value);
+} catch(e) { currentData = {}; }
+
+function populate(data) {
+  const h = data.hero || {};
+  const c = h.central  || {};
+  const r = h.regional || {};
+  document.getElementById('c_term').value      = c.term      || '';
+  document.getElementById('c_date').value      = c.date_range|| '';
+  document.getElementById('c_link').value      = c.link      || '';
+  document.getElementById('c_link_text').value = c.link_text || '';
+  document.getElementById('r_term').value      = r.term      || '';
+  document.getElementById('r_date').value      = r.date_range|| '';
+  document.getElementById('r_link').value      = r.link      || '';
+  document.getElementById('r_link_text').value = r.link_text || '';
+}
+populate(currentData);
+
+// ── sync ช่อง hero กลับเข้า JSON ก่อน submit ──────────────────────────
+function buildUpdatedJSON() {
+  let data = currentData;
+  try { data = JSON.parse(document.getElementById('jsonEditor').value); } catch(e) {}
+  if (!data.hero) data.hero = {};
+  data.hero.central = {
+    term:       document.getElementById('c_term').value.trim(),
+    date_range: document.getElementById('c_date').value.trim(),
+    link:       document.getElementById('c_link').value.trim(),
+    link_text:  document.getElementById('c_link_text').value.trim(),
+  };
+  data.hero.regional = {
+    term:       document.getElementById('r_term').value.trim(),
+    date_range: document.getElementById('r_date').value.trim(),
+    link:       document.getElementById('r_link').value.trim(),
+    link_text:  document.getElementById('r_link_text').value.trim(),
+  };
+  return data;
+}
+
+function syncBeforeSubmit() {
+  const updated = buildUpdatedJSON();
+  document.getElementById('jsonHidden').value = JSON.stringify(updated, null, 2);
+  document.getElementById('jsonEditor').value  = JSON.stringify(updated, null, 2);
+}
+
+// ── Raw JSON toggle ────────────────────────────────────────────────────
+function toggleRaw() {
+  const sec = document.getElementById('rawJsonSection');
+  const lbl = document.getElementById('rawToggleLabel');
+  sec.classList.toggle('open');
+  lbl.textContent = sec.classList.contains('open') ? 'ซ่อน JSON Editor' : 'แสดง JSON Editor';
+}
+
+// ── Format JSON ────────────────────────────────────────────────────────
+function formatJSON() {
+  try {
+    const parsed = JSON.parse(document.getElementById('jsonEditor').value);
+    document.getElementById('jsonEditor').value = JSON.stringify(parsed, null, 2);
+    populate(parsed);
+    currentData = parsed;
+  } catch(e) { alert('JSON ไม่ถูกต้อง: ' + e.message); }
+}
+
+// อัปเดต currentData เมื่อพิมพ์ใน JSON editor
+document.getElementById('jsonEditor').addEventListener('input', function() {
+  try { currentData = JSON.parse(this.value); populate(currentData); } catch(e) {}
+});
+
+// init hidden field
+document.getElementById('jsonHidden').value = document.getElementById('jsonEditor').value;
+</script>
+{% endblock %}
