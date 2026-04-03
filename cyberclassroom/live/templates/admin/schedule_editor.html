@@ -172,7 +172,56 @@
       </div>
     </div>
 
-    <!-- ══ ส่วนที่ 2: JSON Editor (สำหรับขั้นสูง) ══ -->
+    <!-- ══ ส่วนที่ 2: Popup Modal ══ -->
+    <div class="sch-card">
+      <div class="sch-card-head">
+        <h2>🔔 Popup หน้าหลัก <small style="font-weight:400;color:#94a3b8;">(modal ที่แสดงอัตโนมัติเมื่อเข้าเว็บ)</small></h2>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;">
+          <span style="font-size:12.5px;font-weight:600;color:#475569;" id="popupStatusLabel">กำลังโหลด...</span>
+          <div style="position:relative;width:44px;height:24px;">
+            <input type="checkbox" id="p_enabled" style="opacity:0;position:absolute;inset:0;width:100%;height:100%;cursor:pointer;margin:0;z-index:1;"
+                   onchange="updateToggleStyle()">
+            <div id="toggleTrack" style="position:absolute;inset:0;border-radius:12px;background:#cbd5e1;transition:background .2s;"></div>
+            <div id="toggleThumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s;"></div>
+          </div>
+        </label>
+      </div>
+      <div class="sch-card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <div class="fld">
+              <label>หัวข้อ popup</label>
+              <input type="text" id="p_title" placeholder="ช่องทางการสอบถามและแจ้งปัญหา">
+            </div>
+            <div class="fld">
+              <label>คำอธิบาย</label>
+              <input type="text" id="p_desc" placeholder="สแกน QR Code เพื่อ...">
+            </div>
+            <div class="fld">
+              <label>URL รูปภาพ (ว่างได้ถ้าไม่ต้องการรูป)</label>
+              <input type="text" id="p_image" placeholder="/static/qr_cyberclassroom.png">
+            </div>
+          </div>
+          <div>
+            <div class="fld">
+              <label>ข้อความปุ่มปิด</label>
+              <input type="text" id="p_btn" placeholder="ปิด">
+            </div>
+            <div class="fld">
+              <label>หน่วงเวลาก่อนแสดง (มิลลิวินาที เช่น 1500 = 1.5 วินาที)</label>
+              <input type="number" id="p_delay" placeholder="1500" min="0" max="10000">
+            </div>
+            <div style="margin-top:14px;padding:12px;background:#f8fafc;border-radius:8px;font-size:12px;color:#64748b;line-height:1.6;">
+              <strong style="display:block;margin-bottom:4px;">💡 การใช้งาน</strong>
+              เปิด toggle = popup แสดงอัตโนมัติ<br>
+              ปิด toggle = popup ไม่แสดง (ทันที ไม่ต้อง restart)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ส่วนที่ 3: JSON Editor (สำหรับขั้นสูง) ══ -->
     <div class="sch-card">
       <div class="sch-card-head">
         <h2>⚙️ แก้ไข JSON ขั้นสูง <small style="font-weight:400;color:#94a3b8;">(ส่วนเต็มของไฟล์ schedule.json)</small></h2>
@@ -220,6 +269,7 @@ try {
 } catch(e) { currentData = {}; }
 
 function populate(data) {
+  // hero
   const h = data.hero || {};
   const c = h.central  || {};
   const r = h.regional || {};
@@ -231,10 +281,28 @@ function populate(data) {
   document.getElementById('r_date').value      = r.date_range|| '';
   document.getElementById('r_link').value      = r.link      || '';
   document.getElementById('r_link_text').value = r.link_text || '';
+  // popup
+  const p = data.popup || {};
+  document.getElementById('p_enabled').checked = p.enabled === true;
+  document.getElementById('p_title').value  = p.title       || '';
+  document.getElementById('p_desc').value   = p.description || '';
+  document.getElementById('p_image').value  = p.image_url   || '';
+  document.getElementById('p_btn').value    = p.button_text || 'ปิด';
+  document.getElementById('p_delay').value  = p.delay_ms !== undefined ? p.delay_ms : 1500;
+  updateToggleStyle();
 }
 populate(currentData);
 
-// ── sync ช่อง hero กลับเข้า JSON ก่อน submit ──────────────────────────
+// ── toggle style ────────────────────────────────────────────────────────
+function updateToggleStyle() {
+  const on = document.getElementById('p_enabled').checked;
+  document.getElementById('toggleTrack').style.background = on ? '#22c55e' : '#cbd5e1';
+  document.getElementById('toggleThumb').style.transform  = on ? 'translateX(20px)' : 'translateX(0)';
+  document.getElementById('popupStatusLabel').textContent = on ? '🟢 เปิดใช้งาน' : '⚫ ปิดใช้งาน';
+  document.getElementById('popupStatusLabel').style.color = on ? '#16a34a' : '#94a3b8';
+}
+
+// ── sync ช่อง hero + popup กลับเข้า JSON ก่อน submit ───────────────────
 function buildUpdatedJSON() {
   let data = currentData;
   try { data = JSON.parse(document.getElementById('jsonEditor').value); } catch(e) {}
@@ -250,6 +318,14 @@ function buildUpdatedJSON() {
     date_range: document.getElementById('r_date').value.trim(),
     link:       document.getElementById('r_link').value.trim(),
     link_text:  document.getElementById('r_link_text').value.trim(),
+  };
+  data.popup = {
+    enabled:     document.getElementById('p_enabled').checked,
+    title:       document.getElementById('p_title').value.trim(),
+    description: document.getElementById('p_desc').value.trim(),
+    image_url:   document.getElementById('p_image').value.trim(),
+    button_text: document.getElementById('p_btn').value.trim() || 'ปิด',
+    delay_ms:    parseInt(document.getElementById('p_delay').value) || 1500,
   };
   return data;
 }

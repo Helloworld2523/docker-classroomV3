@@ -32,6 +32,25 @@ def get_hero_schedule():
     default['regional'].update(hero.get('regional', {}))
     return default
 
+@register.simple_tag
+def get_popup_config():
+    """
+    คืนค่า dict ของ popup config จาก schedule.json
+    ใช้ใน template แบบ:  {% get_popup_config as popup %}
+    จากนั้น  {% if popup.enabled %}  {{ popup.title }}  ฯลฯ
+    """
+    data = _read_schedule_json()
+    default = {
+        'enabled':     False,
+        'title':       'ประกาศ',
+        'description': '',
+        'image_url':   '',
+        'button_text': 'ปิด',
+        'delay_ms':    1500,
+    }
+    default.update(data.get('popup', {}))
+    return default
+
 @register.simple_tag(takes_context=True)
 def get_room_schedule(context, room):
     today_weekday = datetime.today().weekday() + 1

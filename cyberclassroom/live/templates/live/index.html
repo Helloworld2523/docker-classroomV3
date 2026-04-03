@@ -386,26 +386,33 @@
 </section>
 {% endif %}
 
-<!-- ── QR Code Modal ── -->
-{% if not q and not q_subject and not classroom_p.number > 1 %}
+<!-- ── Popup Modal (config จาก schedule.json) ── -->
+{% get_popup_config as popup %}
+{% if popup.enabled and not q and not q_subject and not classroom_p.number > 1 %}
 <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content rounded-4 shadow">
             <div class="modal-header" style="background:linear-gradient(135deg,#0f172a,#1e3a8a);">
                 <h5 class="modal-title text-white" id="myModalLabel">
-                    <i class="fas fa-qrcode me-2"></i>
-                    ช่องทางการสอบถามและแจ้งปัญหา
+                    <i class="fas fa-bell me-2"></i>
+                    {{ popup.title }}
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center p-4">
-                <img src="{% static 'qr_cyberclassroom.png' %}" class="img-fluid rounded mb-3" alt="QR Code Cyber Classroom RU" style="max-height:280px;">
+                {% if popup.image_url %}
+                <img src="{{ popup.image_url }}" class="img-fluid rounded mb-3"
+                     alt="{{ popup.title }}" style="max-height:280px;">
+                {% endif %}
+                {% if popup.description %}
                 <p class="mb-0" style="font-size:0.92rem; color:var(--text-secondary);">
-                    สแกน QR Code เพื่อสอบถามหรือแจ้งปัญหาเกี่ยวกับการรับชม
+                    {{ popup.description }}
                 </p>
+                {% endif %}
             </div>
             <div class="modal-footer justify-content-center border-0 pt-0">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">ปิด</button>
+                <button type="button" class="btn btn-secondary btn-sm"
+                        data-bs-dismiss="modal">{{ popup.button_text }}</button>
             </div>
         </div>
     </div>
@@ -413,7 +420,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         var myModal = new bootstrap.Modal(document.getElementById('myModal'), { backdrop: true });
-        setTimeout(function() { myModal.show(); }, 1500);
+        setTimeout(function() { myModal.show(); }, {{ popup.delay_ms }});
     });
 </script>
 {% endif %}

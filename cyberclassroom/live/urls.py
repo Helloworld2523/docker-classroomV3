@@ -26,5 +26,5 @@ urlpatterns = [
     # path('searchRoom', views.index, name='searchRoom'),
     # path('searchSubject',views.index,name='searchSubject'),
     # path('showSubjectInRoom/<room>/',views.index,name='showSubjectInRoom'),    
-    # path('test-error-500/', views.test_error_500, name='test_error_500'),
+    # path('test-error-500/', views.test_error_500/', views.test_error_500, name='test_error_500'),
 ]

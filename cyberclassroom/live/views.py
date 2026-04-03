@@ -415,18 +415,11 @@ def live_monitor_view(request):
 @require_GET
 @staff_member_required
 def live_viewer_data(request):
-    rooms = LiveClassroom.objects.filter(room_status='1')
-
-    viewer_map = {
-        count.room_name.strip().lower(): int(count.sessions_total) if str(count.sessions_total).isdigit() else 0
-        for count in Count.objects.all()
-    }
-
-    data = [
-        {
+    rooms = LiveClassroom.objects.filter(room_status="1")
+    data = []
+    for room in rooms:
+        data.append({
             'room_name': room.room_name,
-            'viewer_count': viewer_map.get(room.room_name.strip().lower(), 0)
-        }
-        for room in rooms
-    ]
+            'viewer_count': room.viewer_count if room.viewer_count else 0,
+        })
     return JsonResponse({'data': data})
