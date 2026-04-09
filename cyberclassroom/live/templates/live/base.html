@@ -215,16 +215,70 @@
                         <a href="https://www.facebook.com/rucyberclassroomfanpage/" target="_blank">Rucyberclassroom Fanpage</a>
                     </li>
                 </ul>
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="https://lin.ee/BNqViwp" target="_blank" class="btn btn-success btn-sm">
-                        <i class="fab fa-line me-1"></i> เพิ่มเพื่อน LINE
-                    </a>
-                    <button type="button" class="btn btn-outline-light btn-sm"
-                        data-bs-toggle="modal" data-bs-target="#myModal">
-                        <i class="fas fa-qrcode me-1"></i> QR Code
-                    </button>
-                </div>
+
+                <!-- LINE button — prominent -->
+                <a href="https://lin.ee/BNqViwp" target="_blank" class="btn-line-big d-flex align-items-center gap-2 mb-2">
+                    <span class="btn-line-icon">
+                        <i class="fab fa-line"></i>
+                    </span>
+                    <span class="btn-line-text">
+                        <span class="btn-line-label">เพิ่มเพื่อน LINE</span>
+                        <span class="btn-line-sub">สอบถามและแจ้งปัญหา</span>
+                    </span>
+                    <i class="fas fa-chevron-right btn-line-arrow"></i>
+                </a>
+
+                <button type="button" class="btn btn-outline-light btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#myModal">
+                    <i class="fas fa-qrcode me-1"></i> QR Code
+                </button>
             </div>
+
+            <style>
+            .btn-line-big {
+                background: linear-gradient(135deg, #00b900, #00c800);
+                border-radius: 12px;
+                padding: 0.6rem 1rem;
+                text-decoration: none;
+                color: #fff;
+                box-shadow: 0 3px 14px rgba(0,185,0,0.35);
+                transition: all 0.2s ease;
+                max-width: 260px;
+            }
+            .btn-line-big:hover {
+                background: linear-gradient(135deg, #00a000, #00b900);
+                box-shadow: 0 5px 20px rgba(0,185,0,0.5);
+                color: #fff;
+                transform: translateY(-1px);
+            }
+            .btn-line-icon {
+                background: rgba(255,255,255,0.22);
+                border-radius: 8px;
+                width: 38px; height: 38px;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.3rem;
+                flex-shrink: 0;
+            }
+            .btn-line-text {
+                flex: 1;
+                display: flex; flex-direction: column;
+                line-height: 1.25;
+            }
+            .btn-line-label {
+                font-size: 0.9rem;
+                font-weight: 700;
+                letter-spacing: 0.2px;
+            }
+            .btn-line-sub {
+                font-size: 0.7rem;
+                opacity: 0.82;
+            }
+            .btn-line-arrow {
+                font-size: 0.7rem;
+                opacity: 0.7;
+                flex-shrink: 0;
+            }
+            </style>
         </div>
         <hr />
         <p class="text-center mb-0" style="font-size:0.8rem; color:var(--text-muted);">
