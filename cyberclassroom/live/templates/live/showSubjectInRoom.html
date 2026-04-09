@@ -1114,11 +1114,21 @@
                     function initHls() {
                         if (hls) { hls.destroy(); }
                         hls = new Hls({
-                            /* Low-latency tuning */
-                            maxBufferLength: 15,
-                            liveSyncDurationCount: 3,
-                            liveMaxLatencyDurationCount: 6,
-                            enableWorker: true,
+                            /* ── Low-Latency tuning (กลุ่ม 3) ── */
+                            enableWorker:              true,
+                            lowLatencyMode:            true,   // HLS.js LL-HLS mode
+                            maxBufferLength:           10,     // buffer สูงสุด 10 วิ (ลด delay)
+                            maxMaxBufferLength:        20,     // ไม่ให้ buffer เกิน 20 วิ
+                            liveSyncDurationCount:     2,      // sync กับ live edge ห่าง 2 segment
+                            liveMaxLatencyDurationCount: 4,    // ถ้า delay > 4 segment ให้ catch-up
+                            liveDurationInfinity:      true,   // treat live เป็น infinite duration
+                            highBufferWatchdogPeriod:  2,      // ตรวจ buffer สูงเกิน ทุก 2 วิ
+                            nudgeMaxRetry:             5,      // nudge playback ถ้า stall
+                            maxFragLookUpTolerance:    0.2,
+                            /* ── Network tuning ── */
+                            xhrSetup: function(xhr) {
+                                xhr.withCredentials = false;
+                            },
                         });
 
                         hls.loadSource(SRC);
@@ -1161,24 +1171,54 @@
                         });
                     }
 
-                    /* ── Buffer & Latency monitor ── */
+                    /* ── Buffer, Latency monitor & Auto catch-up (กลุ่ม 3) ── */
                     setInterval(() => {
                         if (!hls || !video) return;
-                        /* Buffer */
+
+                        /* Buffer ahead */
                         const buf = video.buffered;
                         if (buf.length) {
                             const ahead = buf.end(buf.length - 1) - video.currentTime;
                             document.getElementById('vpBufferVal').textContent = ahead.toFixed(1);
+
+                            /* Auto catch-up: ถ้า buffer สะสมเกิน 18 วิ ให้ข้ามไปใกล้ live edge */
+                            if (ahead > 18 && !video.paused) {
+                                video.currentTime = buf.end(buf.length - 1) - 2;
+                                showHint('⚡ Catch-up — ลด delay อัตโนมัติ');
+                            }
                         }
-                        /* Latency (estimated via liveSyncPosition) */
-                        if (hls.liveSyncPosition) {
+
+                        /* Live latency */
+                        const latEl = document.getElementById('vpLatencyVal');
+                        if (hls.liveSyncPosition && video.currentTime > 0) {
                             const lat = hls.liveSyncPosition - video.currentTime;
-                            document.getElementById('vpLatencyVal').textContent =
-                                lat > 0 ? lat.toFixed(0) + 'วิ' : '—';
+                            if (lat > 0) {
+                                latEl.textContent = lat.toFixed(0) + 'วิ';
+                                /* เปลี่ยนสีตาม latency */
+                                const statEl = document.getElementById('vpLatency');
+                                statEl.style.color = lat < 8 ? '#22c55e' : lat < 20 ? '#f59e0b' : '#ef4444';
+                            } else {
+                                latEl.textContent = '< 1วิ';
+                            }
                         }
+
                         /* Volume memory */
                         if (!video.muted) localStorage.setItem('vp_volume', video.volume);
                     }, 2000);
+
+                    /* ── Playback speed nudge เมื่อ stall (กลุ่ม 3) ── */
+                    video.addEventListener('waiting', () => {
+                        /* ถ้ารอนานเกิน 4 วิ ให้ลอง seek ไป live edge */
+                        clearTimeout(video._stallTimer);
+                        video._stallTimer = setTimeout(() => {
+                            if (video.paused || !hls) return;
+                            const buf = video.buffered;
+                            if (buf.length) {
+                                video.currentTime = buf.end(buf.length - 1) - 0.5;
+                            }
+                        }, 4000);
+                    });
+                    video.addEventListener('playing', () => clearTimeout(video._stallTimer));
 
                     function showOverlay() { overlay.style.display = 'flex'; }
                     function hideOverlay() { overlay.style.display = 'none'; }
@@ -1193,11 +1233,74 @@
                 </script>
 
             {% else %}
-                <div class="video-no-live">
-                    <div class="no-live-icon"><i class="fas fa-video-slash"></i></div>
-                    <h5>ไม่มีการถ่ายทอดสดในขณะนี้</h5>
-                    <p class="mb-0">โปรดกลับมาตรวจสอบใหม่ในช่วงเวลาบรรยาย</p>
+                <!-- Offline screen พร้อม auto-poll (กลุ่ม 3) -->
+                <div class="video-no-live" id="offlineScreen">
+                    <div class="no-live-icon"><i class="fas fa-satellite-dish" id="offlineIcon"></i></div>
+                    <h5 id="offlineTitle">ไม่มีการถ่ายทอดสดในขณะนี้</h5>
+                    <p class="mb-2" id="offlineMsg">กำลังตรวจสอบสัญญาณอัตโนมัติ...</p>
+                    <div class="offline-poll-bar">
+                        <div class="offline-poll-fill" id="pollFill"></div>
+                    </div>
+                    <p class="offline-poll-label" id="pollLabel">ตรวจสอบใหม่ใน 30 วิ</p>
                 </div>
+                <style>
+                .offline-poll-bar {
+                    width: 180px; height: 3px;
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 3px; margin: 0.5rem auto;
+                    overflow: hidden;
+                }
+                .offline-poll-fill {
+                    height: 100%; width: 0%;
+                    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+                    border-radius: 3px;
+                    transition: width 1s linear;
+                }
+                .offline-poll-label {
+                    font-size: 0.72rem; color: #475569; margin: 0;
+                }
+                </style>
+                <script>
+                (function () {
+                    const POLL_SEC  = 30;
+                    const SRC_CHECK = '{{ server }}{{ q|lower }}/playlist.m3u8';
+                    let   elapsed   = 0;
+                    const fill  = document.getElementById('pollFill');
+                    const label = document.getElementById('pollLabel');
+                    const title = document.getElementById('offlineTitle');
+                    const icon  = document.getElementById('offlineIcon');
+
+                    function checkStream() {
+                        fetch(SRC_CHECK, { method: 'HEAD', cache: 'no-store' })
+                            .then(r => {
+                                if (r.ok) {
+                                    title.textContent = '🎉 สัญญาณกลับมาแล้ว! กำลังโหลดหน้าใหม่...';
+                                    icon.className = 'fas fa-signal';
+                                    setTimeout(() => location.reload(), 1500);
+                                }
+                            })
+                            .catch(() => {});
+                    }
+
+                    const timer = setInterval(() => {
+                        elapsed++;
+                        const pct = (elapsed / POLL_SEC) * 100;
+                        fill.style.width = pct + '%';
+                        label.textContent = 'ตรวจสอบใหม่ใน ' + (POLL_SEC - elapsed) + ' วิ';
+                        if (elapsed >= POLL_SEC) {
+                            elapsed = 0;
+                            fill.style.transition = 'none';
+                            fill.style.width = '0%';
+                            setTimeout(() => { fill.style.transition = 'width 1s linear'; }, 50);
+                            label.textContent = 'กำลังตรวจสอบ...';
+                            checkStream();
+                        }
+                    }, 1000);
+
+                    /* ตรวจสอบทันทีตอนโหลดหน้า */
+                    checkStream();
+                })();
+                </script>
             {% endif %}
         </div>
     </div>
