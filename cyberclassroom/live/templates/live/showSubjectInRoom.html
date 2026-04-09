@@ -110,6 +110,45 @@
     50%      { transform: scale(1.25); }
 }
 
+/* Back button — inline near section heading */
+.btn-back-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+    border: none;
+    border-radius: 20px;
+    padding: 0.45rem 1.1rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(29,78,216,0.35);
+}
+.btn-back-inline i {
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+}
+.btn-back-inline:hover {
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    box-shadow: 0 4px 16px rgba(29,78,216,0.5);
+    color: #fff;
+    transform: translateX(-2px);
+}
+.btn-back-inline:hover i {
+    transform: translateX(-3px);
+}
+.dark-mode .btn-back-inline {
+    background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+    box-shadow: 0 2px 10px rgba(29,78,216,0.4);
+}
+.dark-mode .btn-back-inline:hover {
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    box-shadow: 0 4px 18px rgba(59,130,246,0.45);
+}
+
 /* ── Section heading ── */
 .page-section {
     padding: 2rem 0 0;
@@ -146,55 +185,60 @@
 .subject-card-today {
     background: var(--ru-card-bg, #fff);
     border: 1px solid var(--ru-border, #e2e8f0);
-    border-radius: 14px;
-    padding: 1.2rem 1.3rem;
-    height: 100%;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem 0.5rem 0.9rem;
     position: relative;
     overflow: hidden;
-    transition: all 0.28s cubic-bezier(0.4,0,0.2,1);
-    box-shadow: 0 2px 8px rgba(30,58,138,0.06);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
 }
 .subject-card-today:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 28px rgba(30,58,138,0.14);
-    border-color: rgba(59,130,246,0.3);
+    background: rgba(59,130,246,0.04);
+    border-color: rgba(59,130,246,0.28);
 }
 .subject-card-today .course-num {
-    font-size: 0.95rem;
+    font-size: 0.75rem;
     font-weight: 700;
     color: #1d4ed8;
-    margin-bottom: 0.3rem;
-    letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .subject-card-today .course-name {
-    font-size: 0.88rem;
-    color: var(--ru-text-muted, #64748b);
-    line-height: 1.45;
-    margin-bottom: 0.8rem;
-    min-height: 2.5rem;
+    font-size: 0.8rem;
+    color: var(--ru-text, #1e293b);
+    line-height: 1.35;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .subject-card-today .meta-row {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.82rem;
+    gap: 0.3rem;
+    font-size: 0.72rem;
     color: var(--ru-text-muted, #64748b);
-    margin-top: 0.3rem;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .subject-card-today .meta-row i {
-    width: 14px; color: #94a3b8; flex-shrink: 0;
+    width: 12px; color: #94a3b8; flex-shrink: 0;
 }
 .time-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    background: rgba(29,78,216,0.09);
+    gap: 0.28rem;
+    background: rgba(29,78,216,0.08);
     color: #1d4ed8;
-    border-radius: 20px;
-    padding: 0.25rem 0.75rem;
-    font-size: 0.82rem;
+    border-radius: 6px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    margin-bottom: 0.7rem;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .live-chip {
     display: inline-flex;
@@ -223,14 +267,36 @@
     0%,100% { opacity: 1; } 50% { opacity: 0.15; }
 }
 
-/* Corner accent */
+/* Left accent bar */
 .subject-card-today::before {
     content: '';
     position: absolute;
     top: 0; left: 0;
-    width: 4px; height: 100%;
+    width: 3px; height: 100%;
     background: linear-gradient(180deg, #1d4ed8, #3b82f6);
-    border-radius: 4px 0 0 4px;
+    border-radius: 3px 0 0 3px;
+}
+
+/* List wrapper */
+.subject-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+/* Mobile: wrap meta onto next line */
+@media (max-width: 575px) {
+    .subject-card-today {
+        flex-wrap: wrap;
+        gap: 0.3rem 0.6rem;
+    }
+    .subject-card-today .course-name {
+        white-space: normal;
+        width: 100%;
+        order: 3;
+    }
+    .subject-card-today .meta-row { order: 4; }
+    .subject-card-today .class-status-badge { order: 5; margin-left: auto; }
 }
 
 /* Empty state */
@@ -387,259 +453,63 @@
             </span>
         </div>
 
-        <a href="/" class="btn-hero" style="display:inline-flex;">
-            <i class="fas fa-arrow-left"></i> กลับหน้าหลัก
-        </a>
     </div>
 </div>
 
-<!-- ══════════════ NOW ON AIR BANNER ══════════════ -->
-<div id="nowOnAirBanner" style="display:none;">
-    <div class="now-on-air-wrap">
-        <div class="now-on-air-inner container">
+<!-- ══════════════ UPCOMING CARD (floating, bottom-right) ══════════════ -->
+<div id="notifContainer" style="position:fixed;bottom:1rem;right:1rem;z-index:1050;display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end;pointer-events:none;">
 
-            <!-- Left: Live signal -->
-            <div class="noa-signal">
-                <div class="noa-ring"></div>
-                <div class="noa-ring noa-ring-2"></div>
-                <i class="fas fa-broadcast-tower noa-icon"></i>
+    <!-- UPCOMING -->
+    <div id="upcomingBanner" style="display:none;pointer-events:auto;">
+        <div class="notif-card notif-upcoming">
+            <button class="notif-close notif-close-amber" id="upcCloseBtn" title="ปิด (จะแจ้งอีก 30 นาที)">×</button>
+            <div class="notif-icon-col notif-icon-amber">
+                <i class="fas fa-hourglass-half notif-hourglass"></i>
             </div>
-
-            <!-- Center: Subject info -->
-            <div class="noa-info">
-                <div class="noa-label">
-                    <span class="noa-live-dot"></span>
-                    กำลังเรียนอยู่ขณะนี้
+            <div class="notif-body">
+                <div class="notif-tag notif-tag-amber">
+                    <i class="fas fa-calendar-check me-1"></i>วิชาถัดไป
                 </div>
-                <div class="noa-course-num" id="noaCourseNum">—</div>
-                <div class="noa-course-name" id="noaCourseName">—</div>
-                <div class="noa-meta">
-                    <span id="noaInstructor"><i class="fas fa-chalkboard-teacher me-1"></i>—</span>
-                    <span class="noa-divider">·</span>
-                    <span id="noaTime"><i class="fas fa-clock me-1"></i>—</span>
-                </div>
-            </div>
-
-            <!-- Right: Time remaining -->
-            <div class="noa-countdown">
-                <div class="noa-countdown-label">เหลืออีก</div>
-                <div class="noa-countdown-val" id="noaTimeLeft">—</div>
-                <div class="noa-countdown-unit">นาที</div>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<!-- ══════════════ UPCOMING BANNER ══════════════ -->
-<div id="upcomingBanner" style="display:none;">
-    <div class="upcoming-wrap">
-        <div class="upcoming-inner container">
-
-            <!-- Left: Hourglass -->
-            <div class="upc-icon-wrap">
-                <i class="fas fa-hourglass-half upc-icon"></i>
-            </div>
-
-            <!-- Center: info -->
-            <div class="upc-info">
-                <div class="upc-label">
-                    <i class="fas fa-calendar-check me-1"></i>
-                    วิชาถัดไปกำลังจะเริ่ม
-                </div>
-                <div class="upc-course-num" id="upcCourseNum">—</div>
-                <div class="upc-course-name" id="upcCourseName">—</div>
-                <div class="upc-meta">
+                <div class="notif-course-num notif-course-num-amber" id="upcCourseNum">—</div>
+                <div class="notif-course-name" id="upcCourseName">—</div>
+                <div class="notif-meta">
                     <span id="upcInstructor"><i class="fas fa-chalkboard-teacher me-1"></i>—</span>
-                    <span class="upc-divider">·</span>
+                    <span class="notif-sep">·</span>
                     <span id="upcTime"><i class="fas fa-clock me-1"></i>—</span>
                 </div>
             </div>
-
-            <!-- Right: Countdown -->
-            <div class="upc-countdown">
-                <div class="upc-countdown-label">เริ่มในอีก</div>
-                <div class="upc-countdown-val" id="upcTimeLeft">—</div>
-                <div class="upc-countdown-unit">นาที</div>
+            <div class="notif-countdown notif-countdown-amber">
+                <div class="notif-cd-label">เริ่มใน</div>
+                <div class="notif-cd-val" id="upcTimeLeft">—</div>
+                <div class="notif-cd-unit">นาที</div>
             </div>
-
         </div>
     </div>
+
 </div>
 
 <style>
 /* ══════════════════════════════════════
-   NOW ON AIR BANNER
+   NOTIFICATION CARDS (floating, compact)
 ══════════════════════════════════════ */
-.now-on-air-wrap {
-    background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 35%, #dc2626 70%, #ef4444 100%);
-    background-size: 200% 200%;
-    animation: heroGradient 8s ease infinite;
-    padding: 1.5rem 0;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 32px rgba(220,38,38,0.35);
-}
-.now-on-air-wrap::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 60px,
-        rgba(255,255,255,0.025) 60px,
-        rgba(255,255,255,0.025) 61px
-    );
-    pointer-events: none;
-}
-.now-on-air-inner {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    position: relative;
-    z-index: 1;
-}
-
-/* Signal animation */
-.noa-signal {
-    position: relative;
-    width: 64px; height: 64px;
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-}
-.noa-ring {
-    position: absolute;
-    border: 2px solid rgba(255,255,255,0.5);
-    border-radius: 50%;
-    animation: noa-expand 2s ease-out infinite;
-}
-.noa-ring-2 { animation-delay: 1s; }
-@keyframes noa-expand {
-    0%   { width:20px; height:20px; opacity:0.9; }
-    100% { width:64px; height:64px; opacity:0; }
-}
-.noa-icon {
-    color: #fff;
-    font-size: 1.6rem;
-    filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));
-    animation: satellitePulse 2s ease-in-out infinite;
-    position: relative; z-index: 1;
-}
-
-/* Info block */
-.noa-info { flex: 1; min-width: 0; }
-.noa-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: rgba(255,255,255,0.18);
-    color: #fff;
-    border-radius: 20px;
-    padding: 0.18rem 0.7rem;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-}
-.noa-live-dot {
-    width: 7px; height: 7px;
-    background: #fff;
-    border-radius: 50%;
-    animation: blinker 0.9s linear infinite;
-    flex-shrink: 0;
-}
-.noa-course-num {
-    font-size: clamp(1rem, 3vw, 1.35rem);
-    font-weight: 800;
-    color: #fecaca;
-    letter-spacing: 1px;
-    margin-bottom: 0.2rem;
-    line-height: 1.2;
-}
-.noa-course-name {
-    font-size: clamp(1.1rem, 4vw, 1.85rem);
-    font-weight: 800;
-    color: #fff;
-    line-height: 1.25;
-    margin-bottom: 0.45rem;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.25);
-    /* ตัดข้อความยาวเกินไป */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.noa-meta {
-    font-size: 0.88rem;
-    color: rgba(255,255,255,0.8);
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-}
-.noa-divider { opacity: 0.5; }
-
-/* Countdown block */
-.noa-countdown {
-    text-align: center;
-    background: rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 14px;
-    padding: 0.7rem 1.2rem;
-    flex-shrink: 0;
-    backdrop-filter: blur(10px);
-    min-width: 90px;
-}
-.noa-countdown-label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.6);
-    margin-bottom: 0.15rem;
-}
-.noa-countdown-val {
-    font-size: 2.4rem;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.3);
-    transition: transform 0.3s ease;
-}
-.noa-countdown-val.bump {
-    animation: countBounce 0.35s ease;
-}
-.noa-countdown-unit {
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.65);
-    font-weight: 600;
-    margin-top: 0.1rem;
-}
-
-/* Mobile — NOW ON AIR */
-@media (max-width: 575px) {
-    .now-on-air-inner { flex-wrap: wrap; gap: 1rem; }
-    .noa-signal { width: 48px; height: 48px; }
-    .noa-icon { font-size: 1.2rem; }
-    .noa-countdown { width: 100%; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; }
-    .noa-countdown-val { font-size: 1.8rem; }
-    .noa-countdown-label, .noa-countdown-unit { font-size: 0.72rem; }
-}
 
 /* ══════════════════════════════════════
-   UPCOMING BANNER (สีเหลือง-ส้ม)
+   LIVE ON AIR BAR — under section heading
 ══════════════════════════════════════ */
-.upcoming-wrap {
-    background: linear-gradient(135deg, #78350f 0%, #92400e 35%, #d97706 70%, #f59e0b 100%);
-    background-size: 200% 200%;
-    animation: heroGradient 10s ease infinite;
-    padding: 1.2rem 0;
-    position: relative;
+.loa-bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    background: linear-gradient(90deg, #7f1d1d 0%, #b91c1c 45%, #dc2626 100%);
+    border-radius: 10px;
+    padding: 0.55rem 0.9rem;
+    box-shadow: 0 3px 14px rgba(220,38,38,0.3);
+    animation: loaSlideDown 0.3s cubic-bezier(0.34,1.3,0.64,1) both;
     overflow: hidden;
-    box-shadow: 0 4px 28px rgba(217,119,6,0.3);
+    position: relative;
 }
-.upcoming-wrap::before {
+.loa-bar-row::before {
     content: '';
     position: absolute; inset: 0;
     background: repeating-linear-gradient(
@@ -648,120 +518,256 @@
     );
     pointer-events: none;
 }
-.upcoming-inner {
-    display: flex;
-    align-items: center;
-    gap: 1.4rem;
-    position: relative; z-index: 1;
+@keyframes loaSlideDown {
+    from { transform: translateY(-8px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
 }
 
-/* Hourglass icon */
-.upc-icon-wrap {
-    width: 56px; height: 56px;
-    background: rgba(0,0,0,0.18);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 50%;
+.loa-bar-left {
+    display: flex; align-items: center;
+    gap: 0.5rem; min-width: 0; flex: 1;
+}
+.loa-bar-right {
+    display: flex; align-items: center;
+    gap: 0.5rem; flex-shrink: 0;
+}
+
+/* Signal icon */
+.loa-signal-wrap {
+    position: relative;
+    width: 26px; height: 26px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
 }
-.upc-icon {
-    color: #fff;
-    font-size: 1.5rem;
-    animation: hourglassSpin 3s ease-in-out infinite;
+.loa-ring {
+    position: absolute; inset: 0;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    border-radius: 50%;
+    animation: notifRing 2s ease-out infinite;
 }
+.loa-icon {
+    color: #fff; font-size: 0.82rem;
+    position: relative; z-index: 1;
+    filter: drop-shadow(0 0 4px rgba(255,255,255,0.4));
+}
+
+/* LIVE badge */
+.loa-tag {
+    display: inline-flex; align-items: center; gap: 0.28rem;
+    background: rgba(0,0,0,0.28);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.62rem; font-weight: 800;
+    letter-spacing: 1.5px; color: #fff;
+    flex-shrink: 0;
+}
+.loa-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #fff;
+    animation: blinker 0.9s linear infinite;
+    flex-shrink: 0;
+}
+
+/* Course info */
+.loa-course-num {
+    font-size: 0.75rem; font-weight: 800;
+    color: #fecaca; white-space: nowrap; flex-shrink: 0;
+}
+.loa-sep { color: rgba(255,255,255,0.3); flex-shrink: 0; }
+.loa-course-name {
+    font-size: 0.85rem; font-weight: 700; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Right meta */
+.loa-meta {
+    font-size: 0.72rem; color: rgba(255,255,255,0.8);
+    white-space: nowrap;
+}
+.loa-meta-sep { color: rgba(255,255,255,0.25); }
+
+/* Countdown box */
+.loa-countdown {
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 6px;
+    padding: 0.15rem 0.5rem;
+    display: flex; align-items: baseline; gap: 0.22rem;
+    flex-shrink: 0;
+}
+.loa-cd-val {
+    font-size: 1rem; font-weight: 800;
+    color: #fff; line-height: 1;
+    transition: transform 0.3s ease;
+}
+.loa-cd-val.bump { animation: countBounce 0.35s ease; }
+.loa-cd-unit {
+    font-size: 0.58rem; color: rgba(255,255,255,0.65); font-weight: 600;
+}
+
+/* Close button */
+.loa-close {
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 50%;
+    color: rgba(255,255,255,0.75);
+    width: 22px; height: 22px;
+    font-size: 12px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+.loa-close:hover { background: rgba(0,0,0,0.48); color: #fff; }
+
+/* Mobile */
+@media (max-width: 575px) {
+    .loa-bar-row { flex-wrap: wrap; gap: 0.4rem; }
+    .loa-bar-right { width: 100%; justify-content: flex-end; }
+    .loa-meta, .loa-meta-sep { display: none; }
+}
+
+/* Card base */
+.notif-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: 270px;
+    border-radius: 10px;
+    padding: 0.45rem 0.6rem;
+    box-shadow: 0 3px 18px rgba(0,0,0,0.28);
+    backdrop-filter: blur(12px);
+    animation: notifSlideIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes notifSlideIn {
+    from { transform: translateX(110%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* Live (red) */
+.notif-live {
+    background: linear-gradient(135deg, rgba(127,29,29,0.96), rgba(185,28,28,0.96));
+    border: 1px solid rgba(255,255,255,0.13);
+}
+/* Upcoming (amber) */
+.notif-upcoming {
+    background: linear-gradient(135deg, rgba(120,53,15,0.96), rgba(180,83,9,0.96));
+    border: 1px solid rgba(255,255,255,0.13);
+}
+
+/* Close button */
+.notif-close {
+    position: absolute;
+    top: 3px; right: 4px;
+    background: rgba(0,0,0,0.25);
+    border: none; border-radius: 50%;
+    color: rgba(255,255,255,0.75);
+    width: 16px; height: 16px;
+    font-size: 10px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.15s, color 0.15s;
+}
+.notif-close:hover { background: rgba(0,0,0,0.5); color: #fff; }
+
+/* Icon column */
+.notif-icon-col {
+    position: relative;
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+    font-size: 0.85rem;
+}
+.notif-live-ring {
+    position: absolute; inset: 0;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    border-radius: 50%;
+    animation: notifRing 2s ease-out infinite;
+}
+@keyframes notifRing {
+    0%   { transform: scale(0.5); opacity: 0.8; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+.notif-hourglass { animation: hourglassSpin 3s ease-in-out infinite; }
 @keyframes hourglassSpin {
     0%,45%  { transform: rotate(0deg); }
     50%,95% { transform: rotate(180deg); }
-    100%    { transform: rotate(180deg); }
 }
+.notif-icon-amber { color: #fde68a; }
 
-/* Info */
-.upc-info { flex: 1; min-width: 0; }
-.upc-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    background: rgba(0,0,0,0.18);
-    color: #fef3c7;
+/* Body */
+.notif-body { flex: 1; min-width: 0; padding-right: 6px; }
+.notif-tag {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    background: rgba(255,255,255,0.16);
     border-radius: 20px;
-    padding: 0.18rem 0.7rem;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-}
-.upc-course-num {
-    font-size: clamp(0.9rem, 2.5vw, 1.2rem);
-    font-weight: 800;
-    color: #fef9c3;
-    letter-spacing: 1px;
+    padding: 0.07rem 0.4rem;
+    font-size: 0.58rem; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    color: #fff;
     margin-bottom: 0.18rem;
+}
+.notif-tag-amber { background: rgba(0,0,0,0.18); color: #fef3c7; }
+.notif-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #fff;
+    animation: blinker 0.9s linear infinite;
+    flex-shrink: 0;
+}
+.notif-course-num {
+    font-size: 0.64rem; font-weight: 800;
+    color: #fecaca; letter-spacing: 0.4px;
     line-height: 1.2;
 }
-.upc-course-name {
-    font-size: clamp(1rem, 3.5vw, 1.6rem);
-    font-weight: 800;
-    color: #fff;
-    line-height: 1.25;
-    margin-bottom: 0.4rem;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.notif-course-num-amber { color: #fef9c3; }
+.notif-course-name {
+    font-size: 0.74rem; font-weight: 700;
+    color: #fff; line-height: 1.25;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.upc-meta {
-    font-size: 0.86rem;
-    color: rgba(255,255,255,0.8);
-    display: flex; align-items: center;
-    flex-wrap: wrap; gap: 0.3rem;
+.notif-meta {
+    font-size: 0.6rem; color: rgba(255,255,255,0.72);
+    display: flex; align-items: center; gap: 0.2rem;
+    margin-top: 0.15rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.upc-divider { opacity: 0.45; }
+.notif-sep { opacity: 0.45; }
 
-/* Countdown */
-.upc-countdown {
+/* Countdown block */
+.notif-countdown {
     text-align: center;
-    background: rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 14px;
-    padding: 0.7rem 1.2rem;
+    border-radius: 7px;
+    padding: 0.22rem 0.4rem;
     flex-shrink: 0;
-    backdrop-filter: blur(10px);
-    min-width: 90px;
+    min-width: 42px;
 }
-.upc-countdown-label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.65);
-    margin-bottom: 0.15rem;
+.notif-countdown-red   { background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.16); }
+.notif-countdown-amber { background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.16); }
+.notif-cd-label {
+    font-size: 0.52rem; font-weight: 700;
+    letter-spacing: 0.6px; text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
 }
-.upc-countdown-val {
-    font-size: 2.4rem;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.25);
+.notif-cd-val {
+    font-size: 1.25rem; font-weight: 800;
+    color: #fff; line-height: 1;
     transition: transform 0.3s ease;
 }
-.upc-countdown-val.bump { animation: countBounce 0.35s ease; }
-.upc-countdown-unit {
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.65);
-    font-weight: 600;
-    margin-top: 0.1rem;
+.notif-cd-val.bump { animation: countBounce 0.35s ease; }
+.notif-cd-unit {
+    font-size: 0.52rem; font-weight: 600;
+    color: rgba(255,255,255,0.6);
 }
 
-/* Mobile — UPCOMING */
+/* Mobile: shrink */
 @media (max-width: 575px) {
-    .upcoming-inner { flex-wrap: wrap; gap: 0.9rem; }
-    .upc-icon-wrap { width: 44px; height: 44px; }
-    .upc-icon { font-size: 1.2rem; }
-    .upc-countdown { width: 100%; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; }
-    .upc-countdown-val { font-size: 1.8rem; }
-    .upc-countdown-label, .upc-countdown-unit { font-size: 0.72rem; }
+    .notif-card { width: 230px; }
+    .notif-course-name { font-size: 0.68rem; }
+    .notif-cd-val { font-size: 1rem; }
 }
 </style>
 
@@ -779,13 +785,45 @@
 
     <!-- ─── LIVE VIDEO ─── -->
     <div class="page-section">
-        <div class="section-label">
-            <div class="label-icon orange">
-                <i class="fas fa-broadcast-tower"></i>
+        <div class="section-label" style="justify-content:space-between;align-items:center;">
+            <a href="/" class="btn-back-inline">
+                <i class="fas fa-arrow-left"></i> กลับหน้าหลัก
+            </a>
+
+            <div style="display:flex;align-items:center;gap:0.7rem;flex-shrink:0;">
+                <div class="label-icon orange">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <div style="text-align:right;">
+                    <h5>การถ่ายทอดสด</h5>
+                    <small>Live Streaming</small>
+                </div>
             </div>
-            <div>
-                <h5>การถ่ายทอดสด</h5>
-                <small>Live Streaming</small>
+        </div>
+
+        <!-- LIVE BAR — ปรากฏใต้หัวข้อ บน player -->
+        <div id="nowOnAirBanner" style="display:none;" class="mb-3">
+            <div class="loa-bar-row">
+                <div class="loa-bar-left">
+                    <div class="loa-signal-wrap">
+                        <div class="loa-ring"></div>
+                        <i class="fas fa-broadcast-tower loa-icon"></i>
+                    </div>
+                    <span class="loa-tag"><span class="loa-dot"></span>LIVE</span>
+                    <span class="loa-course-num" id="noaCourseNum">—</span>
+                    <span class="loa-sep">·</span>
+                    <span class="loa-course-name" id="noaCourseName">—</span>
+                </div>
+                <div class="loa-bar-right">
+                    <span class="loa-meta" id="noaInstructor"><i class="fas fa-chalkboard-teacher me-1"></i>—</span>
+                    <span class="loa-meta-sep">·</span>
+                    <span class="loa-meta" id="noaTime"><i class="fas fa-clock me-1"></i>—</span>
+                    <div class="loa-countdown">
+                        <span class="loa-cd-val" id="noaTimeLeft">—</span>
+                        <span class="loa-cd-unit">นาที</span>
+                    </div>
+                    <button class="loa-close" id="noaCloseBtn" title="ปิด (จะแจ้งอีก 30 นาที)">×</button>
+                </div>
             </div>
         </div>
 
@@ -841,27 +879,20 @@
                 <p class="small mb-0">ลองดูตารางรายวิชาทั้งหมดด้านล่าง</p>
             </div>
         {% else %}
-            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-5">
+            <div class="subject-list mb-4">
                 {% for s in data_subject %}
-                <div class="col">
-                    <div class="subject-card-today"
-                         data-time-start="{{ s.time_start }}"
-                         data-time-end="{{ s.time_end }}">
-                        <div class="d-flex align-items-start justify-content-between mb-2">
-                            <span class="time-chip">
-                                <i class="fas fa-clock"></i>
-                                {{ s.time_start }} – {{ s.time_end }}
-                            </span>
-                            <!-- status badge — JS จะเติมเนื้อหา -->
-                            <span class="class-status-badge"></span>
-                        </div>
-                        <div class="course-num">{{ s.course_no }}</div>
-                        <div class="course-name">{{ s.course_name_thai }}</div>
-                        <div class="meta-row">
-                            <i class="fas fa-chalkboard-teacher"></i>
-                            <span>{{ s.instructor }}</span>
-                        </div>
-                    </div>
+                <div class="subject-card-today"
+                     data-time-start="{{ s.time_start }}"
+                     data-time-end="{{ s.time_end }}">
+                    <span class="time-chip">
+                        <i class="fas fa-clock"></i>{{ s.time_start }}–{{ s.time_end }}
+                    </span>
+                    <span class="course-num">{{ s.course_no }}</span>
+                    <span class="course-name">{{ s.course_name_thai }}</span>
+                    <span class="meta-row">
+                        <i class="fas fa-chalkboard-teacher"></i>{{ s.instructor }}
+                    </span>
+                    <span class="class-status-badge" style="flex-shrink:0;"></span>
                 </div>
                 {% endfor %}
             </div>
@@ -985,6 +1016,7 @@
     var elTime  = document.getElementById('noaTime');
     var elLeft  = document.getElementById('noaTimeLeft');
     var prevLiveMin = -1;
+    var noaDismissedUntil = 0;   /* timestamp ที่จะแสดงใหม่ */
 
     /* ── Banner elements — UPCOMING ── */
     var upcBanner  = document.getElementById('upcomingBanner');
@@ -994,6 +1026,26 @@
     var upcTime    = document.getElementById('upcTime');
     var upcLeft    = document.getElementById('upcTimeLeft');
     var prevUpcMin = -1;
+    var upcDismissedUntil = 0;   /* timestamp ที่จะแสดงใหม่ */
+
+    /* ── Close button handlers (dismiss 30 นาที) ── */
+    var DISMISS_MS = 30 * 60 * 1000;
+    var noaCloseBtn = document.getElementById('noaCloseBtn');
+    var upcCloseBtn = document.getElementById('upcCloseBtn');
+    if (noaCloseBtn) {
+        noaCloseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            noaDismissedUntil = Date.now() + DISMISS_MS;
+            banner.style.display = 'none';
+        });
+    }
+    if (upcCloseBtn) {
+        upcCloseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            upcDismissedUntil = Date.now() + DISMISS_MS;
+            upcBanner.style.display = 'none';
+        });
+    }
 
     /* ── อัปเดต LIVE Banner ── */
     function updateBanner(nowMins) {
@@ -1008,6 +1060,8 @@
         }
 
         if (!banner) return;
+        /* ถ้าผู้ใช้ปิดไว้ และยังไม่ถึงเวลา 30 นาที → ไม่แสดง */
+        if (Date.now() < noaDismissedUntil) { banner.style.display = 'none'; return; }
 
         if (active) {
             var remaining = toMinutes(active.time_end) - nowMins;
@@ -1041,6 +1095,8 @@
         }
 
         if (!upcBanner) return;
+        /* ถ้าผู้ใช้ปิดไว้ และยังไม่ถึงเวลา 30 นาที → ไม่แสดง */
+        if (Date.now() < upcDismissedUntil) { upcBanner.style.display = 'none'; return; }
 
         if (next) {
             var diff = toMinutes(next.time_start) - nowMins;
