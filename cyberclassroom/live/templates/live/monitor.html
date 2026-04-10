@@ -65,7 +65,6 @@
     }
     .topbar-brand i { color: var(--accent); font-size: 1.1rem; }
 
-    /* ON AIR indicator */
     .on-air-pill {
       display: inline-flex;
       align-items: center;
@@ -88,7 +87,6 @@
       animation: blink 1s linear infinite;
     }
 
-    /* Clock */
     .topbar-clock {
       font-size: 0.88rem;
       color: var(--muted);
@@ -97,7 +95,6 @@
     }
     .topbar-clock span { color: var(--text); font-weight: 600; }
 
-    /* Update indicator */
     .update-pill {
       display: flex;
       align-items: center;
@@ -190,6 +187,61 @@
       color: var(--muted);
     }
 
+    /* ══════════════════════════════════════
+       CHART SECTION
+    ══════════════════════════════════════ */
+    .chart-section {
+      padding: 1rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 900px) {
+      .chart-section { grid-template-columns: 1fr; }
+    }
+
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .chart-card-head {
+      padding: 0.75rem 1rem 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .chart-card-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .chart-card-title i { color: var(--accent); }
+    .chart-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: rgba(59,130,246,0.12);
+      color: #93c5fd;
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 20px;
+      padding: 0.15rem 0.5rem;
+    }
+    .chart-body {
+      padding: 1rem;
+      position: relative;
+    }
+    /* fix canvas height */
+    .chart-body canvas {
+      max-height: 260px;
+    }
+
     /* ── ROOM GRID ── */
     .room-grid {
       padding: 0.75rem 1.5rem 2rem;
@@ -219,7 +271,6 @@
     .room-card.flash-up   { animation: flashUp   0.6s ease; }
     .room-card.flash-down { animation: flashDown 0.6s ease; }
 
-    /* Left accent bar — color by tier */
     .room-card::before {
       content: '';
       position: absolute;
@@ -232,7 +283,6 @@
     .room-card.tier-low::before   { background: var(--tier-low);   }
     .room-card.tier-zero::before  { background: var(--tier-zero);  }
 
-    /* Card header */
     .rc-head {
       padding: 0.7rem 0.85rem 0.5rem 1rem;
       display: flex;
@@ -257,7 +307,6 @@
       flex-shrink: 0;
     }
 
-    /* Viewer count */
     .rc-viewers {
       padding: 0.2rem 0.85rem 0.3rem 1rem;
       display: flex;
@@ -273,14 +322,12 @@
     }
     .rc-unit { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
 
-    /* Tier color for count */
     .tier-peak  .rc-count { color: #c4b5fd; }
     .tier-high  .rc-count { color: var(--tier-high); }
     .tier-mid   .rc-count { color: var(--tier-mid); }
     .tier-low   .rc-count { color: #94a3b8; }
     .tier-zero  .rc-count { color: #4b5563; }
 
-    /* Trend arrow */
     .rc-trend {
       font-size: 0.7rem;
       font-weight: 700;
@@ -292,10 +339,7 @@
     .trend-down { color: #ef4444;           background: rgba(239,68,68,0.12); }
     .trend-same { color: var(--muted);      background: rgba(255,255,255,0.05); }
 
-    /* Progress bar */
-    .rc-bar-wrap {
-      padding: 0.2rem 1rem 0.7rem;
-    }
+    .rc-bar-wrap { padding: 0.2rem 1rem 0.7rem; }
     .rc-bar-bg {
       height: 4px;
       background: rgba(255,255,255,0.06);
@@ -313,7 +357,6 @@
     .tier-low   .rc-bar-fill { background: var(--tier-low); }
     .tier-zero  .rc-bar-fill { background: var(--tier-zero); width: 2px !important; }
 
-    /* Tier badge */
     .rc-badge {
       margin: 0 1rem 0.7rem;
       display: inline-flex;
@@ -330,7 +373,6 @@
     .tier-low   .rc-badge { background: rgba(100,116,139,0.1); color: #94a3b8; }
     .tier-zero  .rc-badge { background: rgba(55,65,81,0.3);    color: #4b5563; }
 
-    /* Empty state */
     .empty-state {
       grid-column: 1/-1;
       text-align: center;
@@ -346,7 +388,6 @@
     @keyframes flashUp  { 0%{background:rgba(34,197,94,0.08);}  100%{background:transparent;} }
     @keyframes flashDown{ 0%{background:rgba(239,68,68,0.08);} 100%{background:transparent;} }
 
-    /* Scrollbar */
     ::-webkit-scrollbar       { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
@@ -391,12 +432,7 @@
 
   <div class="kpi-card green">
     <div class="kpi-label"><i class="fas fa-users"></i> ผู้ชมรวม</div>
-    <div class="kpi-value" id="kpiTotal">
-      {% with total=0 %}
-        {% for r in live_classrooms %}{% if forloop.first %}{{ live_classrooms|length }}{% endif %}{% endfor %}
-        0
-      {% endwith %}
-    </div>
+    <div class="kpi-value" id="kpiTotal">0</div>
     <div class="kpi-sub">คนกำลังรับชมอยู่</div>
   </div>
 
@@ -412,10 +448,39 @@
 
   <div class="kpi-card amber">
     <div class="kpi-label"><i class="fas fa-broadcast-tower"></i> ห้องที่มีผู้ชม</div>
-    <div class="kpi-value" id="kpiActive">
-      {% with c=0 %}0{% endwith %}
-    </div>
+    <div class="kpi-value" id="kpiActive">0</div>
     <div class="kpi-sub">ห้องที่มีผู้ชม > 0</div>
+  </div>
+
+</div>
+
+<!-- ════ CHART SECTION ════ -->
+<div class="chart-section">
+
+  <!-- Bar Chart: Top Rooms -->
+  <div class="chart-card">
+    <div class="chart-card-head">
+      <div class="chart-card-title">
+        <i class="fas fa-chart-bar"></i> ผู้ชมแต่ละห้อง
+      </div>
+      <span class="chart-badge">Real-time</span>
+    </div>
+    <div class="chart-body">
+      <canvas id="barChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Line Chart: Total Viewers History -->
+  <div class="chart-card">
+    <div class="chart-card-head">
+      <div class="chart-card-title">
+        <i class="fas fa-chart-line"></i> ผู้ชมรวมย้อนหลัง
+      </div>
+      <span class="chart-badge" id="historyLabel">0 / 120 รายการ</span>
+    </div>
+    <div class="chart-body">
+      <canvas id="lineChart"></canvas>
+    </div>
   </div>
 
 </div>
@@ -483,9 +548,10 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
 /* ══════════════════════════════════════
-   MONITOR DASHBOARD — Live Updater
+   MONITOR DASHBOARD — Live Updater + Charts
 ══════════════════════════════════════ */
 
 /* ── Clock ── */
@@ -496,13 +562,11 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-/* ── Slugify (match Django's |slugify) ── */
+/* ── Helpers ── */
 function slugify(text) {
   return text.toString().toLowerCase().trim()
     .replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-');
 }
-
-/* ── Tier class ── */
 function tierClass(n) {
   if (n >= 50) return 'tier-peak';
   if (n >= 15) return 'tier-high';
@@ -510,8 +574,6 @@ function tierClass(n) {
   if (n >= 1)  return 'tier-low';
   return 'tier-zero';
 }
-
-/* ── Badge label ── */
 function badgeHTML(n) {
   if (n >= 50) return '<i class="fas fa-fire"></i> สูงมาก';
   if (n >= 15) return '<i class="fas fa-arrow-up"></i> มาก';
@@ -519,24 +581,167 @@ function badgeHTML(n) {
   if (n >= 1)  return '<i class="fas fa-arrow-down"></i> น้อย';
   return '<i class="fas fa-circle-xmark"></i> ไม่มีผู้ชม';
 }
-
-/* ── Bar width (cap at 100%) ── */
 function barWidth(n, max) {
   if (!max || max === 0) return 2;
   return Math.min(Math.round((n / max) * 100), 100);
 }
+function timeLabel() {
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' +
+         d.getMinutes().toString().padStart(2,'0') + ':' +
+         d.getSeconds().toString().padStart(2,'0');
+}
 
-/* ── Update all cards ── */
+/* ══════════════════════════════════════
+   CHART.JS — SHARED CONFIG
+══════════════════════════════════════ */
+Chart.defaults.color      = '#64748b';
+Chart.defaults.borderColor= 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family= "'Poppins', sans-serif";
+Chart.defaults.font.size  = 11;
+
+/* ── Tier bar colors ── */
+function barColor(n) {
+  if (n >= 50) return 'rgba(139,92,246,0.85)';
+  if (n >= 15) return 'rgba(34,197,94,0.85)';
+  if (n >= 5)  return 'rgba(245,158,11,0.85)';
+  if (n >= 1)  return 'rgba(100,116,139,0.85)';
+  return 'rgba(55,65,81,0.5)';
+}
+
+/* ══════════════════════════════════════
+   BAR CHART — ผู้ชมแต่ละห้อง (Top 15)
+══════════════════════════════════════ */
+const barCtx = document.getElementById('barChart').getContext('2d');
+const barChart = new Chart(barCtx, {
+  type: 'bar',
+  data: {
+    labels: [],
+    datasets: [{
+      label: 'ผู้ชม (คน)',
+      data: [],
+      backgroundColor: [],
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y',           /* horizontal bars */
+    responsive: true,
+    maintainAspectRatio: true,
+    animation: { duration: 500 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.raw.toLocaleString('th-TH')} คน`
+        }
+      }
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 5,
+          callback: v => v.toLocaleString('th-TH')
+        },
+        grid: { color: 'rgba(255,255,255,0.05)' }
+      },
+      y: {
+        ticks: { color: '#cbd5e1', font: { size: 11 } },
+        grid: { display: false }
+      }
+    }
+  }
+});
+
+function updateBarChart(rooms) {
+  /* เรียงมากสุดก่อน, แสดง top 15 */
+  const sorted = [...rooms].sort((a,b) => b.viewer_count - a.viewer_count).slice(0, 15);
+  barChart.data.labels   = sorted.map(r => r.room_name);
+  barChart.data.datasets[0].data = sorted.map(r => r.viewer_count);
+  barChart.data.datasets[0].backgroundColor = sorted.map(r => barColor(r.viewer_count));
+  barChart.update('none');  /* ไม่ animate เพราะ update บ่อย */
+}
+
+/* ══════════════════════════════════════
+   LINE CHART — ผู้ชมรวมย้อนหลัง (max 120 จุด = 10 นาที)
+══════════════════════════════════════ */
+const MAX_HISTORY = 120;
+const lineHistory = { labels: [], total: [] };
+
+const lineCtx = document.getElementById('lineChart').getContext('2d');
+const lineChart = new Chart(lineCtx, {
+  type: 'line',
+  data: {
+    labels: lineHistory.labels,
+    datasets: [{
+      label: 'ผู้ชมรวม',
+      data: lineHistory.total,
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59,130,246,0.10)',
+      borderWidth: 2,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      fill: true,
+      tension: 0.4,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    animation: { duration: 0 },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.raw.toLocaleString('th-TH')} คน`,
+          title: items  => items[0].label
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          maxTicksLimit: 6,
+          color: '#475569',
+          maxRotation: 0,
+        },
+        grid: { color: 'rgba(255,255,255,0.04)' }
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { callback: v => v.toLocaleString('th-TH') },
+        grid: { color: 'rgba(255,255,255,0.05)' }
+      }
+    }
+  }
+});
+
+function pushLineHistory(total) {
+  lineHistory.labels.push(timeLabel());
+  lineHistory.total.push(total);
+  if (lineHistory.labels.length > MAX_HISTORY) {
+    lineHistory.labels.shift();
+    lineHistory.total.shift();
+  }
+  document.getElementById('historyLabel').textContent =
+    lineHistory.labels.length + ' / ' + MAX_HISTORY + ' รายการ';
+  lineChart.update();
+}
+
+/* ══════════════════════════════════════
+   LIVE UPDATER
+══════════════════════════════════════ */
 async function updateViewerCounts() {
   try {
-    const res  = await fetch("{% url 'live_viewer_data' %}");
-    const json = await res.json();
+    const res   = await fetch("{% url 'live_viewer_data' %}");
+    const json  = await res.json();
     const rooms = json.data;
 
-    /* คำนวณ max สำหรับ bar width */
     const max = Math.max(...rooms.map(r => r.viewer_count), 1);
 
-    /* KPI totals */
     let total  = 0;
     let active = 0;
     let peak   = { room_name: '—', viewer_count: 0 };
@@ -547,26 +752,25 @@ async function updateViewerCounts() {
       if (room.viewer_count > peak.viewer_count) peak = room;
     });
 
-    /* อัปเดต KPI */
-    document.getElementById('kpiTotal').textContent    = total.toLocaleString('th-TH');
-    document.getElementById('kpiActive').textContent   = active;
-    document.getElementById('kpiPeakRoom').textContent = peak.room_name;
+    /* KPI */
+    document.getElementById('kpiTotal').textContent     = total.toLocaleString('th-TH');
+    document.getElementById('kpiActive').textContent    = active;
+    document.getElementById('kpiPeakRoom').textContent  = peak.room_name;
     document.getElementById('kpiPeakCount').textContent = peak.viewer_count + ' คน';
 
-    /* อัปเดต Cards */
+    /* Cards */
     rooms.forEach(room => {
-      const sl    = slugify(room.room_name);
-      const card  = document.getElementById('card-' + sl);
-      const cntEl = document.getElementById('count-' + sl);
-      const barEl = document.getElementById('bar-' + sl);
+      const sl     = slugify(room.room_name);
+      const card   = document.getElementById('card-' + sl);
+      const cntEl  = document.getElementById('count-' + sl);
+      const barEl  = document.getElementById('bar-' + sl);
       const trendEl= document.getElementById('trend-' + sl);
-      const bdgEl = document.getElementById('badge-' + sl);
+      const bdgEl  = document.getElementById('badge-' + sl);
       if (!card || !cntEl) return;
 
       const oldCount = parseInt(card.dataset.count || '0', 10);
       const newCount = room.viewer_count;
 
-      /* Trend arrow */
       if (trendEl) {
         if (newCount > oldCount) {
           trendEl.className = 'rc-trend trend-up';
@@ -580,25 +784,26 @@ async function updateViewerCounts() {
         }
       }
 
-      /* Flash animation */
       if (newCount !== oldCount) {
         card.classList.remove('flash-up', 'flash-down');
-        void card.offsetWidth; /* reflow */
+        void card.offsetWidth;
         card.classList.add(newCount > oldCount ? 'flash-up' : 'flash-down');
       }
 
-      /* Update values */
-      cntEl.textContent = newCount;
+      cntEl.textContent  = newCount;
       card.dataset.count = newCount;
       if (barEl) barEl.style.width = barWidth(newCount, max) + '%';
-      if (bdgEl) bdgEl.innerHTML = badgeHTML(newCount);
+      if (bdgEl) bdgEl.innerHTML   = badgeHTML(newCount);
 
-      /* Update tier class */
       card.classList.remove('tier-peak','tier-high','tier-mid','tier-low','tier-zero');
       card.classList.add(tierClass(newCount));
     });
 
-    /* Pulse indicator */
+    /* ── Update Charts ── */
+    updateBarChart(rooms);
+    pushLineHistory(total);
+
+    /* Pulse */
     const pulse = document.getElementById('updatePulse');
     pulse.classList.remove('active');
     void pulse.offsetWidth;
@@ -612,11 +817,11 @@ async function updateViewerCounts() {
   }
 }
 
-/* Init bar widths (first load from server data) */
+/* ── Init bars (first load) ── */
 (function initBars() {
-  const cards = document.querySelectorAll('.room-card');
+  const cards  = document.querySelectorAll('.room-card');
   const counts = Array.from(cards).map(c => parseInt(c.dataset.count || '0', 10));
-  const max = Math.max(...counts, 1);
+  const max    = Math.max(...counts, 1);
   let total = 0, active = 0;
   cards.forEach(card => {
     const n  = parseInt(card.dataset.count || '0', 10);
@@ -630,7 +835,7 @@ async function updateViewerCounts() {
   document.getElementById('kpiActive').textContent = active;
 })();
 
-/* Run */
+/* ── Run ── */
 updateViewerCounts();
 setInterval(updateViewerCounts, 5000);
 </script>
