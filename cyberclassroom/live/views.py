@@ -394,21 +394,28 @@ def caption_view(request):
     except ImportError:
         return JsonResponse({'error': 'SpeechRecognition not installed'}, status=503)
 
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+
     recognizer = sr.Recognizer()
-    recognizer.energy_threshold = 200        # ลด threshold สำหรับเสียงจากวิดีโอ
+    recognizer.energy_threshold = 200
     recognizer.dynamic_energy_threshold = True
 
-    try:
+    def _do_stt():
         audio_file = io.BytesIO(audio_data)
         with sr.AudioFile(audio_file) as source:
             audio = recognizer.record(source)
+        return recognizer.recognize_google(audio, language='th-TH')
 
-        text = recognizer.recognize_google(audio, language='th-TH')
+    try:
+        with ThreadPoolExecutor(max_workers=1) as ex:
+            future = ex.submit(_do_stt)
+            text = future.result(timeout=15)   # รอสูงสุด 15 วิ
         return JsonResponse({'text': text})
 
+    except FuturesTimeout:
+        return JsonResponse({'text': '', 'warn': 'STT timeout (>15s)'})
     except sr.UnknownValueError:
-        # เงียบหรือไม่เข้าใจ — คืน text ว่างเปล่า (ไม่ใช่ error)
-        return JsonResponse({'text': ''})
+        return JsonResponse({'text': ''})      # เงียบ / ไม่เข้าใจ
     except sr.RequestError as e:
         return JsonResponse({'error': f'Google STT unavailable: {e}'}, status=503)
     except Exception as e:
