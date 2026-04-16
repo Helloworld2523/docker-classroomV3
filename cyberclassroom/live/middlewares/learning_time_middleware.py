@@ -27,4 +27,4 @@ class LearningHoursMiddleware:
                 'end_time': end_time.strftime('%H:%M'),
             })
 
-        return self.get_response(request)
+        return self.get_response(request) 
