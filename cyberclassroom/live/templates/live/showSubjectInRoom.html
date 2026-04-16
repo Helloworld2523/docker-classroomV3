@@ -520,10 +520,106 @@
     margin-right: 0.25rem;
 }
 
+/* ── CC button active state ── */
+.vp-btn.cc-active {
+    background: rgba(59,130,246,0.25);
+    border-color: rgba(59,130,246,0.5);
+    color: #93c5fd;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+.vp-btn.cc-listening {
+    background: rgba(239,68,68,0.2);
+    border-color: rgba(239,68,68,0.45);
+    color: #fca5a5;
+    animation: ccPulse 1.5s ease-in-out infinite;
+}
+@keyframes ccPulse {
+    0%,100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
+    50%      { box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+}
+
+/* ── Caption overlay ── */
+.vp-caption-overlay {
+    position: absolute;
+    bottom: 52px; left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 720px;
+    z-index: 15;
+    pointer-events: none;
+    min-height: 2.2em;
+    text-align: center;
+}
+.vp-caption-text {
+    display: inline-block;
+    background: rgba(0,0,0,0.78);
+    color: #fff;
+    font-size: clamp(0.95rem, 2.5vw, 1.25rem);
+    font-weight: 600;
+    line-height: 1.55;
+    padding: 0.35em 0.9em;
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.vp-caption-text.interim {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* ── Caption status bar (below video) ── */
+.vp-cc-statusbar {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 860px;
+    margin: 0.4rem auto 0;
+    padding: 0.3rem 0.75rem;
+    background: rgba(15,23,42,0.75);
+    border-radius: 0 0 10px 10px;
+    font-size: 0.72rem;
+    color: #64748b;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.vp-cc-statusbar.show { display: flex; }
+.cc-status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #64748b; flex-shrink: 0;
+    transition: background 0.3s;
+}
+.cc-status-dot.listening { background: #ef4444; animation: blinker 1s linear infinite; }
+.cc-status-dot.ready     { background: #22c55e; }
+.cc-status-dot.error     { background: #f59e0b; }
+#ccStatusText { flex: 1; }
+.cc-lang-tag {
+    background: rgba(59,130,246,0.12);
+    color: #93c5fd;
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+.cc-warn {
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.78rem;
+    color: #fcd34d;
+    max-width: 860px;
+    margin: 0.4rem auto 0;
+    display: none;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+.cc-warn.show { display: flex; }
+.cc-warn i { margin-top: 2px; flex-shrink: 0; }
+
 /* Mobile */
 @media (max-width: 575px) {
     .vp-stat { display: none; }
     .vp-shortcuts { display: none; }
+    .vp-caption-text { font-size: 0.9rem; }
 }
 
 /* ── Video section ── */
@@ -983,6 +1079,9 @@
                         </span>
                     </div>
                     <div class="vp-toolbar-right">
+                        <button class="vp-btn" id="vpCcBtn" title="คำบรรยายภาษาไทย (C)">
+                            <i class="fas fa-closed-captioning" id="vpCcIcon"></i>
+                        </button>
                         <button class="vp-btn" id="vpPipBtn" title="Picture-in-Picture (P)">
                             <i class="fas fa-clone"></i>
                         </button>
@@ -1014,6 +1113,24 @@
 
                     <!-- Keyboard hint toast -->
                     <div class="vp-hint" id="vpHint" style="display:none;"></div>
+
+                    <!-- Caption overlay -->
+                    <div class="vp-caption-overlay" id="vpCaptionOverlay" style="display:none;">
+                        <span class="vp-caption-text" id="vpCaptionText"></span>
+                    </div>
+                </div>
+
+                <!-- CC status bar -->
+                <div class="vp-cc-statusbar" id="vpCcStatusbar">
+                    <span class="cc-status-dot" id="ccDot"></span>
+                    <span id="ccStatusText">พร้อมใช้งาน</span>
+                    <span class="cc-lang-tag">TH</span>
+                </div>
+
+                <!-- CC warning (not Chrome) -->
+                <div class="cc-warn" id="ccWarn">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>ฟีเจอร์คำบรรยายรองรับเฉพาะ <strong>Google Chrome</strong> บน Desktop และ Android เท่านั้น</span>
                 </div>
 
                 <!-- ── Shortcut legend ── -->
@@ -1022,6 +1139,7 @@
                     <span><kbd>M</kbd> Mute</span>
                     <span><kbd>F</kbd> Fullscreen</span>
                     <span><kbd>P</kbd> Picture-in-Picture</span>
+                    <span><kbd>C</kbd> คำบรรยาย CC</span>
                 </div>
 
                 <script src="https://unpkg.com/hls.js@latest"></script>
@@ -1091,6 +1209,9 @@
                                 break;
                             case 'KeyP':
                                 pipBtn.click();
+                                break;
+                            case 'KeyC':
+                                if (typeof vpCcToggle === 'function') vpCcToggle();
                                 break;
                         }
                     });
@@ -1229,6 +1350,213 @@
                         video.src = SRC;
                         video.play().catch(()=>{});
                     }
+                })();
+                </script>
+
+                <!-- ══════════════════════════════════════
+                     CAPTION MODULE — captureStream + WAV → Django STT
+                     ดึงเสียงจาก video element โดยตรง (ไม่ผ่านลำโพง/ไมค์)
+                     ปิดลำโพงก็ใช้งานได้ปกติ
+                ══════════════════════════════════════ -->
+                <script>
+                (function () {
+                    const ccBtn       = document.getElementById('vpCcBtn');
+                    const ccOverlay   = document.getElementById('vpCaptionOverlay');
+                    const ccText      = document.getElementById('vpCaptionText');
+                    const ccStatusbar = document.getElementById('vpCcStatusbar');
+                    const ccDot       = document.getElementById('ccDot');
+                    const ccStatus    = document.getElementById('ccStatusText');
+                    const ccWarn      = document.getElementById('ccWarn');
+                    const video       = document.getElementById('my_video');
+
+                    const CAPTION_URL  = "{% url 'caption' %}";
+                    const CHUNK_SECS   = 4;     /* ส่ง STT ทุก 4 วินาที */
+                    const CAPTION_KEEP = 6000;  /* ซ่อน caption หลัง 6 วิ */
+
+                    let isOn     = localStorage.getItem('vp_cc') === 'on';
+                    let isActive = false;
+                    let audioCtx = null, processor = null, dest = null;
+                    let pcmBuf   = [];
+                    let sending  = false;
+                    let clearTimer;
+
+                    /* ── ตรวจสอบว่า browser รองรับ captureStream ── */
+                    const canCapture = !!(video && (video.captureStream || video.mozCaptureStream));
+                    if (!canCapture) {
+                        if (ccBtn) {
+                            ccBtn.style.opacity = '0.35';
+                            ccBtn.style.cursor  = 'not-allowed';
+                            ccBtn.title = 'browser ไม่รองรับ captureStream';
+                            ccBtn.addEventListener('click', () => {
+                                ccWarn.classList.add('show');
+                                setTimeout(() => ccWarn.classList.remove('show'), 4000);
+                            });
+                        }
+                        return;
+                    }
+
+                    /* ════ WAV encoder (browser-side, ไม่ต้องการ ffmpeg) ════
+                       แปลง Float32 PCM → WAV binary ที่ Python SpeechRecognition อ่านได้ */
+                    function encodeWAV(samples, sr) {
+                        /* Float32 → Int16 */
+                        const i16 = new Int16Array(samples.length);
+                        for (let i = 0; i < samples.length; i++) {
+                            const s = Math.max(-1, Math.min(1, samples[i]));
+                            i16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                        }
+                        const buf = new ArrayBuffer(44 + i16.byteLength);
+                        const v   = new DataView(buf);
+                        const ws  = (o, s) => { for (let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+                        ws(0,'RIFF'); v.setUint32(4, 36+i16.byteLength, true);
+                        ws(8,'WAVE'); ws(12,'fmt ');
+                        v.setUint32(16,16,true);   v.setUint16(20,1,true);  /* PCM */
+                        v.setUint16(22,1,true);                              /* mono */
+                        v.setUint32(24,sr,true);   v.setUint32(28,sr*2,true);
+                        v.setUint16(32,2,true);    v.setUint16(34,16,true);
+                        ws(36,'data'); v.setUint32(40,i16.byteLength,true);
+                        new Uint8Array(buf,44).set(new Uint8Array(i16.buffer));
+                        return new Blob([buf], {type:'audio/wav'});
+                    }
+
+                    /* ════ ส่ง WAV → Django /caption/ → รับ text ════ */
+                    async function sendChunk(wav) {
+                        if (sending) return;
+                        sending = true;
+                        try {
+                            const res  = await fetch(CAPTION_URL, {
+                                method : 'POST',
+                                headers: { 'Content-Type': 'audio/wav',
+                                           'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/)||[])[1]||'' },
+                                body   : wav
+                            });
+                            const data = await res.json();
+                            if (data.text && data.text.trim()) {
+                                showCaption(data.text.trim());
+                            }
+                            if (data.error) setStatus('error', '⚠ ' + data.error);
+                        } catch(e) {
+                            setStatus('error', 'เชื่อมต่อ server ไม่ได้');
+                        } finally {
+                            sending = false;
+                        }
+                    }
+
+                    /* ════ เริ่มดักเสียงจาก video element ════ */
+                    function startCapture() {
+                        let stream;
+                        try {
+                            stream = video.captureStream
+                                ? video.captureStream()
+                                : video.mozCaptureStream();
+                        } catch(e) {
+                            setStatus('error', 'captureStream ล้มเหลว: ' + e.message);
+                            isOn = false; syncUI(); return;
+                        }
+
+                        const tracks = stream.getAudioTracks();
+                        if (!tracks.length) {
+                            setStatus('error', 'ไม่พบ audio track — stream อาจยังไม่โหลด');
+                            /* ลอง retry หลังวิดีโอพร้อม */
+                            video.addEventListener('playing', startCapture, {once:true});
+                            return;
+                        }
+
+                        audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+                        const src = audioCtx.createMediaStreamSource(new MediaStream([tracks[0]]));
+                        dest      = audioCtx.createMediaStreamDestination(); /* silent sink */
+                        processor = audioCtx.createScriptProcessor(4096, 1, 1);
+
+                        const chunkSamples = Math.floor(audioCtx.sampleRate * CHUNK_SECS);
+
+                        processor.onaudioprocess = (e) => {
+                            if (!isOn) return;
+                            const ch = e.inputBuffer.getChannelData(0);
+                            for (let i = 0; i < ch.length; i++) pcmBuf.push(ch[i]);
+                            if (pcmBuf.length >= chunkSamples) {
+                                const chunk = new Float32Array(pcmBuf.splice(0, chunkSamples));
+                                sendChunk(encodeWAV(chunk, audioCtx.sampleRate));
+                            }
+                        };
+
+                        src.connect(processor);
+                        processor.connect(dest); /* ไม่ผ่านลำโพง */
+
+                        isActive = true;
+                        setStatus('listening', 'กำลังรับเสียงจากวิดีโอ (ปิดลำโพงได้)');
+                        syncUI();
+                    }
+
+                    /* ════ หยุดดักเสียง ════ */
+                    function stopCapture() {
+                        if (processor) { try { processor.disconnect(); } catch(_){} processor = null; }
+                        if (audioCtx)  { try { audioCtx.close(); }      catch(_){} audioCtx  = null; }
+                        pcmBuf   = [];
+                        isActive = false;
+                    }
+
+                    /* ════ UI helpers ════ */
+                    function setStatus(state, msg) {
+                        if(ccDot)    ccDot.className  = 'cc-status-dot ' + state;
+                        if(ccStatus) ccStatus.textContent = msg;
+                    }
+
+                    function showCaption(text) {
+                        ccText.textContent = text;
+                        ccText.className   = 'vp-caption-text';
+                        ccOverlay.style.display = 'block';
+                        clearTimeout(clearTimer);
+                        clearTimer = setTimeout(() => {
+                            ccOverlay.style.display = 'none';
+                            ccText.textContent = '';
+                        }, CAPTION_KEEP);
+                    }
+
+                    function clearCaption() {
+                        clearTimeout(clearTimer);
+                        ccOverlay.style.display = 'none';
+                        ccText.textContent = '';
+                    }
+
+                    function syncUI() {
+                        if (!ccBtn) return;
+                        if (!isOn) {
+                            ccBtn.classList.remove('cc-active','cc-listening');
+                            ccStatusbar.classList.remove('show');
+                            clearCaption();
+                            localStorage.setItem('vp_cc','off');
+                        } else if (isActive) {
+                            ccBtn.classList.remove('cc-active');
+                            ccBtn.classList.add('cc-listening');
+                            ccStatusbar.classList.add('show');
+                            localStorage.setItem('vp_cc','on');
+                        } else {
+                            ccBtn.classList.add('cc-active');
+                            ccBtn.classList.remove('cc-listening');
+                            ccStatusbar.classList.add('show');
+                            setStatus('ready','เปิด CC — รอ video โหลด...');
+                            localStorage.setItem('vp_cc','on');
+                        }
+                    }
+
+                    /* ════ Toggle ════ */
+                    window.vpCcToggle = function() {
+                        isOn = !isOn;
+                        if (isOn) { startCapture(); }
+                        else      { stopCapture();  }
+                        syncUI();
+                    };
+
+                    if (ccBtn) ccBtn.addEventListener('click', vpCcToggle);
+
+                    /* auto-start ถ้าเคยเปิดไว้ */
+                    if (isOn) { startCapture(); } else { syncUI(); }
+
+                    /* cleanup เมื่อออกจากหน้า */
+                    window.addEventListener('beforeunload', stopCapture);
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.hidden)  stopCapture();
+                        else if (isOn)        startCapture();
+                    });
                 })();
                 </script>
 

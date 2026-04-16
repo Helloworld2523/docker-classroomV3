@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import io
 from urllib import request
 
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -20,6 +21,7 @@ from django_ratelimit.decorators import ratelimit
 from django.views.decorators.cache import cache_page
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt
 #from django.db.models import Q
 
 # --- helper: path to schedule JSON ---
@@ -372,6 +374,45 @@ def test_error_500(request):
     # โค้ดนี้ตั้งใจทำให้เกิด ZeroDivisionError
     1 / 0
     return HttpResponse("This will never be reached")
+
+
+@csrf_exempt
+def caption_view(request):
+    """
+    รับ audio/wav (WAV bytes) จาก browser → ส่ง Google STT → คืน JSON { text }
+    ใช้ SpeechRecognition library (recognize_google, ไม่ต้องมี API key)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST only'}, status=405)
+
+    audio_data = request.body
+    if len(audio_data) < 44:          # WAV header = 44 bytes ขั้นต่ำ
+        return JsonResponse({'text': ''})
+
+    try:
+        import speech_recognition as sr
+    except ImportError:
+        return JsonResponse({'error': 'SpeechRecognition not installed'}, status=503)
+
+    recognizer = sr.Recognizer()
+    recognizer.energy_threshold = 200        # ลด threshold สำหรับเสียงจากวิดีโอ
+    recognizer.dynamic_energy_threshold = True
+
+    try:
+        audio_file = io.BytesIO(audio_data)
+        with sr.AudioFile(audio_file) as source:
+            audio = recognizer.record(source)
+
+        text = recognizer.recognize_google(audio, language='th-TH')
+        return JsonResponse({'text': text})
+
+    except sr.UnknownValueError:
+        # เงียบหรือไม่เข้าใจ — คืน text ว่างเปล่า (ไม่ใช่ error)
+        return JsonResponse({'text': ''})
+    except sr.RequestError as e:
+        return JsonResponse({'error': f'Google STT unavailable: {e}'}, status=503)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 def not_available(request):
