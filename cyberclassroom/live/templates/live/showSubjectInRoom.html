@@ -1354,9 +1354,8 @@
                 </script>
 
                 <!-- ══════════════════════════════════════
-                     CAPTION MODULE — captureStream + WAV → Django STT
-                     ดึงเสียงจาก video element โดยตรง (ไม่ผ่านลำโพง/ไมค์)
-                     ปิดลำโพงก็ใช้งานได้ปกติ
+                     CAPTION MODULE v2 — captureStream + WAV → Django STT
+                     ดึงเสียงจาก video element โดยตรง (ปิดลำโพงได้)
                 ══════════════════════════════════════ -->
                 <script>
                 (function () {
@@ -1370,35 +1369,32 @@
                     const video       = document.getElementById('my_video');
 
                     const CAPTION_URL  = "{% url 'caption' %}";
-                    const CHUNK_SECS   = 4;     /* ส่ง STT ทุก 4 วินาที */
-                    const CAPTION_KEEP = 6000;  /* ซ่อน caption หลัง 6 วิ */
+                    const CHUNK_SECS   = 4;
+                    const CAPTION_KEEP = 7000;
 
-                    let isOn     = localStorage.getItem('vp_cc') === 'on';
+                    let isOn     = false;   /* ไม่ auto-start จาก localStorage เพราะ AudioContext ต้องการ user gesture */
                     let isActive = false;
-                    let audioCtx = null, processor = null, dest = null;
+                    let audioCtx = null, processor = null;
                     let pcmBuf   = [];
                     let sending  = false;
-                    let clearTimer;
+                    let clearTimer, chunkCount = 0;
 
-                    /* ── ตรวจสอบว่า browser รองรับ captureStream ── */
+                    /* ── browser support check ── */
                     const canCapture = !!(video && (video.captureStream || video.mozCaptureStream));
                     if (!canCapture) {
                         if (ccBtn) {
-                            ccBtn.style.opacity = '0.35';
+                            ccBtn.style.opacity = '0.4';
                             ccBtn.style.cursor  = 'not-allowed';
                             ccBtn.title = 'browser ไม่รองรับ captureStream';
                             ccBtn.addEventListener('click', () => {
-                                ccWarn.classList.add('show');
-                                setTimeout(() => ccWarn.classList.remove('show'), 4000);
+                                if (ccWarn) { ccWarn.classList.add('show'); setTimeout(()=>ccWarn.classList.remove('show'),4000); }
                             });
                         }
                         return;
                     }
 
-                    /* ════ WAV encoder (browser-side, ไม่ต้องการ ffmpeg) ════
-                       แปลง Float32 PCM → WAV binary ที่ Python SpeechRecognition อ่านได้ */
+                    /* ════ WAV encoder — Float32 PCM → WAV Blob ════ */
                     function encodeWAV(samples, sr) {
-                        /* Float32 → Int16 */
                         const i16 = new Int16Array(samples.length);
                         for (let i = 0; i < samples.length; i++) {
                             const s = Math.max(-1, Math.min(1, samples[i]));
@@ -1406,72 +1402,93 @@
                         }
                         const buf = new ArrayBuffer(44 + i16.byteLength);
                         const v   = new DataView(buf);
-                        const ws  = (o, s) => { for (let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
-                        ws(0,'RIFF'); v.setUint32(4, 36+i16.byteLength, true);
-                        ws(8,'WAVE'); ws(12,'fmt ');
-                        v.setUint32(16,16,true);   v.setUint16(20,1,true);  /* PCM */
-                        v.setUint16(22,1,true);                              /* mono */
-                        v.setUint32(24,sr,true);   v.setUint32(28,sr*2,true);
-                        v.setUint16(32,2,true);    v.setUint16(34,16,true);
+                        const ws  = (o,s) => { for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+                        ws(0,'RIFF'); v.setUint32(4,36+i16.byteLength,true); ws(8,'WAVE');
+                        ws(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+                        v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
                         ws(36,'data'); v.setUint32(40,i16.byteLength,true);
                         new Uint8Array(buf,44).set(new Uint8Array(i16.buffer));
-                        return new Blob([buf], {type:'audio/wav'});
+                        return new Blob([buf],{type:'audio/wav'});
                     }
 
-                    /* ════ ส่ง WAV → Django /caption/ → รับ text ════ */
+                    /* ════ ส่ง WAV → /caption/ → แสดง text ════ */
                     async function sendChunk(wav) {
                         if (sending) return;
                         sending = true;
+                        chunkCount++;
+                        setStatus('listening', `ส่ง chunk #${chunkCount} (${(wav.size/1024).toFixed(0)} KB) → STT...`);
                         try {
                             const res  = await fetch(CAPTION_URL, {
                                 method : 'POST',
-                                headers: { 'Content-Type': 'audio/wav',
-                                           'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/)||[])[1]||'' },
-                                body   : wav
+                                headers: {
+                                    'Content-Type': 'audio/wav',
+                                    'X-CSRFToken' : (document.cookie.match(/csrftoken=([^;]+)/)||[])[1]||''
+                                },
+                                body: wav
                             });
                             const data = await res.json();
                             if (data.text && data.text.trim()) {
                                 showCaption(data.text.trim());
+                                setStatus('listening', `✓ #${chunkCount} — กำลังฟังต่อ...`);
+                            } else if (data.error) {
+                                setStatus('error', '⚠ ' + data.error);
+                            } else {
+                                setStatus('listening', `#${chunkCount} — เงียบ / รอเสียงต่อ...`);
                             }
-                            if (data.error) setStatus('error', '⚠ ' + data.error);
                         } catch(e) {
-                            setStatus('error', 'เชื่อมต่อ server ไม่ได้');
+                            setStatus('error', 'server error: ' + e.message);
                         } finally {
                             sending = false;
                         }
                     }
 
-                    /* ════ เริ่มดักเสียงจาก video element ════ */
+                    /* ════ เริ่มดักเสียง ════ */
                     function startCapture() {
+                        if (isActive) return;
+
+                        /* ── get audio stream from video ── */
                         let stream;
                         try {
                             stream = video.captureStream
                                 ? video.captureStream()
                                 : video.mozCaptureStream();
                         } catch(e) {
-                            setStatus('error', 'captureStream ล้มเหลว: ' + e.message);
+                            setStatus('error', 'captureStream: ' + e.message);
                             isOn = false; syncUI(); return;
                         }
 
                         const tracks = stream.getAudioTracks();
                         if (!tracks.length) {
-                            setStatus('error', 'ไม่พบ audio track — stream อาจยังไม่โหลด');
-                            /* ลอง retry หลังวิดีโอพร้อม */
+                            /* video ยังไม่มีเสียง — รอแล้ว retry */
+                            setStatus('ready', 'รอ video เริ่มเล่น...');
                             video.addEventListener('playing', startCapture, {once:true});
                             return;
                         }
 
-                        audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
-                        const src = audioCtx.createMediaStreamSource(new MediaStream([tracks[0]]));
-                        dest      = audioCtx.createMediaStreamDestination(); /* silent sink */
-                        processor = audioCtx.createScriptProcessor(4096, 1, 1);
+                        /* ── สร้าง AudioContext + resume (สำคัญ!) ── */
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        audioCtx.resume();   /* แก้ Chrome suspended state */
+
+                        const src      = audioCtx.createMediaStreamSource(new MediaStream([tracks[0]]));
+                        processor      = audioCtx.createScriptProcessor(4096, 1, 1);
+
+                        /* ── GainNode(0) → destination เพื่อให้ onaudioprocess ทำงาน ── */
+                        /* (ต้องต่อถึง audioCtx.destination ถึงจะ fire ใน Chrome)       */
+                        const silencer = audioCtx.createGain();
+                        silencer.gain.value = 0;   /* ไม่ออกลำโพง */
 
                         const chunkSamples = Math.floor(audioCtx.sampleRate * CHUNK_SECS);
+                        let   fireCount    = 0;
 
                         processor.onaudioprocess = (e) => {
                             if (!isOn) return;
+                            fireCount++;
+                            /* แสดงสัญลักษณ์ว่า onaudioprocess กำลัง fire */
+                            if (fireCount === 1) setStatus('listening','✓ AudioContext ทำงานแล้ว — รอรวบรวมเสียง...');
+
                             const ch = e.inputBuffer.getChannelData(0);
                             for (let i = 0; i < ch.length; i++) pcmBuf.push(ch[i]);
+
                             if (pcmBuf.length >= chunkSamples) {
                                 const chunk = new Float32Array(pcmBuf.splice(0, chunkSamples));
                                 sendChunk(encodeWAV(chunk, audioCtx.sampleRate));
@@ -1479,10 +1496,11 @@
                         };
 
                         src.connect(processor);
-                        processor.connect(dest); /* ไม่ผ่านลำโพง */
+                        processor.connect(silencer);
+                        silencer.connect(audioCtx.destination);  /* key: ต่อถึง destination */
 
                         isActive = true;
-                        setStatus('listening', 'กำลังรับเสียงจากวิดีโอ (ปิดลำโพงได้)');
+                        setStatus('listening', 'เชื่อมต่อแล้ว — รอ AudioContext...');
                         syncUI();
                     }
 
@@ -1490,19 +1508,18 @@
                     function stopCapture() {
                         if (processor) { try { processor.disconnect(); } catch(_){} processor = null; }
                         if (audioCtx)  { try { audioCtx.close(); }      catch(_){} audioCtx  = null; }
-                        pcmBuf   = [];
-                        isActive = false;
+                        pcmBuf = []; isActive = false; chunkCount = 0;
                     }
 
-                    /* ════ UI helpers ════ */
+                    /* ════ UI ════ */
                     function setStatus(state, msg) {
-                        if(ccDot)    ccDot.className  = 'cc-status-dot ' + state;
-                        if(ccStatus) ccStatus.textContent = msg;
+                        if (ccDot)    ccDot.className   = 'cc-status-dot ' + state;
+                        if (ccStatus) ccStatus.textContent = msg;
                     }
 
                     function showCaption(text) {
-                        ccText.textContent = text;
-                        ccText.className   = 'vp-caption-text';
+                        ccText.textContent      = text;
+                        ccText.className        = 'vp-caption-text';
                         ccOverlay.style.display = 'block';
                         clearTimeout(clearTimer);
                         clearTimer = setTimeout(() => {
@@ -1523,39 +1540,33 @@
                             ccBtn.classList.remove('cc-active','cc-listening');
                             ccStatusbar.classList.remove('show');
                             clearCaption();
-                            localStorage.setItem('vp_cc','off');
                         } else if (isActive) {
                             ccBtn.classList.remove('cc-active');
                             ccBtn.classList.add('cc-listening');
                             ccStatusbar.classList.add('show');
-                            localStorage.setItem('vp_cc','on');
                         } else {
                             ccBtn.classList.add('cc-active');
                             ccBtn.classList.remove('cc-listening');
                             ccStatusbar.classList.add('show');
-                            setStatus('ready','เปิด CC — รอ video โหลด...');
-                            localStorage.setItem('vp_cc','on');
                         }
                     }
 
-                    /* ════ Toggle ════ */
+                    /* ════ Toggle (เรียกจากปุ่มหรือ keyboard) ════ */
                     window.vpCcToggle = function() {
                         isOn = !isOn;
-                        if (isOn) { startCapture(); }
-                        else      { stopCapture();  }
+                        if (isOn)  startCapture();
+                        else      { stopCapture(); clearCaption(); }
                         syncUI();
                     };
 
                     if (ccBtn) ccBtn.addEventListener('click', vpCcToggle);
 
-                    /* auto-start ถ้าเคยเปิดไว้ */
-                    if (isOn) { startCapture(); } else { syncUI(); }
+                    /* ไม่ auto-start — รอ user click เสมอ (AudioContext policy) */
+                    syncUI();
 
-                    /* cleanup เมื่อออกจากหน้า */
                     window.addEventListener('beforeunload', stopCapture);
                     document.addEventListener('visibilitychange', () => {
-                        if (document.hidden)  stopCapture();
-                        else if (isOn)        startCapture();
+                        if (document.hidden && isActive) stopCapture();
                     });
                 })();
                 </script>

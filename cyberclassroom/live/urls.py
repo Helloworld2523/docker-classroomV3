@@ -15,6 +15,7 @@ urlpatterns = [
     # path('not-available/', views.not_available, name='not_available'),
     path('live-monitor/', views.live_monitor_view, name='live_monitor'),
     path('viewer-data/', views.live_viewer_data, name='live_viewer_data'),
+    path('monitor-sse/', views.monitor_sse, name='monitor_sse'),  # SSE real-time push
     path('schedule-editor/', views.schedule_editor, name='schedule_editor'),
     path('caption/', views.caption_view, name='caption'),  # Thai STT endpoint
     

@@ -2,10 +2,11 @@ import datetime
 import json
 import os
 import io
+import time as time_module
 from urllib import request
 
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.http import HttpResponse,JsonResponse
+from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from datetime import datetime
 
@@ -460,14 +461,63 @@ def live_monitor_view(request):
 
     return render(request, 'live/monitor.html', context)
 
+@staff_member_required
+def monitor_sse(request):
+    """
+    Server-Sent Events: push ข้อมูลผู้ชมทันทีที่ตัวเลขเปลี่ยน
+    - ส่งข้อมูลทันทีถ้า viewer_count เปลี่ยน
+    - ส่ง keepalive comment ทุก 15 วิ เพื่อกัน proxy timeout
+    - จบ connection เองใน 50 วิ (ต่ำกว่า harakiri=60) แล้ว EventSource reconnect อัตโนมัติ
+    """
+    def event_stream():
+        last_snapshot = None
+        start = time_module.time()
+        MAX_DURATION = 50  # วินาที — ต่ำกว่า harakiri=60
+
+        while time_module.time() - start < MAX_DURATION:
+            rooms = LiveClassroom.objects.filter(room_status='1')
+            data = [
+                {'room_name': r.room_name, 'viewer_count': r.viewer_count or 0}
+                for r in rooms
+            ]
+            data_str = json.dumps(data, ensure_ascii=False)
+
+            if data_str != last_snapshot:
+                last_snapshot = data_str
+                yield f'data: {data_str}\n\n'
+            else:
+                # keepalive comment (ไม่ trigger onmessage)
+                elapsed = int(time_module.time() - start)
+                if elapsed % 15 == 0:
+                    yield ': keepalive\n\n'
+
+            time_module.sleep(1)
+
+        # จบ gracefully — EventSource จะ reconnect อัตโนมัติภายใน 3 วิ
+        yield ': reconnect\n\n'
+
+    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream; charset=utf-8')
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'   # บอก Nginx อย่า buffer response นี้
+    return response
+
+
 @require_GET
 @staff_member_required
 def live_viewer_data(request):
     rooms = LiveClassroom.objects.filter(room_status="1")
-    data = []
-    for room in rooms:
-        data.append({
+
+    # LiveClassroom ไม่มี field viewer_count — ต้องดึงจาก Count model แยก
+    viewer_map = {
+        c.room_name.strip().lower(): int(c.sessions_total) if str(c.sessions_total).isdigit() else 0
+        for c in Count.objects.all()
+    }
+
+    data = [
+        {
             'room_name': room.room_name,
-            'viewer_count': room.viewer_count if room.viewer_count else 0,
-        })
+            'viewer_count': viewer_map.get(room.room_name.strip().lower(), 0),
+        }
+        for room in rooms
+    ]
     return JsonResponse({'data': data})
