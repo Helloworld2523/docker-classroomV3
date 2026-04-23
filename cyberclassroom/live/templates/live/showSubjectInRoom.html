@@ -1368,15 +1368,19 @@
                     const ccWarn      = document.getElementById('ccWarn');
                     const video       = document.getElementById('my_video');
 
-                    const CAPTION_URL  = "{% url 'caption' %}";
+                    const CAPTION_URL  = "{% url 'caption' %}";   /* = /caption/ */
+                    console.log('[CC] CAPTION_URL =', CAPTION_URL);  /* ตรวจ URL จริงใน console */
                     const CHUNK_SECS   = 4;
                     const CAPTION_KEEP = 7000;
 
-                    let isOn     = false;   /* ไม่ auto-start จาก localStorage เพราะ AudioContext ต้องการ user gesture */
-                    let isActive = false;
-                    let audioCtx = null, processor = null;
-                    let pcmBuf   = [];
-                    let sending  = false;
+                    let isOn             = false;
+                    let isActive         = false;
+                    let audioCtx         = null;
+                    let mediaRecorder    = null;
+                    let recTimerId       = null;
+                    let sending          = false;
+                    let pcmBuf           = [];      /* สะสม PCM ข้ามหลาย MediaRecorder chunk */
+                    let detectedSR       = 48000;   /* sample rate จริงจาก decodeAudioData */
                     let clearTimer, chunkCount = 0;
 
                     /* ── browser support check ── */
@@ -1419,13 +1423,15 @@
                         setStatus('listening', `ส่ง chunk #${chunkCount} (${(wav.size/1024).toFixed(0)} KB) → STT...`);
                         try {
                             const res  = await fetch(CAPTION_URL, {
-                                method : 'POST',
-                                headers: {
+                                method  : 'POST',
+                                redirect: 'error',          /* ถ้า Django redirect (APPEND_SLASH) ให้ throw ทันที ไม่ follow เป็น GET */
+                                headers : {
                                     'Content-Type': 'audio/wav',
                                     'X-CSRFToken' : (document.cookie.match(/csrftoken=([^;]+)/)||[])[1]||''
                                 },
                                 body: wav
                             });
+                            console.log('[CC] response status:', res.status, res.url);
                             const data = await res.json();
                             if (data.text && data.text.trim()) {
                                 showCaption(data.text.trim());
@@ -1442,73 +1448,137 @@
                         }
                     }
 
-                    /* ════ เริ่มดักเสียง ════ */
+                    /* ════ เริ่มดักเสียง — ใช้ MediaRecorder (เชื่อถือได้ใน Chrome) ════ */
                     function startCapture() {
                         if (isActive) return;
 
-                        /* ── get audio stream from video ── */
+                        /* ── ดึง stream จาก video element ── */
                         let stream;
                         try {
                             stream = video.captureStream
                                 ? video.captureStream()
                                 : video.mozCaptureStream();
                         } catch(e) {
-                            setStatus('error', 'captureStream: ' + e.message);
+                            setStatus('error', 'captureStream ล้มเหลว: ' + e.message);
+                            console.error('[CC] captureStream error:', e);
                             isOn = false; syncUI(); return;
                         }
 
+                        /* ── ตรวจ audio tracks ── */
                         const tracks = stream.getAudioTracks();
+                        console.log('[CC] tracks ทั้งหมด:', stream.getTracks().length,
+                                    '| audio:', tracks.length,
+                                    '| video readyState:', video.readyState,
+                                    '| paused:', video.paused);
+
                         if (!tracks.length) {
-                            /* video ยังไม่มีเสียง — รอแล้ว retry */
                             setStatus('ready', 'รอ video เริ่มเล่น...');
                             video.addEventListener('playing', startCapture, {once:true});
                             return;
                         }
 
-                        /* ── สร้าง AudioContext + resume (สำคัญ!) ── */
+                        /* ── เลือก mimeType ที่ Chrome รองรับ ── */
+                        const mimeType = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg']
+                            .find(t => MediaRecorder.isTypeSupported(t)) || '';
+                        console.log('[CC] mimeType:', mimeType || '(browser default)');
+
+                        /* ── AudioContext (ใช้สำหรับ decodeAudioData แปลง webm → PCM → WAV) ── */
                         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                        audioCtx.resume();   /* แก้ Chrome suspended state */
+                        audioCtx.resume();
 
-                        const src      = audioCtx.createMediaStreamSource(new MediaStream([tracks[0]]));
-                        processor      = audioCtx.createScriptProcessor(4096, 1, 1);
-
-                        /* ── GainNode(0) → destination เพื่อให้ onaudioprocess ทำงาน ── */
-                        /* (ต้องต่อถึง audioCtx.destination ถึงจะ fire ใน Chrome)       */
-                        const silencer = audioCtx.createGain();
-                        silencer.gain.value = 0;   /* ไม่ออกลำโพง */
-
-                        const chunkSamples = Math.floor(audioCtx.sampleRate * CHUNK_SECS);
-                        let   fireCount    = 0;
-
-                        processor.onaudioprocess = (e) => {
-                            if (!isOn) return;
-                            fireCount++;
-                            /* แสดงสัญลักษณ์ว่า onaudioprocess กำลัง fire */
-                            if (fireCount === 1) setStatus('listening','✓ AudioContext ทำงานแล้ว — รอรวบรวมเสียง...');
-
-                            const ch = e.inputBuffer.getChannelData(0);
-                            for (let i = 0; i < ch.length; i++) pcmBuf.push(ch[i]);
-
-                            if (pcmBuf.length >= chunkSamples) {
-                                const chunk = new Float32Array(pcmBuf.splice(0, chunkSamples));
-                                sendChunk(encodeWAV(chunk, audioCtx.sampleRate));
-                            }
-                        };
-
-                        src.connect(processor);
-                        processor.connect(silencer);
-                        silencer.connect(audioCtx.destination);  /* key: ต่อถึง destination */
+                        /* ── สร้าง MediaRecorder ── */
+                        try {
+                            mediaRecorder = new MediaRecorder(
+                                new MediaStream([tracks[0]]),
+                                mimeType ? {mimeType} : {}
+                            );
+                        } catch(e) {
+                            setStatus('error', 'MediaRecorder: ' + e.message);
+                            console.error('[CC] MediaRecorder error:', e);
+                            isOn = false; syncUI(); return;
+                        }
 
                         isActive = true;
-                        setStatus('listening', 'เชื่อมต่อแล้ว — รอ AudioContext...');
+                        setStatus('listening', '🎙 เริ่มบันทึกเสียง...');
                         syncUI();
+                        recordLoop();   /* เริ่ม record loop */
+                    }
+
+                    /* ════ record loop ════
+                       HLS.js MSE stream ให้ audio chunk สั้นๆ ต่อครั้ง (~0.3-0.5s)
+                       แก้โดย: สะสม PCM หลายรอบ → ส่ง STT เมื่อมีเสียงพอ (CHUNK_SECS วิ)
+                    ════ */
+                    function recordLoop() {
+                        if (!isOn || !mediaRecorder || mediaRecorder.state !== 'inactive') return;
+
+                        const chunks = [];
+
+                        mediaRecorder.ondataavailable = (e) => {
+                            if (e.data && e.data.size > 0) chunks.push(e.data);
+                        };
+
+                        mediaRecorder.onstop = async () => {
+                            if (!isOn) return;
+
+                            const blob = new Blob(chunks, {type: mediaRecorder.mimeType || 'audio/webm'});
+
+                            if (blob.size > 200) {   /* ไม่ใช่ chunk ว่าง */
+                                try {
+                                    const arrayBuf = await blob.arrayBuffer();
+                                    const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
+                                    detectedSR     = audioBuf.sampleRate;
+
+                                    /* สะสม PCM ต่อกัน */
+                                    const samples = audioBuf.getChannelData(0);
+                                    for (let i = 0; i < samples.length; i++) pcmBuf.push(samples[i]);
+
+                                    const targetSamples = detectedSR * CHUNK_SECS;
+                                    const bufferedSecs  = (pcmBuf.length / detectedSR).toFixed(1);
+
+                                    console.log(`[CC] สะสม ${bufferedSecs}/${CHUNK_SECS}s` +
+                                                ` (blob ${(blob.size/1024).toFixed(0)} KB)`);
+
+                                    if (pcmBuf.length >= targetSamples) {
+                                        /* มีเสียงพอแล้ว → ส่ง STT */
+                                        const chunk = new Float32Array(pcmBuf.splice(0, targetSamples));
+                                        chunkCount++;
+                                        setStatus('listening',
+                                            `ส่ง #${chunkCount} (${CHUNK_SECS}s) → STT...`);
+                                        await sendChunk(encodeWAV(chunk, detectedSR));
+                                    } else {
+                                        setStatus('listening',
+                                            `🎙 รวบรวมเสียง ${bufferedSecs} / ${CHUNK_SECS} วิ...`);
+                                    }
+                                } catch(err) {
+                                    console.error('[CC] decode error:', err);
+                                    /* ถ้า decode ล้มเหลวให้ข้ามและวนต่อ */
+                                }
+                            }
+
+                            /* วนซ้ำทันที */
+                            if (isOn) setTimeout(recordLoop, 50);
+                        };
+
+                        mediaRecorder.start();
+
+                        /* หยุดหลัง 1.5 วิ เพื่อรับ chunk ใหม่เร็วๆ และสะสมจนพอ */
+                        recTimerId = setTimeout(() => {
+                            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                                mediaRecorder.stop();
+                            }
+                        }, 1500);
                     }
 
                     /* ════ หยุดดักเสียง ════ */
                     function stopCapture() {
-                        if (processor) { try { processor.disconnect(); } catch(_){} processor = null; }
-                        if (audioCtx)  { try { audioCtx.close(); }      catch(_){} audioCtx  = null; }
-                        pcmBuf = []; isActive = false; chunkCount = 0;
+                        if (recTimerId)    { clearTimeout(recTimerId); recTimerId = null; }
+                        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                            try { mediaRecorder.stop(); } catch(_){}
+                        }
+                        mediaRecorder = null;
+                        if (audioCtx)  { try { audioCtx.close(); } catch(_){} audioCtx = null; }
+                        pcmBuf = [];   /* ล้าง PCM buffer สะสม */
+                        isActive = false; chunkCount = 0;
                     }
 
                     /* ════ UI ════ */

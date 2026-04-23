@@ -10,12 +10,18 @@ class LearningHoursMiddleware:
         print("📄 PATH =", request.path)
         print("🕒 NOW =", datetime.now().strftime('%H:%M:%S'))
 
-        # ✅ ยกเว้นเส้นทาง /admin และ static/media
-        if request.path.startswith('/admin/') or request.path.startswith('/static/') or request.path.startswith('/media/') or request.path.startswith('/live-monitor/'):
-            return self.get_response(request)
-
-        # ✅ ถ้ายกเว้น API บาง path เช่น /get-live-viewers/
-        if request.path.startswith('/get-live-viewers/'):
+        # ✅ ยกเว้น path ที่ไม่ต้องการตรวจสอบเวลาเรียน
+        EXEMPT_PREFIXES = (
+            '/admin/',
+            '/static/',
+            '/media/',
+            '/live-monitor/',
+            '/get-live-viewers/',
+            '/caption/',       # STT endpoint — ต้องใช้ได้ทุกเวลา (กดจาก video ขณะเรียน)
+            '/viewer-data/',   # Monitor API polling
+            '/monitor-sse/',   # Monitor SSE
+        )
+        if request.path.startswith(EXEMPT_PREFIXES):
             return self.get_response(request)
 
         now = datetime.now().time()
