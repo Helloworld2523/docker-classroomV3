@@ -1,0 +1,262 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'live/admin_classrooms.css' %}">
+  <style>
+    .analytics-wrap { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin-bottom: 24px; }
+    .analytics-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .analytics-title { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin:0; }
+    .analytics-meta  { font-size:0.7rem; color:#94a3b8; }
+
+    /* skeleton shimmer */
+    @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+    .skeleton {
+      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+    }
+
+    /* stat cards */
+    .stat-cards { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+    .stat-card  { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px 20px; min-width:130px; flex:1; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+    .stat-card .val { font-size:1.9rem; font-weight:800; color:#1e293b; line-height:1; margin-bottom:4px; }
+    .stat-card .lbl { font-size:0.73rem; color:#64748b; }
+    .stat-card.accent-blue  .val { color:#2563eb; }
+    .stat-card.accent-green .val { color:#16a34a; }
+    .stat-card.accent-red   .val { color:#dc2626; }
+    .stat-card.accent-amber .val { color:#d97706; }
+    .val-skeleton { display:inline-block; width:60px; height:30px; vertical-align:middle; }
+
+    /* grid */
+    .analytics-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+    @media(max-width:900px){ .analytics-grid{grid-template-columns:1fr;} }
+    .analytics-panel { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+    .panel-title { font-size:0.78rem; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.06em; margin:0 0 12px; padding-bottom:8px; border-bottom:1px solid #f1f5f9; }
+
+    /* bar chart rows */
+    .bar-row   { display:flex; align-items:center; gap:8px; margin-bottom:7px; font-size:0.8rem; }
+    .bar-label { width:90px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#334155; font-size:0.77rem; }
+    .bar-track { flex:1; background:#f1f5f9; border-radius:4px; height:16px; overflow:hidden; }
+    .bar-fill  { height:100%; border-radius:4px; background:linear-gradient(90deg,#3b82f6,#60a5fa); transition:width .4s ease; min-width:2px; }
+    .bar-fill.green { background:linear-gradient(90deg,#22c55e,#86efac); }
+    .bar-fill.amber { background:linear-gradient(90deg,#f59e0b,#fcd34d); }
+    .bar-count { width:46px; text-align:right; color:#64748b; font-size:0.75rem; flex-shrink:0; }
+
+    /* 7-day trend */
+    .trend-bars { display:flex; align-items:flex-end; gap:6px; height:80px; padding-bottom:2px; }
+    .trend-col  { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .trend-bar  { width:100%; border-radius:3px 3px 0 0; background:linear-gradient(180deg,#3b82f6,#93c5fd); min-height:3px; }
+    .trend-bar.today-bar { background:linear-gradient(180deg,#dc2626,#fca5a5); }
+    .trend-date  { font-size:0.62rem; color:#94a3b8; white-space:nowrap; }
+    .trend-count { font-size:0.62rem; color:#64748b; }
+    .trend-skeleton { flex:1; height:40px; border-radius:3px; }
+
+    /* location */
+    .loc-row   { display:flex; align-items:center; justify-content:space-between; padding:5px 0; border-bottom:1px solid #f8fafc; font-size:0.8rem; }
+    .loc-name  { color:#334155; }
+    .loc-count { background:#eff6ff; color:#2563eb; border-radius:999px; padding:1px 10px; font-size:0.73rem; font-weight:700; }
+
+    /* error state */
+    .analytics-error { color:#ef4444; font-size:0.8rem; padding:8px; background:#fef2f2; border-radius:6px; }
+
+    /* refresh btn */
+    .btn-refresh { font-size:0.72rem; color:#94a3b8; background:none; border:1px solid #e2e8f0; border-radius:4px; padding:2px 8px; cursor:pointer; }
+    .btn-refresh:hover { color:#475569; border-color:#94a3b8; }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-wrap" id="analyticsWrap">
+
+  <div class="analytics-header">
+    <p class="analytics-title">📊 Analytics Dashboard — บันทึกการเข้าห้องเรียน</p>
+    <span class="analytics-meta" id="analyticsMeta">⏳ กำลังโหลด...</span>
+  </div>
+
+  {# ── Stat cards (skeleton) ── #}
+  <div class="stat-cards">
+    <div class="stat-card accent-red">
+      <div class="val"><span class="skeleton val-skeleton" id="s_today">&nbsp;</span></div>
+      <div class="lbl" id="l_today">📅 วันนี้</div>
+    </div>
+    <div class="stat-card accent-blue">
+      <div class="val"><span class="skeleton val-skeleton" id="s_unique">&nbsp;</span></div>
+      <div class="lbl">👤 IP ไม่ซ้ำวันนี้</div>
+    </div>
+    <div class="stat-card accent-green">
+      <div class="val"><span class="skeleton val-skeleton" id="s_month">&nbsp;</span></div>
+      <div class="lbl" id="l_month">📆 เดือนนี้</div>
+    </div>
+  </div>
+
+  {# ── Grid ── #}
+  <div class="analytics-grid">
+
+    <div class="analytics-panel">
+      <p class="panel-title">📈 7 วันล่าสุด</p>
+      <div class="trend-bars" id="trendBars">
+        {% for i in "1234567" %}
+          <div class="trend-col">
+            <span class="trend-count">&nbsp;</span>
+            <div class="trend-bar skeleton trend-skeleton"></div>
+            <span class="trend-date">--/--</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="analytics-panel">
+      <p class="panel-title">🏫 สถานที่ยอดนิยม</p>
+      <div id="locList">
+        {% for i in "12345" %}
+          <div class="loc-row">
+            <span class="loc-name skeleton" style="width:120px;height:14px;display:inline-block;">&nbsp;</span>
+            <span class="loc-count skeleton" style="width:36px;height:14px;display:inline-block;">&nbsp;</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="analytics-panel" style="margin-bottom:20px;" id="topCoursesPanel">
+    <p class="panel-title">🏆 Top 10 วิชาที่เข้าชมมากที่สุด <span id="topCourseMonth" style="font-weight:400;text-transform:none;"></span></p>
+    <div id="topCoursesBars">
+      {% for i in "1234567890" %}
+        <div class="bar-row">
+          <span class="bar-label skeleton" style="height:14px;display:inline-block;">&nbsp;</span>
+          <div class="bar-track"><div class="bar-fill skeleton" style="width:60%;"></div></div>
+          <span class="bar-count skeleton" style="height:14px;display:inline-block;">&nbsp;</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>{# analytics-wrap #}
+
+{# Django admin table #}
+{{ block.super }}
+
+<script>
+(function () {
+  var ANALYTICS_URL = '{{ analytics_json_url }}';
+
+  function setVal(id, val) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.className = '';   /* remove skeleton */
+    el.textContent = val;
+  }
+
+  function renderTrend(trend) {
+    var container = document.getElementById('trendBars');
+    if (!container || !trend) return;
+    var maxV = 1;
+    trend.forEach(function(d){ if (d.count > maxV) maxV = d.count; });
+    var html = '';
+    trend.forEach(function(d, i) {
+      var pct  = Math.max(3, Math.round(d.count * 100 / maxV));
+      var cls  = (i === trend.length - 1) ? 'trend-bar today-bar' : 'trend-bar';
+      html += '<div class="trend-col">'
+            + '<span class="trend-count">' + d.count + '</span>'
+            + '<div class="' + cls + '" style="height:' + pct + '%;"></div>'
+            + '<span class="trend-date">' + d.date + '</span>'
+            + '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  function renderLocations(locs) {
+    var el = document.getElementById('locList');
+    if (!el) return;
+    if (!locs || !locs.length) { el.innerHTML = '<span style="color:#94a3b8;font-size:.8rem;">ไม่มีข้อมูล</span>'; return; }
+    var html = '';
+    locs.forEach(function(l) {
+      html += '<div class="loc-row"><span class="loc-name">' + (l.room_location__location_name || '—') + '</span>'
+            + '<span class="loc-count">' + l.visits + '</span></div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function renderTopCourses(courses, monthLabel) {
+    var el   = document.getElementById('topCoursesBars');
+    var lbl  = document.getElementById('topCourseMonth');
+    if (lbl) lbl.textContent = '(' + (monthLabel || '') + ')';
+    if (!el) return;
+    if (!courses || !courses.length) { el.innerHTML = '<span style="color:#94a3b8;font-size:.8rem;">ไม่มีข้อมูล</span>'; return; }
+    var maxV = courses[0].visits || 1;
+    var html = '';
+    courses.forEach(function(c, i) {
+      var pct = Math.max(2, Math.round(c.visits * 100 / maxV));
+      var cls = i === 0 ? 'bar-fill green' : (i < 3 ? 'bar-fill amber' : 'bar-fill');
+      html += '<div class="bar-row">'
+            + '<span class="bar-label" title="' + c.course_no + '">' + c.course_no + '</span>'
+            + '<div class="bar-track"><div class="' + cls + '" style="width:' + pct + '%;"></div></div>'
+            + '<span class="bar-count">' + c.visits + '</span>'
+            + '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function loadAnalytics(forceRefresh) {
+    var url = ANALYTICS_URL + (forceRefresh ? '?refresh=1' : '');
+    var meta = document.getElementById('analyticsMeta');
+
+    fetch(url, {credentials: 'same-origin'})
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        /* stat cards */
+        setVal('s_today',  data.today_count  || 0);
+        setVal('s_unique', data.unique_today || 0);
+        setVal('s_month',  data.month_count  || 0);
+
+        var todayEl = document.getElementById('l_today');
+        if (todayEl) todayEl.textContent = '\uD83D\uDCC5 วันนี้ (' + (data.today_label || '') + ')';
+        var monthEl = document.getElementById('l_month');
+        if (monthEl) monthEl.textContent = '\uD83D\uDCC6 ' + (data.month_label || 'เดือนนี้');
+
+        renderTrend(data.daily_trend);
+        renderLocations(data.top_locations);
+        renderTopCourses(data.top_courses, data.month_label);
+
+        if (meta) {
+          meta.textContent = data.cached
+            ? '\u26A1 จาก cache (อัปเดตทุก 5 นาที)'
+            : '\u2705 โหลดสำเร็จ';
+          /* add refresh button */
+          var btn = document.createElement('button');
+          btn.className   = 'btn-refresh';
+          btn.textContent = ' รีเฟรช';
+          btn.style.marginLeft = '8px';
+          btn.onclick = function() { loadAnalytics(true); };
+          meta.appendChild(btn);
+        }
+      })
+      .catch(function(err) {
+        var wrap = document.getElementById('analyticsWrap');
+        if (wrap) {
+          var div = document.createElement('div');
+          div.className   = 'analytics-error';
+          div.textContent = '⚠ โหลด Analytics ไม่สำเร็จ: ' + err.message;
+          wrap.insertBefore(div, wrap.firstChild.nextSibling);
+        }
+        if (meta) meta.textContent = '';
+      });
+  }
+
+  /* Start loading after page is ready */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function(){ loadAnalytics(false); });
+  } else {
+    loadAnalytics(false);
+  }
+})();
+</script>
+
+{% endblock %}

@@ -374,17 +374,185 @@ admin.site.register(Locations, LocationsAdmin)
 
 # ─── LogSubjectInRoom ─────────────────────────────────────────────────────────
 
+class CreatedAtFilter(admin.SimpleListFilter):
+    """กรองตาม created_at (CharField รูปแบบ 'YYYY-MM-DD ...')"""
+    title        = 'ช่วงเวลา'
+    parameter_name = 'period'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('today',   'วันนี้'),
+            ('week',    '7 วันล่าสุด'),
+            ('month',   'เดือนนี้'),
+            ('year',    'ปีนี้'),
+        )
+
+    def queryset(self, request, queryset):
+        import datetime as dt
+        now = dt.datetime.now()
+        if self.value() == 'today':
+            prefix = now.strftime('%Y-%m-%d')
+            return queryset.filter(created_at__startswith=prefix)
+        if self.value() == 'week':
+            days = [(now - dt.timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
+            from django.db.models import Q
+            q = Q()
+            for d in days:
+                q |= Q(created_at__startswith=d)
+            return queryset.filter(q)
+        if self.value() == 'month':
+            prefix = now.strftime('%Y-%m')
+            return queryset.filter(created_at__startswith=prefix)
+        if self.value() == 'year':
+            prefix = now.strftime('%Y')
+            return queryset.filter(created_at__startswith=prefix)
+        return queryset
+
+
 class LogSubjectInRoomAdmin(admin.ModelAdmin):
-    list_display  = ('course_no', 'room_location', 'user_ip', 'created_at')
-    list_per_page = 50
-    list_filter   = ('room_location',)
-    search_fields = ('course_no', 'user_ip')
+    list_display         = ('created_at_fmt', 'course_no', 'room_location', 'user_ip')
+    list_per_page        = 50
+    ordering             = ('-id',)          # PK มี index -> เร็ว
+    list_filter          = (CreatedAtFilter, 'room_location')
+    search_fields        = ('course_no', 'user_ip')
+    list_select_related  = ('room_location',)
+    show_full_result_count = False           # ปิด COUNT(*) ทั้งตาราง
 
-    def has_add_permission(self, request):
-        return False
+    class Media:
+        css = {'all': ('live/admin_classrooms.css',)}
 
-    def has_change_permission(self, request, obj=None):
-        return False
+    def has_add_permission(self, request):    return False
+    def has_change_permission(self, request, obj=None): return False
+    def has_delete_permission(self, request, obj=None): return False
+
+    # -- เพิ่ม URL: /admin/live/logsubjectinroom/analytics-json/ ---------------
+    def get_urls(self):
+        from django.urls import path
+        urls = super(LogSubjectInRoomAdmin, self).get_urls()
+        extra = [
+            path(
+                'analytics-json/',
+                self.admin_site.admin_view(self._analytics_json),
+                name='live_log_analytics_json',
+            ),
+        ]
+        return extra + urls
+
+    # -- JSON endpoint: ยิง query ที่นี่ ไม่ให้ block changelist ---------------
+    def _analytics_json(self, request):
+        import datetime as dt
+        from django.http import JsonResponse
+        from django.core.cache import cache
+        from django.db.models import Count as DjCount, Case, When, IntegerField
+        from django.db.models.functions import Substr
+
+        now   = dt.datetime.now()
+        today = now.strftime('%Y-%m-%d')
+        month = now.strftime('%Y-%m')
+
+        CACHE_KEY = 'log_analytics_{}'.format(today)
+        CACHE_TTL = 5 * 60
+
+        if request.GET.get('refresh'):
+            cache.delete(CACHE_KEY)
+
+        data = cache.get(CACHE_KEY)
+
+        if data is None:
+            base = LogSubjectInRoom.objects.all()
+
+            # Q1: วันนี้ + เดือนนี้ ใน 1 query
+            stats = base.filter(
+                created_at__startswith=month
+            ).aggregate(
+                month_count=DjCount('id'),
+                today_count=DjCount(Case(
+                    When(created_at__startswith=today, then=1),
+                    output_field=IntegerField(),
+                )),
+            )
+
+            # Q2: unique IPs วันนี้
+            unique_today = (
+                base.filter(created_at__startswith=today)
+                .values('user_ip').distinct().count()
+            )
+
+            # Q3: trend 7 วัน ใน 1 query (Substr + GROUP BY)
+            week_start = (now - dt.timedelta(days=6)).strftime('%Y-%m-%d')
+            trend_dict = {
+                r['day']: r['cnt']
+                for r in (
+                    base.filter(created_at__gte=week_start)
+                    .annotate(day=Substr('created_at', 1, 10))
+                    .values('day')
+                    .annotate(cnt=DjCount('id'))
+                )
+            }
+            daily_trend = []
+            max_v = 1
+            for i in range(6, -1, -1):
+                d   = (now - dt.timedelta(days=i)).strftime('%Y-%m-%d')
+                cnt = trend_dict.get(d, 0)
+                daily_trend.append({'date': d[5:], 'count': cnt})
+                if cnt > max_v:
+                    max_v = cnt
+            for item in daily_trend:
+                item['pct'] = int(item['count'] * 100 / max_v)
+
+            # Q4: top 10 วิชา เดือนนี้
+            top_courses = list(
+                base.filter(created_at__startswith=month)
+                .values('course_no')
+                .annotate(visits=DjCount('id'))
+                .order_by('-visits')[:10]
+            )
+            if top_courses:
+                mc = top_courses[0]['visits'] or 1
+                for item in top_courses:
+                    item['pct'] = int(item['visits'] * 100 / mc)
+
+            # Q5: top 5 สถานที่ เดือนนี้
+            top_locations = list(
+                base.filter(created_at__startswith=month)
+                .values('room_location__location_name')
+                .annotate(visits=DjCount('id'))
+                .order_by('-visits')[:5]
+            )
+
+            data = {
+                'today_count'  : stats['today_count']  or 0,
+                'month_count'  : stats['month_count']  or 0,
+                'unique_today' : unique_today,
+                'top_courses'  : top_courses,
+                'top_locations': top_locations,
+                'daily_trend'  : daily_trend,
+                'month_label'  : now.strftime('%B %Y'),
+                'today_label'  : today,
+                'cached'       : False,
+            }
+            cache.set(CACHE_KEY, data, CACHE_TTL)
+        else:
+            data = dict(data)
+            data['cached'] = True
+
+        return JsonResponse(data)
+
+    # -- changelist: ไม่ยิง query analytics เลย -- โหลดเร็วทันที -------------
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['analytics_json_url'] = 'analytics-json/'
+        return super(LogSubjectInRoomAdmin, self).changelist_view(
+            request, extra_context=extra_context
+        )
+
+    def created_at_fmt(self, obj):
+        val = str(obj.created_at or '').strip()
+        return val[:19] if len(val) >= 19 else val
+    created_at_fmt.short_description = 'เวลา'
+    created_at_fmt.admin_order_field = 'id'
+
+    change_list_template = 'live/admin_log_analytics.html'
 
 
 admin.site.register(LogSubjectInRoom, LogSubjectInRoomAdmin)
