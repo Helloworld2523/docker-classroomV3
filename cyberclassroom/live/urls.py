@@ -17,8 +17,6 @@ urlpatterns = [
     path('viewer-data/', views.live_viewer_data, name='live_viewer_data'),
     path('monitor-sse/', views.monitor_sse, name='monitor_sse'),  # SSE real-time push
     path('schedule-editor/', views.schedule_editor, name='schedule_editor'),
-    path('caption/', views.caption_view, name='caption'),  # Thai STT endpoint
-    
     # สำหรับงานถ่ายทอดสด
     # path('live', views.live, name='live'),
     # path('get-live-viewers/', views.get_live_viewers, name='get-live-viewers'),

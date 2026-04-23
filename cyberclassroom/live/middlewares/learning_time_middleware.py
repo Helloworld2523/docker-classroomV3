@@ -17,7 +17,6 @@ class LearningHoursMiddleware:
             '/media/',
             '/live-monitor/',
             '/get-live-viewers/',
-            '/caption/',       # STT endpoint — ต้องใช้ได้ทุกเวลา (กดจาก video ขณะเรียน)
             '/viewer-data/',   # Monitor API polling
             '/monitor-sse/',   # Monitor SSE
         )
