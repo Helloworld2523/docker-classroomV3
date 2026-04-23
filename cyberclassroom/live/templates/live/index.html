@@ -109,6 +109,9 @@
                     <span class="ch-icon"><i class="fas fa-tv"></i></span>
                     {{ room.room_name }}
                 </h5>
+                {% if room.has_today %}
+                <span class="badge-today-class">📚 มีเรียนวันนี้</span>
+                {% endif %}
             </div>
 
             <!-- Channel body -->

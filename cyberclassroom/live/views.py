@@ -21,6 +21,7 @@ from django_ratelimit.decorators import ratelimit
 from django.views.decorators.cache import cache_page
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_GET
+from django.db.models import Exists, OuterRef
 #from django.db.models import Q
 
 # --- helper: path to schedule JSON ---
@@ -38,7 +39,16 @@ def _load_schedule():
 def index(request):
     now = datetime.now()
     IsDayInt=now.strftime("%w")
-    data_classroom= Classrooms.objects.filter(room_status="1").order_by('room_location',)
+
+    today_schedule_qs = ClassScheduleCenter.objects.filter(
+        room_name=OuterRef('room_name'),
+        course_day=IsDayInt,
+    )
+    data_classroom = (
+        Classrooms.objects.filter(room_status="1")
+        .annotate(has_today=Exists(today_schedule_qs))
+        .order_by('-has_today', 'room_location', 'room_order', 'room_name')
+    )
 
     roomCount= data_classroom.count()
 
