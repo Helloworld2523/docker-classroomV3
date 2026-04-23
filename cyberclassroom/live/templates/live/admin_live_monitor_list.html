@@ -1,0 +1,35 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  <li>
+    <a href="/live-monitor/" class="button" target="_blank"
+       style="background:#2563eb;color:#fff;padding:4px 14px;border-radius:6px;font-weight:600;">
+      📊 Live Monitor (fullscreen)
+    </a>
+  </li>
+{% endblock %}
+
+{% block content %}
+
+  {# ── Summary stats bar ── #}
+  <div class="live-monitor-stats">
+    <div class="live-monitor-stat">
+      <span class="stat-val">{{ live_count }}</span>
+      <span class="stat-lbl">ห้องที่ LIVE</span>
+    </div>
+    <div class="live-monitor-stat">
+      <span class="stat-val">{{ total_viewers }}</span>
+      <span class="stat-lbl">ผู้ชมทั้งหมด</span>
+    </div>
+  </div>
+
+  <p class="live-monitor-refresh-note">
+    ⏱ หน้านี้ไม่ได้ auto-refresh — กด F5 เพื่ออัปเดต หรือเปิด
+    <a href="/live-monitor/" target="_blank">Live Monitor</a> ที่อัปเดตทุก 2 วิ
+  </p>
+
+  {{ block.super }}
+
+{% endblock %}
