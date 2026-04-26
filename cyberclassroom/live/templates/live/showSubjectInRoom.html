@@ -909,6 +909,140 @@
 }
 </style>
 
+<style>
+/* ════════════════════════════════════════
+   RESPONSIVE IMPROVEMENTS
+════════════════════════════════════════ */
+
+/* ── 2-Column Layout ── */
+.room-sidebar {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.15) transparent;
+}
+.room-sidebar::-webkit-scrollbar { width: 4px; }
+.room-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15); border-radius: 4px;
+}
+@media (max-width: 991px) {
+  .room-sidebar { position: static; max-height: none; overflow-y: visible; }
+}
+.sidebar-section { padding-top: 0 !important; }
+.sidebar-section .section-label { margin-bottom: 0.85rem; }
+.sidebar-section .section-label h5 { font-size: 0.95rem; }
+
+/* ── Now Playing strip (below player) ── */
+.vp-now-playing {
+  background: linear-gradient(90deg, rgba(127,29,29,0.97), rgba(153,27,27,0.97));
+  border-radius: 0 0 8px 8px;
+  padding: 0.38rem 0.9rem;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.vp-np-inner {
+  display: flex; align-items: center; gap: 0.55rem;
+  overflow: hidden;
+}
+.vp-np-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #f87171; flex-shrink: 0;
+  animation: blinker 0.9s linear infinite;
+}
+.vp-np-label {
+  font-size: 0.6rem; font-weight: 800;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: #fca5a5; white-space: nowrap; flex-shrink: 0;
+}
+.vp-np-text {
+  font-size: 0.78rem; font-weight: 600; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Volume Slider ── */
+.vp-vol-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 72px; height: 3px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.22);
+  outline: none; cursor: pointer; flex-shrink: 0;
+}
+.vp-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px; border-radius: 50%;
+  background: #fff; cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.4);
+}
+.vp-vol-slider::-moz-range-thumb {
+  width: 13px; height: 13px; border-radius: 50%;
+  background: #fff; border: none; cursor: pointer;
+}
+@media (max-width: 575px) { .vp-vol-slider { width: 48px; } }
+
+/* ── Day group header in all subjects table ── */
+.day-group-row td {
+  background: var(--bg-surface, #f0f4f8) !important;
+  padding: 0.45rem 0.9rem !important;
+}
+.day-group-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.75rem; font-weight: 700;
+  padding: 0.18rem 0.65rem; border-radius: 20px;
+  color: var(--text-secondary, #334155);
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border, rgba(0,0,0,0.08));
+}
+.day-group-chip.today {
+  color: #1d4ed8;
+  background: rgba(29,78,216,0.08);
+  border-color: rgba(29,78,216,0.25);
+}
+
+/* ── Mobile card table ── */
+@media (max-width: 767px) {
+  .mobile-card-table table,
+  .mobile-card-table thead,
+  .mobile-card-table tbody,
+  .mobile-card-table th,
+  .mobile-card-table td,
+  .mobile-card-table tr { display: block; }
+
+  .mobile-card-table thead tr {
+    position: absolute; top: -9999px; left: -9999px;
+  }
+  .day-group-row, .day-group-row td { display: block !important; }
+
+  .mobile-card-table tbody tr:not(.day-group-row) {
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border, rgba(0,0,0,0.08));
+    border-radius: 10px;
+    margin-bottom: 0.6rem;
+    padding: 0.55rem 0.75rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  }
+  .today-row:not(.day-group-row) { border-left: 3px solid #1d4ed8 !important; }
+
+  .mobile-card-table tbody td { border: none !important; }
+  .mobile-card-table tbody td[data-label="#"] { display: none; }
+  .mobile-card-table tbody td:not([data-label="#"]) {
+    display: flex; align-items: flex-start; gap: 0.5rem;
+    font-size: 0.83rem;
+    padding: 0.22rem 0 !important;
+    border-bottom: 1px solid var(--border, rgba(0,0,0,0.06)) !important;
+  }
+  .mobile-card-table tbody td:last-child { border-bottom: none !important; }
+  .mobile-card-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.67rem; font-weight: 700;
+    color: var(--text-muted, #64748b);
+    min-width: 52px; padding-top: 2px; flex-shrink: 0;
+  }
+  .mobile-card-table tbody td[data-label="#"]::before { display: none; }
+}
+</style>
+
 <!-- ══════════════ MAIN CONTENT ══════════════ -->
 <div class="container py-4">
 
@@ -920,6 +1054,10 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     {% endif %}
+
+    <div class="row g-4 align-items-start">
+    <!-- ── LEFT: Video ── -->
+    <div class="col-12 col-lg-8">
 
     <!-- ─── LIVE VIDEO ─── -->
     <div class="page-section">
@@ -983,6 +1121,8 @@
                         </span>
                     </div>
                     <div class="vp-toolbar-right">
+                        <input type="range" id="vpVolSlider" class="vp-vol-slider"
+                               min="0" max="1" step="0.05" value="1" title="ระดับเสียง">
                         <button class="vp-btn" id="vpPipBtn" title="Picture-in-Picture (P)">
                             <i class="fas fa-clone"></i>
                         </button>
@@ -1025,6 +1165,15 @@
                     <span><kbd>P</kbd> Picture-in-Picture</span>
                 </div>
 
+                <!-- ── Now Playing strip ── -->
+                <div id="vpNowPlaying" class="vp-now-playing" style="display:none;">
+                    <div class="vp-np-inner">
+                        <span class="vp-np-dot"></span>
+                        <span class="vp-np-label">NOW PLAYING</span>
+                        <span class="vp-np-text" id="vpNpText">—</span>
+                    </div>
+                </div>
+
                 <script src="https://unpkg.com/hls.js@latest"></script>
                 <script>
                 (function () {
@@ -1049,6 +1198,22 @@
                     syncMuteUI();
                     video.addEventListener('volumechange', syncMuteUI);
                     muteBtn.addEventListener('click', () => { video.muted = !video.muted; });
+
+                    /* ── Volume slider ── */
+                    const volSlider = document.getElementById('vpVolSlider');
+                    if (volSlider) {
+                        volSlider.value = video.muted ? 0 : video.volume;
+                        volSlider.addEventListener('input', () => {
+                            video.volume = parseFloat(volSlider.value);
+                            video.muted  = (parseFloat(volSlider.value) === 0);
+                            localStorage.setItem('vp_volume', volSlider.value);
+                        });
+                        video.addEventListener('volumechange', () => {
+                            if (!volSlider.matches(':active')) {
+                                volSlider.value = video.muted ? 0 : video.volume;
+                            }
+                        });
+                    }
 
                     /* ── Fullscreen ── */
                     const fsBtn  = document.getElementById('vpFsBtn');
@@ -1306,8 +1471,14 @@
         </div>
     </div>
 
+    </div><!-- /col-lg-8 left column -->
+
+    <!-- ── RIGHT: Sidebar ── -->
+    <div class="col-12 col-lg-4">
+    <div class="room-sidebar">
+
     <!-- ─── TODAY'S SUBJECTS ─── -->
-    <div class="page-section">
+    <div class="page-section sidebar-section">
         <div class="section-label">
             <div class="label-icon green">
                 <i class="fas fa-calendar-check"></i>
@@ -1516,6 +1687,11 @@
             elName.textContent = active.course_name;
             elInst.innerHTML = '<i class="fas fa-chalkboard-teacher me-1"></i>' + active.instructor;
             elTime.innerHTML = '<i class="fas fa-clock me-1"></i>' + active.time_start + ' – ' + active.time_end;
+            /* ── Now Playing strip ── */
+            var npEl = document.getElementById('vpNowPlaying');
+            var npTxt = document.getElementById('vpNpText');
+            if (npEl) npEl.style.display = 'block';
+            if (npTxt) npTxt.textContent = active.course_no + ' \u00b7 ' + active.course_name;
             if (elLeft && remaining !== prevLiveMin) {
                 elLeft.textContent = remaining;
                 elLeft.classList.remove('bump');
@@ -1525,6 +1701,8 @@
             }
         } else {
             banner.style.display = 'none';
+            var npEl = document.getElementById('vpNowPlaying');
+            if (npEl) npEl.style.display = 'none';
         }
     }
 
@@ -1608,8 +1786,12 @@
 </script>
     </div>
 
-    <!-- ─── ALL SUBJECTS ─── -->
-    <div class="page-section pb-4">
+    </div><!-- /room-sidebar -->
+    </div><!-- /col-lg-4 -->
+</div><!-- /row -->
+
+<!-- ─── ALL SUBJECTS ─── -->
+<div class="page-section pb-4">
         <div class="section-label">
             <div class="label-icon blue">
                 <i class="fas fa-list-ul"></i>
