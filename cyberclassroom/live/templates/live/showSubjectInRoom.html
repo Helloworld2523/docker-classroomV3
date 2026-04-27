@@ -181,7 +181,7 @@
     font-weight: 400;
 }
 
-/* ── Today's subjects — Card grid ── */
+/* ── Today's subjects — Card (2-row layout) ── */
 .subject-card-today {
     background: var(--ru-card-bg, #fff);
     border: 1px solid var(--ru-border, #e2e8f0);
@@ -191,19 +191,35 @@
     overflow: hidden;
     transition: all 0.2s ease;
     display: flex;
-    align-items: center;
-    gap: 0.65rem;
+    flex-direction: column;
+    gap: 0.28rem;
 }
 .subject-card-today:hover {
     background: rgba(59,130,246,0.04);
     border-color: rgba(59,130,246,0.28);
 }
+/* แถวบน: code + name + badge */
+.sct-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    min-width: 0;
+}
+/* แถวล่าง: time-chip + instructor */
+.sct-bottom {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    min-width: 0;
+}
 .subject-card-today .course-num {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: #1d4ed8;
     white-space: nowrap;
     flex-shrink: 0;
+    padding-top: 1px;
 }
 .subject-card-today .course-name {
     font-size: 0.8rem;
@@ -211,18 +227,23 @@
     line-height: 1.35;
     flex: 1;
     min-width: 0;
-    white-space: nowrap;
+    /* อนุญาต 2 บรรทัด แทนการตัดด้วย ellipsis บรรทัดเดียว */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 .subject-card-today .meta-row {
     display: flex;
     align-items: center;
     gap: 0.3rem;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--ru-text-muted, #64748b);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
-    flex-shrink: 0;
+    flex: 1;
 }
 .subject-card-today .meta-row i {
     width: 12px; color: #94a3b8; flex-shrink: 0;
@@ -284,19 +305,10 @@
     gap: 0.35rem;
 }
 
-/* Mobile: wrap meta onto next line */
-@media (max-width: 575px) {
-    .subject-card-today {
-        flex-wrap: wrap;
-        gap: 0.3rem 0.6rem;
-    }
-    .subject-card-today .course-name {
-        white-space: normal;
-        width: 100%;
-        order: 3;
-    }
-    .subject-card-today .meta-row { order: 4; }
-    .subject-card-today .class-status-badge { order: 5; margin-left: auto; }
+/* Mobile: badge ไปอยู่ล่างถ้าหน้าจอแคบมาก */
+@media (max-width: 400px) {
+    .sct-top { flex-wrap: wrap; }
+    .subject-card-today .class-status-badge { width: 100%; }
 }
 
 /* Empty state */
@@ -520,10 +532,41 @@
     margin-right: 0.25rem;
 }
 
-/* Mobile */
+/* Mobile — Player */
 @media (max-width: 575px) {
-    .vp-stat { display: none; }
+    .vp-stat     { display: none; }
     .vp-shortcuts { display: none; }
+}
+
+/* Mobile — Hero section */
+@media (max-width: 767px) {
+    .room-hero { padding: 1.4rem 0 1.1rem; }
+    .room-code-pill {
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+        padding: 0.25rem 0.9rem;
+    }
+    .room-hero h1 { font-size: 1.3rem !important; }
+    .room-hero .lead { font-size: 0.9rem; margin-bottom: 0.75rem !important; }
+    .hero-stat, .viewer-badge {
+        font-size: 0.82rem;
+        padding: 0.3rem 0.75rem;
+    }
+    #viewerCountBadge { font-size: 1.1rem; }
+}
+
+/* Mobile — subject list แสดงเป็น 2 คอลัมน์เมื่อมีพื้นที่ */
+@media (min-width: 576px) and (max-width: 991px) {
+    .subject-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+}
+
+/* Sidebar: ลด max-height ให้เหลือพื้นที่เพียงพอ */
+.room-sidebar {
+    max-height: calc(100vh - 64px);
 }
 
 /* ── Video section ── */
@@ -554,8 +597,9 @@
     background: rgba(17,28,53,0.9);
     border-color: rgba(59,130,246,0.15);
 }
-.dark-mode .subject-card-today .course-name,
-.dark-mode .subject-card-today .meta-row { color: #94a3b8; }
+.dark-mode .subject-card-today .course-name { color: #cbd5e1; }
+.dark-mode .subject-card-today .meta-row   { color: #94a3b8; }
+.dark-mode .subject-card-today.status-done { background: rgba(15,23,42,0.6) !important; }
 .dark-mode .time-chip { background: rgba(59,130,246,0.15); }
 .dark-mode .all-subjects-table tbody td { color: #e2e8f0; }
 .dark-mode .all-subjects-table tbody tr { border-bottom-color: rgba(255,255,255,0.06); }
@@ -1501,15 +1545,21 @@
                 <div class="subject-card-today"
                      data-time-start="{{ s.time_start }}"
                      data-time-end="{{ s.time_end }}">
-                    <span class="time-chip">
-                        <i class="fas fa-clock"></i>{{ s.time_start }}–{{ s.time_end }}
-                    </span>
-                    <span class="course-num">{{ s.course_no }}</span>
-                    <span class="course-name">{{ s.course_name_thai }}</span>
-                    <span class="meta-row">
-                        <i class="fas fa-chalkboard-teacher"></i>{{ s.instructor }}
-                    </span>
-                    <span class="class-status-badge" style="flex-shrink:0;"></span>
+                    <!-- แถวบน: รหัสวิชา + ชื่อวิชา + badge สถานะ -->
+                    <div class="sct-top">
+                        <span class="course-num">{{ s.course_no }}</span>
+                        <span class="course-name">{{ s.course_name_thai }}</span>
+                        <span class="class-status-badge" style="flex-shrink:0;"></span>
+                    </div>
+                    <!-- แถวล่าง: เวลา + อาจารย์ -->
+                    <div class="sct-bottom">
+                        <span class="time-chip">
+                            <i class="fas fa-clock"></i>{{ s.time_start }}–{{ s.time_end }}
+                        </span>
+                        <span class="meta-row">
+                            <i class="fas fa-chalkboard-teacher"></i>{{ s.instructor }}
+                        </span>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
