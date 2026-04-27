@@ -255,7 +255,7 @@ def showSubjectInRoom(request, room):
     elif location == 8:
         server = config.serverMedia67
     else:
-        server = config.serverMedia88  # แก้คำผิดจาก serverMdeia88
+        server = config.serverMdeia88  # 202.41.160.88 — ชื่อ attribute มี typo (Mdeia ไม่ใช่ Media)
 
     # บันทึก log
     LogSubjectInRoom.objects.create(
@@ -411,13 +411,16 @@ def live_monitor_view(request):
         for c in Classrooms.objects.only('room_name', 'room_location')
     }
 
+    # ต้องให้ตรงกับ showSubjectInRoom ทุก location
     # config.serverMdeia88 — ชื่อตัวแปรมี typo ตั้งแต่ต้น (Mdeia ไม่ใช่ Media)
     SERVER_MAP = {
-        '1': config.serverMedia68,
-        '2': config.serverMedia65,
-        '3': config.serverMedia66,
-        '4': config.serverMedia67,
-        '5': config.serverMdeia88,
+        '1': config.serverMedia68,   # หัวหมาก
+        '2': config.serverMedia65,   # บางนา
+        '3': config.serverMedia66,   # คณะนิติศาสตร์
+        '5': config.serverMedia66,   # (ตรงกับ showSubjectInRoom: location in [3,5,7])
+        '7': config.serverMedia66,   # (ตรงกับ showSubjectInRoom: location in [3,5,7])
+        '8': config.serverMedia67,   # campus3 → 202.41.160.67 (ตรงกับ showSubjectInRoom)
+        '4': config.serverMdeia88,   # ห้องทดสอบระบบ (serverMdeia88 = 202.41.160.88)
     }
     _default_server = config.serverMedia68  # fallback ปลอดภัย ไม่ใช้ attribute ที่ไม่มีอยู่
 
@@ -500,10 +503,31 @@ def live_viewer_data(request):
         for c in Count.objects.all()
     }
 
+    # stream_url — ใช้ logic เดียวกับ live_monitor_view
+    loc_map = {
+        c.room_name.strip().lower(): str(c.room_location_id)
+        for c in Classrooms.objects.only('room_name', 'room_location')
+    }
+    SERVER_MAP = {
+        '1': config.serverMedia68,
+        '2': config.serverMedia65,
+        '3': config.serverMedia66,
+        '5': config.serverMedia66,
+        '7': config.serverMedia66,
+        '8': config.serverMedia67,
+        '4': config.serverMdeia88,
+    }
+    _default = config.serverMedia68
+
     data = [
         {
             'room_name': room.room_name,
             'viewer_count': viewer_map.get(room.room_name.strip().lower(), 0),
+            'stream_url': (
+                SERVER_MAP.get(loc_map.get(room.room_name.strip().lower(), ''), _default)
+                + room.room_name.strip().lower()
+                + '/playlist.m3u8'
+            ),
         }
         for room in rooms
     ]

@@ -88,12 +88,25 @@
     }
 
     .topbar-clock {
-      font-size: 0.88rem;
-      color: var(--muted);
-      font-variant-numeric: tabular-nums;
-      font-weight: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.1rem;
     }
-    .topbar-clock span { color: var(--text); font-weight: 600; }
+    .topbar-clock-time {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+      letter-spacing: 0.5px;
+    }
+    .topbar-clock-date {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
 
     .update-pill {
       display: flex;
@@ -244,17 +257,17 @@
 
     /* ── ROOM GRID ── */
     .room-grid {
-      padding: 0.75rem 1.5rem 2rem;
+      padding: 0.6rem 1.5rem 2rem;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 0.5rem;
     }
 
     /* ── ROOM CARD ── */
     .room-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
       transition: all 0.25s ease;
       cursor: pointer;
@@ -284,43 +297,43 @@
     .room-card.tier-zero::before  { background: var(--tier-zero);  }
 
     .rc-head {
-      padding: 0.7rem 0.85rem 0.5rem 1rem;
+      padding: 0.45rem 0.65rem 0.3rem 0.75rem;
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 0.4rem;
+      gap: 0.3rem;
     }
     .rc-name {
       font-weight: 700;
-      font-size: 0.92rem;
+      font-size: 0.8rem;
       color: var(--text);
-      line-height: 1.25;
-      letter-spacing: 0.3px;
+      line-height: 1.2;
+      letter-spacing: 0.2px;
     }
     .rc-rank {
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       font-weight: 700;
       color: var(--muted);
       background: rgba(255,255,255,0.05);
-      border-radius: 6px;
-      padding: 0.12rem 0.4rem;
+      border-radius: 5px;
+      padding: 0.08rem 0.32rem;
       flex-shrink: 0;
     }
 
     .rc-viewers {
-      padding: 0.2rem 0.85rem 0.3rem 1rem;
+      padding: 0.1rem 0.65rem 0.2rem 0.75rem;
       display: flex;
       align-items: baseline;
-      gap: 0.3rem;
+      gap: 0.25rem;
     }
     .rc-count {
-      font-size: 1.7rem;
+      font-size: 1.35rem;
       font-weight: 800;
       line-height: 1;
       font-variant-numeric: tabular-nums;
       transition: color 0.3s ease;
     }
-    .rc-unit { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+    .rc-unit { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
 
     .tier-peak  .rc-count { color: #c4b5fd; }
     .tier-high  .rc-count { color: var(--tier-high); }
@@ -329,19 +342,19 @@
     .tier-zero  .rc-count { color: #4b5563; }
 
     .rc-trend {
-      font-size: 0.7rem;
+      font-size: 0.62rem;
       font-weight: 700;
-      padding: 0.12rem 0.35rem;
-      border-radius: 4px;
-      margin-left: 0.2rem;
+      padding: 0.08rem 0.28rem;
+      border-radius: 3px;
+      margin-left: 0.15rem;
     }
     .trend-up   { color: var(--tier-high);  background: rgba(34,197,94,0.12); }
     .trend-down { color: #ef4444;           background: rgba(239,68,68,0.12); }
     .trend-same { color: var(--muted);      background: rgba(255,255,255,0.05); }
 
-    .rc-bar-wrap { padding: 0.2rem 1rem 0.7rem; }
+    .rc-bar-wrap { padding: 0.1rem 0.75rem 0.45rem; }
     .rc-bar-bg {
-      height: 4px;
+      height: 3px;
       background: rgba(255,255,255,0.06);
       border-radius: 2px;
       overflow: hidden;
@@ -358,13 +371,13 @@
     .tier-zero  .rc-bar-fill { background: var(--tier-zero); width: 2px !important; }
 
     .rc-badge {
-      margin: 0 1rem 0.7rem;
+      margin: 0 0.75rem 0.45rem;
       display: inline-flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.25rem;
       border-radius: 20px;
-      padding: 0.18rem 0.6rem;
-      font-size: 0.68rem;
+      padding: 0.12rem 0.45rem;
+      font-size: 0.62rem;
       font-weight: 700;
     }
     .tier-peak  .rc-badge { background: rgba(139,92,246,0.15); color: #c4b5fd; }
@@ -410,6 +423,66 @@
     ::-webkit-scrollbar       { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+    /* ── ROOM FILTER TOGGLE ── */
+    .rc-filter-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 0.75rem;
+    }
+    .rc-filter-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 0.32rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .rc-filter-btn:hover  { background: rgba(255,255,255,0.05); color: var(--text); }
+    .rc-filter-btn.active {
+      background: rgba(239,68,68,0.18);
+      color: #fca5a5;
+    }
+    .rc-filter-btn[data-filter="all"].active {
+      background: rgba(59,130,246,0.18);
+      color: #93c5fd;
+    }
+    .btn-dot-live {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #ef4444;
+      animation: blink 1s linear infinite;
+      flex-shrink: 0;
+    }
+    .filter-count-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    /* ── ซ่อนการ์ดที่ไม่ผ่านตัวกรอง ── */
+    .room-card.rc-hidden {
+      display: none !important;
+    }
+    /* ── Empty state เมื่อไม่มีห้อง live ── */
+    .filter-empty {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      display: none;
+    }
+    .filter-empty i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; opacity: 0.25; }
+    .filter-empty.show { display: block; }
 
     /* ══════════════════════════════════════
        MINI VIDEO PLAYER — ฝังในการ์ดห้อง
@@ -478,6 +551,16 @@
     }
     .room-card.is-playing .rc-vspinner { display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── การ์ดใหม่ที่เพิ่งปรากฏ (runtime inject) ── */
+    @keyframes cardAppear {
+      0%   { opacity: 0; transform: scale(0.88); box-shadow: 0 0 0 2px rgba(34,197,94,0); }
+      40%  { opacity: 1; transform: scale(1.03); box-shadow: 0 0 0 2px rgba(34,197,94,0.7), 0 0 24px rgba(34,197,94,0.3); }
+      100% { opacity: 1; transform: scale(1);    box-shadow: none; }
+    }
+    .rc-card-appear {
+      animation: cardAppear 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
   </style>
 </head>
 <body>
@@ -502,8 +585,10 @@
       <span id="lastUpdate" style="font-size:0.75rem;">รอการอัปเดต...</span>
     </div>
     <div class="topbar-clock">
-      <i class="fas fa-clock me-1" style="color:var(--accent);"></i>
-      <span id="clockDisplay">--:--:--</span>
+      <div class="topbar-clock-time">
+        <i class="fas fa-clock me-1" style="color:var(--accent); font-size:0.85rem;"></i><span id="clockDisplay">--:--:--</span>
+      </div>
+      <div class="topbar-clock-date" id="dateDisplay">—</div>
     </div>
   </div>
 </div>
@@ -574,9 +659,23 @@
 
 <!-- ════ SECTION HEAD ════ -->
 <div class="section-head">
-  <h6><i class="fas fa-th-large"></i> รายการห้องถ่ายทอดสด</h6>
-  <div class="sort-label">
-    <i class="fas fa-sort-amount-down me-1"></i> เรียงจากผู้ชมมากสุด · อัปเดตทุก 2 วินาที
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <h6><i class="fas fa-th-large"></i> รายการห้องถ่ายทอดสด</h6>
+    <span class="filter-count-label" id="filterCountLabel">— ห้อง</span>
+  </div>
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <!-- Filter toggle -->
+    <div class="rc-filter-toggle" role="group" aria-label="ตัวกรองห้อง">
+      <button class="rc-filter-btn active" id="btnFilterLive" data-filter="live">
+        <span class="btn-dot btn-dot-live"></span> Live เท่านั้น
+      </button>
+      <button class="rc-filter-btn" id="btnFilterAll" data-filter="all">
+        <i class="fas fa-list me-1" style="font-size:0.7rem;"></i> ทั้งหมด
+      </button>
+    </div>
+    <div class="sort-label">
+      <i class="fas fa-sort-amount-down me-1"></i> เรียงจากผู้ชมมากสุด · อัปเดตทุก 2 วินาที
+    </div>
   </div>
 </div>
 
@@ -642,6 +741,12 @@
     <p>ไม่มีห้องถ่ายทอดสดในขณะนี้</p>
   </div>
   {% endfor %}
+  <!-- แสดงเมื่อ filter=live แต่ไม่มีห้องที่กำลัง live -->
+  <div class="filter-empty" id="filterEmpty">
+    <i class="fas fa-satellite-dish"></i>
+    <p style="font-size:0.9rem; margin:0;">ยังไม่มีห้องที่กำลัง Live ในขณะนี้</p>
+    <p style="font-size:0.78rem; margin-top:0.35rem;">กด <strong>ทั้งหมด</strong> เพื่อดูห้องทั้งหมด</p>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -651,10 +756,24 @@
    MONITOR DASHBOARD — Live Updater + Charts
 ══════════════════════════════════════ */
 
-/* ── Clock ── */
+/* ── Clock + Date ── */
+const DAY_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const MONTH_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
 function updateClock() {
+  const now = new Date();
+  /* เวลา HH:MM:SS */
   document.getElementById('clockDisplay').textContent =
-    new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+    now.toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+  /* วันที่ — อัปเดตเฉพาะตอน secondเป็น 0 (เที่ยงคืน) หรือครั้งแรก */
+  const dateEl = document.getElementById('dateDisplay');
+  if (dateEl) {
+    const day   = DAY_TH[now.getDay()];
+    const date  = now.getDate();
+    const month = MONTH_TH[now.getMonth()];
+    const year  = now.getFullYear() + 543;   /* พ.ศ. */
+    dateEl.textContent = `วัน${day}ที่ ${date} ${month} ${year}`;
+  }
 }
 setInterval(updateClock, 1000);
 updateClock();
@@ -829,6 +948,61 @@ function pushLineHistory(total) {
 }
 
 /* ══════════════════════════════════════
+   ROOM FILTER — live เท่านั้น / ทั้งหมด
+══════════════════════════════════════ */
+let filterLiveOnly = true;  /* ค่าเริ่มต้น: แสดงเฉพาะห้องที่มีผู้ชม */
+
+function applyFilter() {
+  const cards      = Array.from(document.querySelectorAll('#roomGrid .room-card'));
+  const emptyEl    = document.getElementById('filterEmpty');
+  const countLabel = document.getElementById('filterCountLabel');
+  let liveCount    = 0;
+  let loadingCount = 0;
+  const totalCount = cards.length;
+
+  cards.forEach(card => {
+    const ok = card.dataset.streamOk;  // 'true' | 'false' | '' (กำลังโหลด)
+    if (filterLiveOnly && ok === 'false') {
+      /* stream 404/offline → ซ่อน */
+      card.classList.add('rc-hidden');
+    } else {
+      card.classList.remove('rc-hidden');
+      if (ok === 'true')  liveCount++;
+      if (ok === '' || ok === undefined) loadingCount++;
+    }
+  });
+
+  if (filterLiveOnly) {
+    if (liveCount > 0) {
+      countLabel.textContent = liveCount + ' ห้อง Live / ' + totalCount + ' ห้องทั้งหมด';
+    } else if (loadingCount > 0) {
+      countLabel.textContent = 'กำลังตรวจสอบสัญญาณ...';
+    } else {
+      countLabel.textContent = '0 ห้อง Live / ' + totalCount + ' ห้องทั้งหมด';
+    }
+    /* แสดง empty state เฉพาะเมื่อตรวจสอบครบทุกห้องแล้วไม่มี live */
+    if (emptyEl) emptyEl.classList.toggle('show', liveCount === 0 && loadingCount === 0);
+  } else {
+    countLabel.textContent = totalCount + ' ห้องทั้งหมด';
+    if (emptyEl) emptyEl.classList.remove('show');
+  }
+}
+
+/* ── ปุ่ม toggle ── */
+document.getElementById('btnFilterLive').addEventListener('click', () => {
+  filterLiveOnly = true;
+  document.getElementById('btnFilterLive').classList.add('active');
+  document.getElementById('btnFilterAll').classList.remove('active');
+  applyFilter();
+});
+document.getElementById('btnFilterAll').addEventListener('click', () => {
+  filterLiveOnly = false;
+  document.getElementById('btnFilterAll').classList.add('active');
+  document.getElementById('btnFilterLive').classList.remove('active');
+  applyFilter();
+});
+
+/* ══════════════════════════════════════
    RESORT GRID — เรียงการ์ดจากผู้ชมมากไปน้อย
    เรียกหลังอัปเดตตัวเลขทุกรอบ
 ══════════════════════════════════════ */
@@ -931,8 +1105,23 @@ async function updateViewerCounts() {
       card.classList.add(tierClass(newCount));
     });
 
+    /* ── ตรวจห้องใหม่ที่ยังไม่มีการ์ดใน DOM ── */
+    const knownIds = new Set(
+      Array.from(document.querySelectorAll('#roomGrid .room-card')).map(c => c.id)
+    );
+    let newRoomAdded = false;
+    rooms.forEach(room => {
+      if (!knownIds.has('card-' + slugify(room.room_name))) {
+        createRoomCard(room);   /* สร้างการ์ดใหม่ + เริ่ม HLS อัตโนมัติ */
+        newRoomAdded = true;
+      }
+    });
+
     /* ── Re-sort grid (มากไปน้อย) ── */
     resortGrid();
+
+    /* ── Re-apply room filter ── */
+    applyFilter();
 
     /* ── Charts ── */
     updateBarChart(rooms);
@@ -967,71 +1156,176 @@ async function updateViewerCounts() {
   });
   document.getElementById('kpiTotal').textContent  = total.toLocaleString('th-TH');
   document.getElementById('kpiActive').textContent = active;
+  /* หมายเหตุ: applyFilter() ถูกเรียกโดย HLS.js initCell() เมื่อรู้ผลแต่ละห้อง */
 })();
 
-/* ── Start polling ── */
-updateViewerCounts();
-setInterval(updateViewerCounts, 2000);
+/* ── Start polling (5 วิ — ลดภาระ server) ── */
+const POLL_INTERVAL = 5000;
+let pollingTimer = null;
+
+function startPolling() {
+  if (pollingTimer) return;
+  updateViewerCounts();
+  pollingTimer = setInterval(updateViewerCounts, POLL_INTERVAL);
+}
+function stopPolling() {
+  clearInterval(pollingTimer);
+  pollingTimer = null;
+}
+
+/* Page Visibility API — หยุด poll เมื่อ tab ซ่อน/minimize */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopPolling();
+  } else {
+    startPolling();   /* กลับมาดู → fetch ทันทีแล้วค่อย interval */
+  }
+});
+
+startPolling();
 
 </script>
 
-<!-- HLS.js for Video Wall -->
+<!-- ── URL template สำหรับ createRoomCard ── -->
+<script>
+  /* Django injects the URL pattern; JS replaces XROOMX with the real room name */
+  const ROOM_URL_TPL = "{% url 'showSubjectInRoom' room='XROOMX' %}";
+</script>
+
+<!-- HLS.js for mini video players -->
 <script src="https://unpkg.com/hls.js@latest"></script>
 <script>
-(function initVideoWall() {
+/* ══════════════════════════════════════
+   HLS CONFIG + initCell (global)
+   — ต้อง global เพื่อให้ createRoomCard เรียกได้
+══════════════════════════════════════ */
+const HLS_CONFIG = {
+  enableWorker:                true,
+  lowLatencyMode:              true,
+  maxBufferLength:             6,
+  maxMaxBufferLength:          12,
+  liveSyncDurationCount:       2,
+  liveMaxLatencyDurationCount: 4,
+  liveDurationInfinity:        true,
+  nudgeMaxRetry:               3,
+  maxFragLookUpTolerance:      0.25,
+};
+
+function initCell(cell, delay) {
+  setTimeout(() => {
+    const src   = cell.dataset.src;
+    const sl    = slugify(cell.dataset.room || '');
+    const video = document.getElementById('vwvid-' + sl);
+    if (!video) return;
+
+    /* ครั้งแรก: mark "กำลังโหลด" เพื่อไม่ซ่อนระหว่างรอผล */
+    if (!('streamOk' in cell.dataset)) {
+      cell.dataset.streamOk = '';   /* '' = loading */
+      applyFilter();
+    }
+
+    if (Hls.isSupported()) {
+      const hls = new Hls(HLS_CONFIG);
+      hls.loadSource(src);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        video.play().catch(() => {});
+        cell.classList.add('is-playing');
+        cell.dataset.streamOk = 'true';   /* ✅ stream OK → โชว์การ์ด */
+        applyFilter();
+      });
+
+      /* fatal error (404, network, dll.) */
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (!data.fatal) return;
+        cell.classList.remove('is-playing');
+        cell.dataset.streamOk = 'false';  /* ❌ stream offline → ซ่อนการ์ด */
+        applyFilter();
+        /* reconnect ใน background — ถ้า stream กลับมาจะโผล่อัตโนมัติ */
+        setTimeout(() => { hls.destroy(); initCell(cell, 0); }, 20000);
+      });
+
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      /* Safari native HLS */
+      video.src = src;
+      video.addEventListener('loadedmetadata', () => {
+        video.play().catch(() => {});
+        cell.classList.add('is-playing');
+        cell.dataset.streamOk = 'true';
+        applyFilter();
+      });
+      video.addEventListener('error', () => {
+        cell.dataset.streamOk = 'false';
+        applyFilter();
+        setTimeout(() => { video.src = ''; initCell(cell, 0); }, 20000);
+      });
+    }
+  }, delay);
+}
+
+/* ══════════════════════════════════════
+   CREATE ROOM CARD — สร้างการ์ดใหม่ runtime
+   เรียกเมื่อ polling พบห้องที่ยังไม่มีใน DOM
+══════════════════════════════════════ */
+function createRoomCard(room) {
+  const sl   = slugify(room.room_name);
+  const vc   = room.viewer_count;
+  const url  = ROOM_URL_TPL.replace('XROOMX', encodeURIComponent(room.room_name));
+
+  const card = document.createElement('a');
+  card.href            = url;
+  card.target          = '_blank';
+  card.className       = 'room-card ' + tierClass(vc) + ' rc-card-appear';
+  card.id              = 'card-' + sl;
+  card.dataset.room    = room.room_name;
+  card.dataset.count   = vc;
+  card.dataset.src     = room.stream_url;
+
+  card.innerHTML = `
+    <div class="rc-head">
+      <div class="rc-name">${room.room_name}</div>
+      <div class="rc-rank">#—</div>
+    </div>
+    <div class="rc-video-wrap">
+      <video id="vwvid-${sl}" muted playsinline preload="none"></video>
+      <span class="rc-vlive"><span class="ld"></span> LIVE</span>
+      <span class="rc-vmute">🔇</span>
+      <div class="rc-vspinner"><div class="rc-spin"></div></div>
+    </div>
+    <div class="rc-viewers">
+      <div class="rc-count" id="count-${sl}">${vc}</div>
+      <div class="rc-unit">คน</div>
+      <span class="rc-trend trend-same" id="trend-${sl}">—</span>
+    </div>
+    <div class="rc-bar-wrap">
+      <div class="rc-bar-bg">
+        <div class="rc-bar-fill" id="bar-${sl}" style="width:0%;"></div>
+      </div>
+    </div>
+    <div class="rc-badge" id="badge-${sl}">${badgeHTML(vc)}</div>
+  `;
+
+  /* แทรกก่อน filterEmpty เสมอ */
+  const grid    = document.getElementById('roomGrid');
+  const emptyEl = document.getElementById('filterEmpty');
+  grid.insertBefore(card, emptyEl || null);
+
+  /* อัปเดต KPI จำนวนห้อง */
+  const kpiRooms = document.getElementById('kpiRooms');
+  if (kpiRooms) kpiRooms.textContent = parseInt(kpiRooms.textContent || '0') + 1;
+
+  /* เริ่ม HLS สำหรับการ์ดใหม่ */
+  initCell(card, 300);
+
+  return card;
+}
+
+/* ══════════════════════════════════════
+   BULK INIT — ห้องที่ render มาตั้งแต่ต้น
+══════════════════════════════════════ */
+(function bulkInitOnLoad() {
   const cells = Array.from(document.querySelectorAll('.room-card[data-src]'));
-  if (!cells.length) return;
-
-  const HLS_CONFIG = {
-    enableWorker:              true,
-    lowLatencyMode:            true,
-    maxBufferLength:           6,
-    maxMaxBufferLength:        12,
-    liveSyncDurationCount:     2,
-    liveMaxLatencyDurationCount: 4,
-    liveDurationInfinity:      true,
-    nudgeMaxRetry:             3,
-    maxFragLookUpTolerance:    0.25,
-  };
-
-  function initCell(cell, delay) {
-    setTimeout(() => {
-      const src   = cell.dataset.src;
-      const sl    = slugify(cell.dataset.room || '');
-      const video = document.getElementById('vwvid-' + sl);
-      if (!video) return;
-
-      if (Hls.isSupported()) {
-        const hls = new Hls(HLS_CONFIG);
-        hls.loadSource(src);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play().catch(() => {});
-          cell.classList.add('is-playing');
-        });
-
-        /* auto-reconnect on fatal error */
-        hls.on(Hls.Events.ERROR, (_, data) => {
-          if (!data.fatal) return;
-          setTimeout(() => {
-            hls.destroy();
-            initCell(cell, 0);
-          }, 8000);
-        });
-
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        /* Safari native HLS */
-        video.src = src;
-        video.addEventListener('loadedmetadata', () => {
-          video.play().catch(() => {});
-          cell.classList.add('is-playing');
-        });
-      }
-    }, delay);
-  }
-
-  /* เริ่ม init ทีละห้อง ห่างกัน 150ms เพื่อกัน network storm */
   cells.forEach((cell, idx) => initCell(cell, idx * 150));
 })();
 </script>
