@@ -404,12 +404,37 @@ def live_monitor_view(request):
         for count in Count.objects.all()
     }
 
+    # LiveClassroom (managed=False) ไม่มี room_location
+    # → lookup จาก Classrooms model แทน
+    loc_map = {
+        c.room_name.strip().lower(): str(c.room_location_id)
+        for c in Classrooms.objects.only('room_name', 'room_location')
+    }
+
+    # config.serverMdeia88 — ชื่อตัวแปรมี typo ตั้งแต่ต้น (Mdeia ไม่ใช่ Media)
+    SERVER_MAP = {
+        '1': config.serverMedia68,
+        '2': config.serverMedia65,
+        '3': config.serverMedia66,
+        '4': config.serverMedia67,
+        '5': config.serverMdeia88,
+    }
+    _default_server = config.serverMedia68  # fallback ปลอดภัย ไม่ใช้ attribute ที่ไม่มีอยู่
+
     # สร้างลิสต์ก่อน
     live_classrooms = [
         {
             'room_name': room.room_name,
             'room_stream': room.room_stream,
-            'viewer_count': viewer_map.get(room.room_name.strip().lower(), 0)
+            'viewer_count': viewer_map.get(room.room_name.strip().lower(), 0),
+            'stream_url': (
+                SERVER_MAP.get(
+                    loc_map.get(room.room_name.strip().lower(), ''),
+                    _default_server
+                )
+                + room.room_name.strip().lower()
+                + '/playlist.m3u8'
+            ),
         }
         for room in rooms
     ]

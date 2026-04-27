@@ -410,6 +410,74 @@
     ::-webkit-scrollbar       { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+    /* ══════════════════════════════════════
+       MINI VIDEO PLAYER — ฝังในการ์ดห้อง
+    ══════════════════════════════════════ */
+    .rc-video-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      overflow: hidden;
+    }
+    .rc-video-wrap video {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    /* LIVE badge — แสดงเมื่อ stream พร้อม */
+    .rc-vlive {
+      position: absolute;
+      top: 4px; left: 4px;
+      display: none;
+      align-items: center;
+      gap: 3px;
+      background: rgba(220,38,38,0.88);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 0.6rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #fff;
+      pointer-events: none;
+    }
+    .rc-vlive .ld {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: #fff;
+      animation: blink 1s linear infinite;
+    }
+    .room-card.is-playing .rc-vlive { display: flex; }
+    /* Mute badge */
+    .rc-vmute {
+      position: absolute;
+      top: 4px; right: 4px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 0.6rem;
+      color: rgba(255,255,255,0.8);
+      pointer-events: none;
+    }
+    /* Loading spinner */
+    .rc-vspinner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.72);
+    }
+    .rc-spin {
+      width: 22px; height: 22px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .room-card.is-playing .rc-vspinner { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -520,11 +588,21 @@
      class="room-card {% if vc >= 50 %}tier-peak{% elif vc >= 15 %}tier-high{% elif vc >= 5 %}tier-mid{% elif vc >= 1 %}tier-low{% else %}tier-zero{% endif %}"
      id="card-{{ room.room_name|slugify }}"
      data-room="{{ room.room_name }}"
-     data-count="{{ vc }}">
+     data-count="{{ vc }}"
+     data-src="{{ room.stream_url }}">
 
     <div class="rc-head">
       <div class="rc-name">{{ room.room_name }}</div>
       <div class="rc-rank">#{{ forloop.counter }}</div>
+    </div>
+
+    <!-- ── Mini video player ── -->
+    <div class="rc-video-wrap">
+      <video id="vwvid-{{ room.room_name|slugify }}"
+             muted playsinline preload="none"></video>
+      <span class="rc-vlive"><span class="ld"></span> LIVE</span>
+      <span class="rc-vmute">🔇</span>
+      <div class="rc-vspinner"><div class="rc-spin"></div></div>
     </div>
 
     <div class="rc-viewers">
@@ -894,6 +972,68 @@ async function updateViewerCounts() {
 /* ── Start polling ── */
 updateViewerCounts();
 setInterval(updateViewerCounts, 2000);
+
+</script>
+
+<!-- HLS.js for Video Wall -->
+<script src="https://unpkg.com/hls.js@latest"></script>
+<script>
+(function initVideoWall() {
+  const cells = Array.from(document.querySelectorAll('.room-card[data-src]'));
+  if (!cells.length) return;
+
+  const HLS_CONFIG = {
+    enableWorker:              true,
+    lowLatencyMode:            true,
+    maxBufferLength:           6,
+    maxMaxBufferLength:        12,
+    liveSyncDurationCount:     2,
+    liveMaxLatencyDurationCount: 4,
+    liveDurationInfinity:      true,
+    nudgeMaxRetry:             3,
+    maxFragLookUpTolerance:    0.25,
+  };
+
+  function initCell(cell, delay) {
+    setTimeout(() => {
+      const src   = cell.dataset.src;
+      const sl    = slugify(cell.dataset.room || '');
+      const video = document.getElementById('vwvid-' + sl);
+      if (!video) return;
+
+      if (Hls.isSupported()) {
+        const hls = new Hls(HLS_CONFIG);
+        hls.loadSource(src);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play().catch(() => {});
+          cell.classList.add('is-playing');
+        });
+
+        /* auto-reconnect on fatal error */
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (!data.fatal) return;
+          setTimeout(() => {
+            hls.destroy();
+            initCell(cell, 0);
+          }, 8000);
+        });
+
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        /* Safari native HLS */
+        video.src = src;
+        video.addEventListener('loadedmetadata', () => {
+          video.play().catch(() => {});
+          cell.classList.add('is-playing');
+        });
+      }
+    }, delay);
+  }
+
+  /* เริ่ม init ทีละห้อง ห่างกัน 150ms เพื่อกัน network storm */
+  cells.forEach((cell, idx) => initCell(cell, idx * 150));
+})();
 </script>
 </body>
 </html>
