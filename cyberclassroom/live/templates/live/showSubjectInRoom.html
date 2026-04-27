@@ -1823,6 +1823,16 @@
                     <tbody>
                         {% for subject in data_subjec_out %}
                         {% with is_today=subject.course_day|ChangDay %}
+                        {% ifchanged subject.course_day %}
+                        <tr class="day-group-row">
+                            <td colspan="6">
+                                <span class="day-group-chip {% if is_today == IsDayString %}today{% endif %}">
+                                    {% if is_today == IsDayString %}<i class="fas fa-circle me-1" style="font-size:0.5rem;color:#1d4ed8;vertical-align:middle;"></i>{% endif %}
+                                    {{ is_today }}{% if is_today == IsDayString %} — วันนี้{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endifchanged %}
                         <tr class="{% if is_today == IsDayString %}today-row{% endif %}">
                             <td class="text-center" data-label="#">
                                 <span class="row-num">{{ forloop.counter }}</span>
