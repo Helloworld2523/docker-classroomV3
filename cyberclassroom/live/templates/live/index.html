@@ -8,16 +8,26 @@
     setTimeout(function() { location.reload(); }, 60000);
 </script>
 
-<!-- ── Channel count banner ── -->
-<div class="alert alert-info text-center mb-4" role="alert">
-    <h4 class="alert-heading mb-0" style="font-size:clamp(1rem,3vw,1.25rem);">
-        <i class="fas fa-broadcast-tower me-2" style="color:var(--accent);"></i>
-        ช่องถ่ายทอดสดทั้งหมด&nbsp;
-        <span class="count-badge">
+<!-- ── Stats bar ── -->
+<div class="stats-bar mb-4">
+    <div class="stats-bar-left">
+        <i class="fas fa-broadcast-tower"></i>
+        ช่องถ่ายทอดสดทั้งหมด
+    </div>
+    <div class="stats-bar-chips">
+        <span class="stat-chip stat-chip-blue">
             <i class="fas fa-door-open"></i>
-            <span data-count="{{ roomCount }}">{{ roomCount }}</span> ห้อง
+            <span data-count="{{ roomCount }}">{{ roomCount }}</span>&nbsp;ห้อง
         </span>
-    </h4>
+        <span class="stat-chip stat-chip-gold">
+            <i class="fas fa-university"></i>
+            ม.รามคำแหง
+        </span>
+        <span class="stat-chip stat-chip-live">
+            <span class="ld" style="width:6px;height:6px;background:#ef4444;border-radius:50%;display:inline-block;animation:blinker 1s linear infinite;"></span>
+            Live Now
+        </span>
+    </div>
 </div>
 
 <!-- ── Search bars ── -->
@@ -65,9 +75,11 @@
         <i class="fas fa-th-large"></i>
     </div>
     <div>
-        <h4>ห้องเรียนทั้งหมด
-            <span class="section-spacer ms-2">·</span>
-            <span class="section-sub d-inline ms-1">เลือกห้องเพื่อเข้าชมการถ่ายทอดสด</span>
+        <div style="font-size:0.7rem;font-weight:600;color:var(--gold-500);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2px;">
+            LIVE STREAMING
+        </div>
+        <h4 style="margin:0;line-height:1.2;">ห้องเรียนทั้งหมด
+            <span class="section-sub d-block" style="font-size:0.82rem;font-weight:400;margin-top:1px;">เลือกห้องเพื่อเข้าชมการถ่ายทอดสด</span>
         </h4>
     </div>
 </div>
@@ -101,20 +113,40 @@
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
     {% for room in classroom_p %}
     <div class="col reveal">
+        {% get_room_schedule room %}
         <div class="channel-card">
 
-            <!-- Channel header -->
-            <div class="channel-header">
-                <h5>
-                    <span class="ch-icon"><i class="fas fa-tv"></i></span>
-                    {{ room.room_name }}
-                </h5>
+            <!-- Thumbnail -->
+            <div class="channel-thumb">
+                <div class="channel-thumb-bg"></div>
+                <div class="channel-thumb-overlay"></div>
+                <span class="channel-thumb-code">
+                    <i class="fas fa-map-marker-alt"></i>{{ room.room_location.location_name }}
+                </span>
+                <!-- Live badge — แสดงถ้ามีคลาสที่กำลัง live อยู่ -->
+                {% for schedule in today_schedules %}{% if schedule|is_current_class_time %}
+                <span class="channel-thumb-live">
+                    <span class="live-dot-sm"></span>LIVE
+                </span>
+                {% endif %}{% endfor %}
+                <!-- Today badge — แสดงถ้าไม่มี live แต่มีเรียนวันนี้ -->
                 {% if room.has_today %}
-                <span class="badge-today-class">📚 มีเรียนวันนี้</span>
+                {% with has_live=False %}
+                {% for schedule in today_schedules %}{% if schedule|is_current_class_time %}{% with has_live=True %}{% endwith %}{% endif %}{% endfor %}
+                {% endwith %}
                 {% endif %}
+                {% if room.has_today %}
+                <span class="channel-thumb-badge channel-thumb-badge--today">
+                    <span class="chip-dot"></span>มีเรียนวันนี้
+                </span>
+                {% endif %}
+                <div class="channel-thumb-name">
+                    <div class="ch-icon"><i class="fas fa-tv"></i></div>
+                    <h5>{{ room.room_name }}</h5>
+                </div>
             </div>
 
-            <!-- Channel body -->
+            <!-- Body -->
             <div class="channel-body">
                 {% if room.room_comment %}
                 <div class="alert alert-warning alert-dismissible fade show mb-3 py-2" role="alert" style="font-size:0.84rem;">
@@ -126,20 +158,16 @@
 
                 <!-- Meta -->
                 <div class="channel-meta">
-                    <span class="badge bg-danger" style="font-size:0.72rem;">
-                        <i class="fas fa-map-marker-alt me-1"></i>{{ room.room_location.location_name }}
-                    </span>
-                    <span class="badge" style="background:rgba(59,130,246,0.15);color:#93c5fd;font-size:0.72rem;">
+                    <span class="badge" style="background:rgba(30,60,184,0.12);color:var(--blue-500);font-size:0.72rem;border:1px solid rgba(30,60,184,0.18);">
                         <i class="fas fa-book me-1"></i>{{ room.classschedulecenter_set.count }} วิชา
                     </span>
                 </div>
 
                 <!-- Today's schedule -->
-                <div class="mb-1" style="font-size:0.74rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem !important;">
-                    <i class="fas fa-calendar-day me-1"></i>วิชาวันนี้
+                <div class="sched-label">
+                    <i class="fas fa-calendar-day"></i>วิชาวันนี้
                 </div>
 
-                {% get_room_schedule room %}
                 {% if is_today_schedule_empty %}
                     <div class="no-today">
                         <i class="fas fa-calendar-times"></i>

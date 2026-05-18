@@ -491,7 +491,7 @@ a, button, .btn { touch-action: manipulation; }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.15s;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.15s;
   box-shadow: var(--shadow-card);
   height: 100%;
   display: flex;
@@ -500,12 +500,143 @@ a, button, .btn { touch-action: manipulation; }
 }
 @media (hover:hover) {
   .channel-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-5px);
     border-color: var(--border-accent);
     box-shadow: var(--shadow-lg), var(--shadow-glow);
   }
 }
-/* Channel header */
+
+/* ── Channel thumbnail (new card design) ── */
+.channel-thumb {
+  aspect-ratio: 16 / 9;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.channel-thumb::after {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 75% 15%, rgba(255,255,255,0.18), transparent 42%),
+    repeating-linear-gradient(135deg, transparent 0, transparent 22px, rgba(255,255,255,0.03) 22px, rgba(255,255,255,0.03) 23px);
+  pointer-events: none;
+  z-index: 1;
+}
+.channel-thumb-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #07112a 0%, #0f2060 50%, #1630a0 100%);
+}
+/* Gold shimmer orb on every card */
+.channel-thumb-bg::before {
+  content: "";
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 160px; height: 160px;
+  background: radial-gradient(circle, rgba(196,154,26,0.22) 0%, transparent 65%);
+}
+/* 6-step color cycling for visual variety */
+.col:nth-child(6n+1) .channel-thumb-bg { background: linear-gradient(135deg, #07112a 0%, #0f2060 50%, #1630a0 100%); }
+.col:nth-child(6n+2) .channel-thumb-bg { background: linear-gradient(135deg, #140540 0%, #2a1480 50%, #4c1d95 100%); }
+.col:nth-child(6n+3) .channel-thumb-bg { background: linear-gradient(135deg, #052030 0%, #0a3d55 50%, #0e7490 100%); }
+.col:nth-child(6n+4) .channel-thumb-bg { background: linear-gradient(135deg, #030d2a 0%, #0c2048 50%, #1d4ed8 100%); }
+.col:nth-child(6n+5) .channel-thumb-bg { background: linear-gradient(135deg, #100a2a 0%, #1e1060 50%, #3730a3 100%); }
+.col:nth-child(6n+0) .channel-thumb-bg { background: linear-gradient(135deg, #041820 0%, #073040 50%, #075985 100%); }
+
+/* Dark overlay for readability of centered room name */
+.channel-thumb-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.22);
+  z-index: 2;
+}
+/* Location code — top-left */
+.channel-thumb-code {
+  position: absolute; top: 12px; left: 14px;
+  z-index: 3;
+  color: rgba(255,255,255,0.72);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: 'Inter', system-ui, sans-serif;
+  display: flex; align-items: center; gap: 4px;
+}
+/* LIVE badge — top-right (แดง, แสดงเมื่อมี class กำลัง live) */
+.channel-thumb-live {
+  position: absolute; top: 10px; right: 12px;
+  z-index: 4;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(220,38,38,0.88);
+  border: 1px solid rgba(255,100,100,0.5);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  padding: 4px 11px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 12px rgba(220,38,38,0.5);
+  animation: livePulse 2s ease-in-out infinite;
+}
+.live-dot-sm {
+  width: 6px; height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: blinker 1s linear infinite;
+}
+/* Today badge — bottom-left */
+.channel-thumb-badge {
+  position: absolute; bottom: 10px; left: 12px;
+  z-index: 3;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(34,197,94,0.22);
+  border: 1px solid rgba(34,197,94,0.4);
+  color: #86efac;
+  border-radius: var(--radius-pill);
+  padding: 3px 9px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(6px);
+}
+.channel-thumb-badge .chip-dot {
+  width: 5px; height: 5px;
+  background: #4ade80;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: blinker 1.4s linear infinite;
+}
+/* Room name — centered in thumbnail */
+.channel-thumb-name {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  z-index: 3;
+  text-align: center;
+}
+.channel-thumb-name .ch-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 10px;
+  color: #fbbf24;
+  font-size: 1rem;
+}
+.channel-thumb-name h5 {
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+  margin: 0;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.6);
+  font-family: 'Inter', 'Noto Sans Thai', system-ui, sans-serif;
+}
+
+/* ── Legacy channel-header (kept for other templates) ── */
 .channel-header {
   background: linear-gradient(135deg, #07112a, #0f2060, #1630a0);
   padding: 1rem 1.2rem;
@@ -668,6 +799,70 @@ a, button, .btn { touch-action: manipulation; }
     box-shadow: 0 6px 22px var(--accent-glow);
     transform: translateY(-1px);
   }
+}
+
+/* ── Schedule label inside card body ── */
+.sched-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  display: flex; align-items: center; gap: 5px;
+}
+
+/* ─────────────────────────────────────────────
+   STATS BAR
+───────────────────────────────────────────── */
+.stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+.stats-bar-left {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+.stats-bar-left i { color: var(--accent); font-size: 1rem; }
+.stats-bar-chips {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.stat-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.28rem 0.85rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: 'Inter', system-ui, sans-serif;
+  border: 1px solid transparent;
+}
+.stat-chip-blue {
+  background: rgba(30,60,184,0.1);
+  color: var(--blue-500);
+  border-color: rgba(30,60,184,0.2);
+}
+:root.dark-mode .stat-chip-blue { color: var(--blue-300); }
+.stat-chip-gold {
+  background: rgba(196,154,26,0.1);
+  color: var(--gold-500);
+  border-color: rgba(196,154,26,0.22);
+}
+:root.dark-mode .stat-chip-gold { color: var(--gold-300); }
+.stat-chip-live {
+  background: rgba(220,38,38,0.1);
+  color: #ef4444;
+  border-color: rgba(220,38,38,0.22);
+  animation: livePulse 2s ease-in-out infinite;
 }
 
 /* ─────────────────────────────────────────────

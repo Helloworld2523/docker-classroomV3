@@ -154,15 +154,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Source — ไฟล์ CSS/JS/Images ที่เราแก้โค้ด
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'staticfiles'),
-
+    os.path.join(BASE_DIR, 'static'),
 ]
 
-# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-# STATIC_ROOT = "/Users/a0002/Desktop/docker-classroom/cyberclassroom/static"
-#STATIC_URL = "/Users/a0002/Desktop/docker-classroom/cyberclassroom/static2"
-# STATIC_ROOT จะใช้ตอน deploy จริงบน Production Server
-# เมื่อคุณรัน 'collectstatic' ไฟล์ทั้งหมดจะถูกย้ายไปที่นี่
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# Output — collectstatic จะก็อปทุกอย่างมาที่นี่, Nginx เสิร์ฟ folder นี้
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # TEMPLATES[0]['OPTIONS']['debug'] = True  # 🔁 ให้ reload template เมื่อแก้ HTML
