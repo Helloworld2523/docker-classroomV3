@@ -1836,9 +1836,745 @@
 </script>
     </div>
 
+    <!-- ─── CHAT PANEL ─── -->
+    {% if room.chat_pin %}
+    <div class="chat-card mt-3" id="chatSection">
+
+        <!-- Header -->
+        <div class="chat-card-header">
+            <div class="chat-card-title">
+                <span class="chat-live-pill"><span class="chat-live-dot-anim"></span>LIVE</span>
+                <span class="chat-room-label">{{ room.room_name }}</span>
+            </div>
+            <div class="chat-header-right">
+                <i class="fas fa-users" style="font-size:0.75rem;opacity:0.7;"></i>
+                <span id="chatViewerCount" style="font-size:0.78rem;color:rgba(255,255,255,0.8);font-weight:600;">—</span>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="chat-tabs">
+            <button class="chat-tab active" id="tabChat" onclick="switchTab('chat')">
+                <i class="fas fa-comment-dots"></i> แชท
+                <span class="chat-tab-badge" id="chatUnreadBadge" style="display:none;"></span>
+            </button>
+            <button class="chat-tab" id="tabParticipants" onclick="switchTab('participants')">
+                <i class="fas fa-users"></i> ผู้ร่วม
+            </button>
+        </div>
+
+        <!-- Welcome notice -->
+        <div class="chat-notice" id="chatWelcome">
+            <i class="fas fa-shield-alt chat-notice-icon"></i>
+            <span>กรุณาใช้คำสุภาพและให้เกียรติผู้อื่นในการสนทนา</span>
+            <button class="chat-notice-close" onclick="dismissChatWelcome()" title="ปิด">×</button>
+        </div>
+
+        <!-- Tab: แชท -->
+        <div id="panelChat">
+            <div id="chatMessages" class="chat-messages-box"></div>
+            <div id="chatEmpty" class="chat-empty-state">
+                <i class="fas fa-comment-slash"></i>
+                <span>ยังไม่มีข้อความในคาบนี้</span>
+            </div>
+            <div class="chat-input-area">
+                <div class="chat-sender-row">
+                    <div class="chat-sender-wrap">
+                        <i class="fas fa-user chat-sender-icon"></i>
+                        <input id="chatSender" type="text" placeholder="ชื่อของคุณ" class="chat-sender-input" maxlength="40">
+                    </div>
+                    <button id="chatTeacherBtn" onclick="chatPromptTeacher()" class="chat-teacher-btn" title="เข้าสู่โหมดอาจารย์">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        <span>อาจารย์</span>
+                    </button>
+                </div>
+                <div class="chat-compose-row">
+                    <textarea id="chatInput" rows="2" placeholder="พิมพ์ข้อความ…" class="chat-compose-input" maxlength="500"></textarea>
+                    <button id="chatSendBtn" onclick="chatSend()" class="chat-send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: ผู้ร่วม -->
+        <div id="panelParticipants" style="display:none;">
+            <div class="participants-panel">
+                <div class="participants-count-row">
+                    <span class="participants-count-num" id="participantsBig">—</span>
+                    <span class="participants-count-label">ผู้เข้าร่วมชม</span>
+                </div>
+                <div class="participants-live-row">
+                    <span class="chat-live-pill" style="font-size:0.7rem;">
+                        <span class="chat-live-dot-anim"></span>กำลังออกอากาศสด
+                    </span>
+                    <span style="font-size:0.78rem;color:var(--text-muted);" id="chatOnlineCount">กำลังเชื่อมต่อ…</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    {% endif %}
+
     </div><!-- /room-sidebar -->
     </div><!-- /col-lg-4 -->
 </div><!-- /row -->
+
+<!-- ─── CHAT STYLES ─── -->
+<style>
+/* Card container */
+.chat-card {
+    background: var(--bg-surface, #fff);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    display: flex;
+    flex-direction: column;
+    max-height: 580px;
+}
+
+/* Header */
+.chat-card-header {
+    background: linear-gradient(135deg, #07112a 0%, #102480 60%, #1e3cb8 100%);
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.chat-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.chat-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(220,38,38,0.85);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    padding: 3px 9px;
+    border-radius: 20px;
+}
+.chat-live-dot-anim {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #fff;
+    animation: livePulse 1.5s ease-in-out infinite;
+    display: inline-block;
+}
+.chat-room-label {
+    color: rgba(255,255,255,0.85);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.chat-status-text {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+/* Notice banner */
+.chat-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fffbeb;
+    border-bottom: 1px solid #fde68a;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.78rem;
+    color: #92400e;
+    line-height: 1.4;
+}
+.chat-notice-icon { color: #d97706; flex-shrink: 0; }
+.chat-notice span { flex: 1; }
+.chat-notice-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: #b45309;
+    line-height: 1;
+    padding: 0 2px;
+    flex-shrink: 0;
+}
+:root.dark-mode .chat-notice {
+    background: #2d1f00;
+    border-color: #78350f;
+    color: #fcd34d;
+}
+
+/* Messages box */
+.chat-messages-box {
+    flex: 1;
+    height: 260px;
+    overflow-y: auto;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,0,0,0.12) transparent;
+}
+
+/* Empty state */
+.chat-empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 1.5rem;
+    color: var(--text-muted, #94a3b8);
+    font-size: 0.82rem;
+}
+.chat-empty-state i { font-size: 1.5rem; opacity: 0.4; }
+.chat-empty-state.visible { display: flex; }
+
+/* Message bubbles */
+.chat-wrap { display: flex; flex-direction: column; gap: 1px; }
+.chat-meta {
+    font-size: 0.63rem;
+    color: var(--text-muted, #94a3b8);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 2px;
+    margin-top: 0.3rem;
+}
+.chat-meta.teacher-meta { color: #3b5bdb; }
+.badge-teacher {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: linear-gradient(135deg,#07112a,#1e3cb8);
+    color: #fcd34d;
+    border-radius: 20px;
+    padding: 1px 6px;
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+.chat-bubble {
+    max-width: 92%;
+    padding: 0.35rem 0.65rem;
+    border-radius: 4px 12px 12px 12px;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    word-break: break-word;
+    background: #f1f5f9;
+    color: #1e293b;
+    align-self: flex-start;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.chat-bubble.teacher-bubble {
+    background: linear-gradient(135deg,#07112a 0%,#102480 100%);
+    color: #fff;
+    border-radius: 4px 12px 12px 12px;
+}
+:root.dark-mode .chat-bubble { background: #1e293b; color: #e2e8f0; }
+:root.dark-mode .chat-meta { color: #64748b; }
+:root.dark-mode .chat-meta.teacher-meta { color: #93c5fd; }
+
+/* Input area */
+.chat-input-area {
+    border-top: 1px solid var(--border, #e2e8f0);
+    padding: 0.7rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: var(--bg-surface, #fff);
+}
+.chat-sender-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+.chat-sender-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--bg-base, #f8fafc);
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    padding: 0 0.6rem;
+}
+.chat-sender-icon { color: var(--text-muted, #94a3b8); font-size: 0.75rem; }
+.chat-sender-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.4rem 0;
+    font-size: 0.82rem;
+    color: var(--text-primary, #1e293b);
+    font-family: inherit;
+    outline: none;
+    min-width: 0;
+}
+.chat-teacher-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.4rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid #c49a1a;
+    background: transparent;
+    color: #c49a1a;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.chat-teacher-btn:hover { background: rgba(196,154,26,0.1); }
+.chat-teacher-btn.active {
+    background: #c49a1a;
+    color: #fff;
+    border-color: #c49a1a;
+}
+.chat-compose-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+.chat-compose-input {
+    flex: 1;
+    resize: none;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-primary, #1e293b);
+    background: var(--bg-base, #f8fafc);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.chat-compose-input:focus { border-color: #1e3cb8; }
+.chat-send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg,#1e3cb8,#102480);
+    color: #fff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(30,60,184,0.3);
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+}
+.chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+:root.dark-mode .chat-input-area { background: var(--bg-surface); border-color: var(--border); }
+:root.dark-mode .chat-compose-input { background: var(--bg-base); color: var(--text-primary); border-color: var(--border); }
+:root.dark-mode .chat-sender-wrap { background: var(--bg-base); border-color: var(--border); }
+:root.dark-mode .chat-sender-input { color: var(--text-primary); }
+
+/* ── Header right ── */
+.chat-header-right {
+    display: flex; align-items: center; gap: 5px;
+    color: rgba(255,255,255,0.8);
+}
+
+/* ── Tabs ── */
+.chat-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+    background: var(--bg-surface, #fff);
+}
+.chat-tab {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    border: none;
+    background: transparent;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted, #94a3b8);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+    font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.chat-tab::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 20%; right: 20%;
+    height: 2px;
+    background: #1e3cb8;
+    border-radius: 2px 2px 0 0;
+    transform: scaleX(0);
+    transition: transform 0.2s;
+}
+.chat-tab.active { color: #1e3cb8; }
+.chat-tab.active::after { transform: scaleX(1); }
+:root.dark-mode .chat-tabs { background: var(--bg-surface); border-color: var(--border); }
+:root.dark-mode .chat-tab.active { color: #93c5fd; }
+:root.dark-mode .chat-tab.active::after { background: #93c5fd; }
+.chat-tab-badge {
+    background: #dc2626; color: #fff;
+    border-radius: 10px; padding: 0 5px;
+    font-size: 0.6rem; font-weight: 800;
+    min-width: 16px; text-align: center;
+}
+
+/* ── Avatar circle ── */
+.chat-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 800; color: #fff;
+    flex-shrink: 0; margin-top: 2px;
+    letter-spacing: 0;
+}
+.chat-msg-row {
+    display: flex; gap: 0.5rem; align-items: flex-start;
+    padding: 0.1rem 0;
+}
+.chat-msg-body { flex: 1; min-width: 0; }
+.chat-meta {
+    font-size: 0.63rem;
+    color: var(--text-muted, #94a3b8);
+    display: flex; align-items: center; gap: 0.25rem;
+    padding: 0 2px; margin-bottom: 2px;
+}
+.chat-meta.teacher-meta { color: #1e3cb8; font-weight: 600; }
+:root.dark-mode .chat-meta.teacher-meta { color: #93c5fd; }
+
+/* ── Participants panel ── */
+.participants-panel {
+    padding: 2rem 1.5rem;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 1rem;
+    min-height: 220px; justify-content: center;
+}
+.participants-count-row {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 0.2rem;
+}
+.participants-count-num {
+    font-size: 3rem; font-weight: 800;
+    color: #1e3cb8; line-height: 1;
+}
+.participants-count-label {
+    font-size: 0.85rem; color: var(--text-muted, #94a3b8);
+    font-weight: 500;
+}
+.participants-live-row {
+    display: flex; align-items: center; gap: 0.6rem;
+}
+</style>
+
+<!-- ─── CHAT SCRIPT ─── -->
+{% if room.chat_pin %}
+<script>
+(function(){
+    const ROOM      = '{{ room.room_name|escapejs }}';
+    const SINCE     = '{{ chat_since|escapejs }}';
+    const CLASS_END = '{{ class_end|escapejs }}';    /* ISO datetime หมดคาบ */
+    const FETCH_URL = '/chat/' + ROOM + '/messages/?since=' + encodeURIComponent(SINCE) + '&after=';
+    const SEND_URL  = '/chat/' + ROOM + '/send/';
+    const POLL_MS   = 3000;
+
+    let lastId     = 0;
+    let msgCount   = 0;
+    let classDone  = false;   /* true = หมดคาบ หยุดแสดงข้อความเก่า */
+    let teacherPin = localStorage.getItem('chat_teacher_pin_' + ROOM) || '';
+    let senderName = localStorage.getItem('chat_sender_' + ROOM) || '';
+
+    const box      = document.getElementById('chatMessages');
+    const empty    = document.getElementById('chatEmpty');
+    const input    = document.getElementById('chatInput');
+    const senderEl = document.getElementById('chatSender');
+    const tBtn     = document.getElementById('chatTeacherBtn');
+
+    /* ── ตั้งค่าเริ่มต้น ── */
+    if (senderName) senderEl.value = senderName;
+    updateTeacherBtn();
+    updateEmpty();
+
+    /* ── Welcome notice (แสดงครั้งแรกที่ใช้แชทในห้องนี้) ── */
+    const welcomeEl = document.getElementById('chatWelcome');
+    if (welcomeEl) {
+        if (localStorage.getItem('chat_welcome_seen_' + ROOM)) {
+            welcomeEl.style.display = 'none';
+        }
+    }
+    window.dismissChatWelcome = function(){
+        if (welcomeEl) welcomeEl.style.display = 'none';
+        localStorage.setItem('chat_welcome_seen_' + ROOM, '1');
+    };
+
+    /* ── บันทึกชื่อลง localStorage ── */
+    senderEl.addEventListener('change', function(){
+        localStorage.setItem('chat_sender_' + ROOM, this.value.trim());
+        senderName = this.value.trim();
+    });
+
+    /* ── กด Enter ส่งข้อความ (Shift+Enter = ขึ้นบรรทัด) ── */
+    input.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); chatSend(); }
+    });
+
+    /* ── Tab switching ── */
+    window.switchTab = function(tab){
+        const isChat = tab === 'chat';
+        document.getElementById('tabChat').classList.toggle('active', isChat);
+        document.getElementById('tabParticipants').classList.toggle('active', !isChat);
+        document.getElementById('panelChat').style.display        = isChat ? '' : 'none';
+        document.getElementById('panelParticipants').style.display = isChat ? 'none' : '';
+        if (isChat){
+            /* reset unread badge */
+            const badge = document.getElementById('chatUnreadBadge');
+            badge.style.display = 'none';
+            badge.textContent   = '';
+        }
+    };
+
+    /* ── Viewer count sync (global เพื่อให้ viewer poll เรียกได้) ── */
+    window.updateViewerCount = function(n){
+        const vcHead = document.getElementById('chatViewerCount');
+        const vcBig  = document.getElementById('participantsBig');
+        if (vcHead) vcHead.textContent = n;
+        if (vcBig)  vcBig.textContent  = n;
+    };
+
+    /* ── Fetch ── */
+    function fetchMessages(){
+        if (classDone) return;
+        fetch(FETCH_URL + lastId)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.messages || !data.messages.length) return;
+                const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+                data.messages.forEach(appendMessage);
+                if (atBottom) box.scrollTop = box.scrollHeight;
+                const now = new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+                const countEl = document.getElementById('chatOnlineCount');
+                if (countEl) countEl.textContent = 'อัปเดต ' + now;
+                updateEmpty();
+            })
+            .catch(() => {});
+    }
+
+    /* ── Avatar helpers ── */
+    const AVATAR_COLORS = [
+        '#1e3cb8','#7c3aed','#059669','#dc2626',
+        '#d97706','#0891b2','#be185d','#4338ca',
+    ];
+    function avatarColor(name){
+        let h = 0;
+        for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+        return AVATAR_COLORS[h % AVATAR_COLORS.length];
+    }
+    function getInitials(name){
+        const parts = name.trim().split(/\s+/);
+        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return name.slice(0, 2).toUpperCase();
+    }
+
+    /* ── Append message row ── */
+    function appendMessage(m){
+        lastId = Math.max(lastId, m.id);
+        msgCount++;
+
+        const row = document.createElement('div');
+        row.className = 'chat-msg-row';
+
+        /* avatar */
+        const av = document.createElement('div');
+        av.className = 'chat-avatar';
+        av.style.background = m.is_teacher
+            ? 'linear-gradient(135deg,#07112a,#1e3cb8)'
+            : avatarColor(m.sender);
+        av.textContent = getInitials(m.sender);
+
+        /* body */
+        const body = document.createElement('div');
+        body.className = 'chat-msg-body';
+
+        const meta = document.createElement('div');
+        meta.className = 'chat-meta' + (m.is_teacher ? ' teacher-meta' : '');
+        meta.innerHTML = (m.is_teacher
+            ? '<span class="badge-teacher"><i class="fas fa-chalkboard-teacher" style="font-size:0.58rem"></i> อาจารย์</span> '
+            : '') + escHtml(m.sender) + ' · ' + m.time;
+
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble' + (m.is_teacher ? ' teacher-bubble' : '');
+        bubble.innerHTML = linkify(m.message);
+
+        body.appendChild(meta);
+        body.appendChild(bubble);
+        row.appendChild(av);
+        row.appendChild(body);
+        box.appendChild(row);
+
+        /* unread badge เมื่อ tab แชทไม่ active */
+        if (!document.getElementById('tabChat').classList.contains('active')){
+            const badge = document.getElementById('chatUnreadBadge');
+            badge.style.display = 'inline-block';
+            badge.textContent = (parseInt(badge.textContent) || 0) + 1;
+        }
+    }
+
+    function updateEmpty(){
+        if (msgCount === 0){
+            empty.classList.add('visible');
+            box.style.display = 'none';
+        } else {
+            empty.classList.remove('visible');
+            box.style.display = 'flex';
+        }
+    }
+
+    /* ── Send ── */
+    window.chatSend = function(){
+        const msg  = input.value.trim();
+        const name = senderEl.value.trim();
+        if (!msg) { input.focus(); return; }
+        if (!name){
+            senderEl.focus();
+            senderEl.closest('.chat-sender-wrap').style.borderColor = '#ef4444';
+            showToast('กรุณาระบุชื่อของคุณ', 'error');
+            return;
+        }
+        senderEl.closest('.chat-sender-wrap').style.borderColor = '';
+        localStorage.setItem('chat_sender_' + ROOM, name);
+        senderName = name;
+
+        const btn = document.getElementById('chatSendBtn');
+        btn.disabled = true;
+
+        fetch(SEND_URL, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json','X-CSRFToken': getCookie('csrftoken')},
+            body: JSON.stringify({ sender: name, message: msg, teacher_pin: teacherPin })
+        })
+        .then(r => {
+            if (r.status === 429){ showToast('ส่งถี่เกินไป กรุณารอสักครู่', 'error'); return null; }
+            if (r.status === 403){ showToast('เซสชันหมดอายุ กรุณารีเฟรชหน้า', 'error'); return null; }
+            return r.json();
+        })
+        .then(data => {
+            if (!data) return;
+            if (data.error){ showToast(data.error, 'error'); return; }
+            input.value = '';
+            appendMessage(data);
+            updateEmpty();
+            box.scrollTop = box.scrollHeight;
+        })
+        .catch(() => showToast('เชื่อมต่อไม่ได้ กรุณาลองใหม่', 'error'))
+        .finally(() => { btn.disabled = false; });
+    };
+
+    /* ── Teacher login ── */
+    window.chatPromptTeacher = function(){
+        if (teacherPin){
+            if (confirm('ออกจากโหมดอาจารย์?')){
+                teacherPin = '';
+                localStorage.removeItem('chat_teacher_pin_' + ROOM);
+                updateTeacherBtn();
+                showToast('ออกจากโหมดอาจารย์แล้ว', 'success');
+            }
+            return;
+        }
+        const pin = prompt('กรุณาใส่รหัสอาจารย์:');
+        if (!pin) return;
+        fetch(SEND_URL, {
+            method:'POST',
+            headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+            body: JSON.stringify({sender: senderEl.value.trim() || 'อาจารย์', message:'__ping__', teacher_pin: pin})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error){ showToast('รหัสไม่ถูกต้อง', 'error'); return; }
+            if (data.is_teacher){
+                teacherPin = pin;
+                localStorage.setItem('chat_teacher_pin_' + ROOM, pin);
+                updateTeacherBtn();
+                showToast('เข้าสู่โหมดอาจารย์แล้ว ✓', 'success');
+                lastId = data.id; /* ซ่อน ping message */
+            } else {
+                showToast('รหัสไม่ถูกต้อง', 'error');
+            }
+        })
+        .catch(() => showToast('เชื่อมต่อไม่ได้', 'error'));
+    };
+
+    function updateTeacherBtn(){
+        if (teacherPin){
+            tBtn.classList.add('active');
+            tBtn.innerHTML = '<i class="fas fa-star"></i><span>กำลังสอน</span>';
+        } else {
+            tBtn.classList.remove('active');
+            tBtn.innerHTML = '<i class="fas fa-chalkboard-teacher"></i><span>อาจารย์</span>';
+        }
+    }
+
+    /* ── Toast ── */
+    function showToast(msg, type){
+        const t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);'
+            + 'padding:0.5rem 1.2rem;border-radius:20px;font-size:0.84rem;font-weight:600;'
+            + 'z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.18);white-space:nowrap;'
+            + (type === 'error' ? 'background:#dc2626;color:#fff;'
+               : type === 'info' ? 'background:#1e3cb8;color:#fff;'
+               : 'background:#16a34a;color:#fff;');
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
+    function escHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    /* แปลง URL ในข้อความให้เป็น link — escape ก่อน แล้วค่อย wrap URL */
+    function linkify(text){
+        const escaped = escHtml(text);
+        return escaped.replace(
+            /((https?:\/\/)[^\s<>"]{4,})/g,
+            function(url){
+                /* ตัด trailing punctuation ออก */
+                const clean = url.replace(/[.,;:!?)\]]+$/, '');
+                return '<a href="' + clean + '" target="_blank" rel="noopener noreferrer" '
+                    + 'style="color:inherit;text-decoration:underline;word-break:break-all;">'
+                    + clean + '</a>';
+            }
+        );
+    }
+    function getCookie(n){
+        const v = document.cookie.match('(^|;)\\s*' + n + '\\s*=\\s*([^;]+)');
+        return v ? v.pop() : '';
+    }
+
+    /* ── Auto-clear เมื่อหมดคาบ ── */
+    (function scheduleClassEnd(){
+        const endMs = new Date(CLASS_END).getTime() - Date.now();
+        if (endMs <= 0) return;
+        setTimeout(function(){
+            classDone = true;        /* หยุด fetch รอบใหม่ */
+            box.innerHTML = '';      /* เคลีย UI */
+            msgCount = 0;
+            /* lastId ไม่ reset — ป้องกันข้อความเก่ากลับมา */
+            updateEmpty();
+            showToast('หมดคาบแล้ว — แชทจะเริ่มใหม่เมื่อเริ่มคาบถัดไป', 'info');
+        }, endMs);
+    })();
+
+    /* ── Start polling ── */
+    fetchMessages();
+    setInterval(fetchMessages, POLL_MS);
+})();
+</script>
+{% endif %}
 
 <!-- ─── ALL SUBJECTS ─── -->
 <div class="page-section pb-4">
@@ -1939,6 +2675,8 @@
                 }
                 badge.setAttribute('data-viewer-count', newCount);
                 timeSpan.textContent = `อัปเดต ${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`;
+                /* sync ไปยัง chat panel header + participants tab */
+                if (typeof updateViewerCount === 'function') updateViewerCount(newCount);
             })
             .catch(() => {
                 badge.textContent = '—';

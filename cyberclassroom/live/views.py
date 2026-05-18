@@ -15,12 +15,21 @@ from django import template
 #from django.db.models import Count
 from . import config
 from .models import (Classrooms, ClassScheduleCenter, Locations,
-                     LogSubjectInRoom,Count,LiveClassroom)
+                     LogSubjectInRoom, Count, LiveClassroom, ChatMessage)
 
 from django_ratelimit.decorators import ratelimit
 from django.views.decorators.cache import cache_page
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.utils.timezone import localtime, now as tz_now
+
+def _safe_localtime(dt):
+    """แปลง datetime เป็น local time — รองรับทั้ง USE_TZ=True และ USE_TZ=False"""
+    from django.conf import settings
+    if getattr(settings, 'USE_TZ', True) and hasattr(dt, 'tzinfo') and dt.tzinfo:
+        return localtime(dt)
+    return dt
 from django.db.models import Exists, OuterRef
 #from django.db.models import Q
 
@@ -204,8 +213,46 @@ def get_client_ip(request):
 
 
     
+def _get_chat_info(subjects, now_local):
+    """คืน dict ที่มี chat_since และ class_end สำหรับคาบปัจจุบัน
+    - chat_since: ISO datetime เวลาเริ่มคาบ (กรองแชทเฉพาะคาบนี้)
+    - class_end:  ISO datetime เวลาหมดคาบ (JS ใช้ตั้ง timer auto-clear)
+    หากไม่มีคาบกำลังเรียน ทั้งคู่เป็นเวลาปัจจุบัน
+    """
+    from datetime import datetime as _dt
+    now_t = now_local.time()
+
+    def _parse(s):
+        if not s:
+            return None
+        s = s.strip()
+        for fmt in ('%H:%M', '%H.%M'):
+            try:
+                return _dt.strptime(s, fmt).time()
+            except ValueError:
+                continue
+        return None
+
+    for subj in subjects:
+        t_start = _parse(subj.time_start)
+        t_end   = _parse(subj.time_end)
+        if t_start and t_end and t_start <= now_t <= t_end:
+            return {
+                'chat_since': _dt.combine(now_local.date(), t_start).isoformat(),
+                'class_end':  _dt.combine(now_local.date(), t_end).isoformat(),
+            }
+
+    now_iso = now_local.isoformat()
+    return {'chat_since': now_iso, 'class_end': now_iso}
+
+
+def _get_chat_since(subjects, now_local):
+    return _get_chat_info(subjects, now_local)['chat_since']
+
+
+@ensure_csrf_cookie
 def showSubjectInRoom(request, room):
-    now = datetime.now()
+    now = datetime.now()   # local Bangkok time (TZ=Asia/Bangkok)
     today_day_en = now.strftime("%A")
     today_day_int = now.strftime("%w")  # string '0'-'6'
 
@@ -284,9 +331,11 @@ def showSubjectInRoom(request, room):
         'today_day_en': today_day_en,
         'location': location,
         'server': server,
+        'room': data_classroom,
         'room_comment': data_classroom.room_comment,
         'sessions_total': countOnline,
         'valid_locations': valid_locations,
+        **_get_chat_info(data_subject, now),
     }
 
     return render(request, 'live/showSubjectInRoom.html', context)
@@ -532,3 +581,85 @@ def live_viewer_data(request):
         for room in rooms
     ]
     return JsonResponse({'data': data})
+
+
+# ═══════════════════════════════════════════════════════════
+#  CHAT — Polling-based real-time chat (ไม่ต้องการ WebSocket)
+# ═══════════════════════════════════════════════════════════
+
+@require_GET
+def chat_fetch(request, room_name):
+    """ดึงข้อความใหม่หลังจาก after_id — ถูกเรียกทุก 3 วินาที
+    รับ ?after=<id>&since=<ISO datetime> เพื่อกรองเฉพาะข้อความในคาบปัจจุบัน
+    """
+    after_id  = int(request.GET.get('after', 0))
+    since_str = request.GET.get('since', '')
+
+    qs = ChatMessage.objects.filter(room_id=room_name, id__gt=after_id).exclude(message='__ping__')
+
+    if since_str:
+        try:
+            from datetime import datetime as _dt
+            since_dt = _dt.fromisoformat(since_str.split('+')[0])  # ตัด timezone offset ออก
+            qs = qs.filter(created_at__gte=since_dt)
+        except (ValueError, TypeError):
+            pass
+
+    msgs = qs.values('id', 'sender', 'is_teacher', 'message', 'created_at').order_by('id')[:50]
+    result = [
+        {
+            'id':         m['id'],
+            'sender':     m['sender'],
+            'is_teacher': m['is_teacher'],
+            'message':    m['message'],
+            'time':       _safe_localtime(m['created_at']).strftime('%H:%M'),
+        }
+        for m in msgs
+    ]
+    return JsonResponse({'messages': result})
+
+
+@ratelimit(key='ip', rate='10/m', method='POST', block=True)
+def chat_send(request, room_name):
+    """รับข้อความจาก client — จำกัด 10 ข้อความ/นาที/IP"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method not allowed'}, status=405)
+    try:
+        data        = json.loads(request.body)
+        sender      = data.get('sender', '').strip()[:80]
+        message     = data.get('message', '').strip()[:500]
+        teacher_pin = data.get('teacher_pin', '').strip()
+
+        if not sender:
+            return JsonResponse({'error': 'กรุณาระบุชื่อ'}, status=400)
+        if not message:
+            return JsonResponse({'error': 'ข้อความว่างเปล่า'}, status=400)
+
+        room = get_object_or_404(Classrooms, room_name=room_name)
+
+        # ตรวจสอบรหัสอาจารย์ — ต้องตรงและ chat_pin ต้องไม่ว่างเปล่า
+        is_teacher = bool(
+            room.chat_pin and
+            teacher_pin and
+            room.chat_pin == teacher_pin
+        )
+
+        msg = ChatMessage.objects.create(
+            room=room,
+            sender=sender,
+            is_teacher=is_teacher,
+            message=message,
+            sender_ip=get_client_ip(request),
+        )
+        return JsonResponse({
+            'id':         msg.id,
+            'sender':     msg.sender,
+            'is_teacher': msg.is_teacher,
+            'message':    msg.message,
+            'time':       _safe_localtime(msg.created_at).strftime('%H:%M'),
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

@@ -30,11 +30,15 @@ class Classrooms(models.Model):
     room_comment=models.TextField(blank = True)
     created_at=models.CharField( max_length=50,blank=True)
     updated_at=models.CharField( max_length=50,blank=True)
+    # รหัสลับสำหรับอาจารย์ — ว่างเปล่า = ปิดใช้งานแชทอาจารย์
+    chat_pin = models.CharField('รหัสอาจารย์ (Chat PIN)', max_length=20,
+                                blank=True, default='',
+                                help_text='ตั้งรหัสลับให้อาจารย์พิมพ์เพื่อแสดง badge "อาจารย์" ในแชท '
+                                          '(ว่างเปล่า = ไม่เปิดฟีเจอร์นี้)')
 
     class Meta:
         verbose_name="รายการห้องเรียน"
         verbose_name_plural="ข้อมูลห้องเรียน"
-
 
     def __str__(self):
         return self.room_name
@@ -98,6 +102,26 @@ class Count(models.Model):
     class Meta:
         managed = False  # This tells Django not to manage the table creation
         db_table = 'live_count'  
+
+class ChatMessage(models.Model):
+    room       = models.ForeignKey(Classrooms, on_delete=models.CASCADE,
+                                   related_name='chat_messages', verbose_name='ห้องเรียน')
+    sender     = models.CharField('ชื่อผู้ส่ง', max_length=80)
+    is_teacher = models.BooleanField('อาจารย์', default=False)
+    message    = models.TextField('ข้อความ', max_length=500)
+    created_at = models.DateTimeField('เวลา', auto_now_add=True)
+    sender_ip  = models.GenericIPAddressField('IP ผู้ส่ง', blank=True, null=True)
+
+    class Meta:
+        verbose_name        = 'ข้อความแชท'
+        verbose_name_plural = 'ข้อความแชทในห้องเรียน'
+        ordering            = ('created_at',)
+        indexes             = [models.Index(fields=['room', 'created_at'])]
+
+    def __str__(self):
+        prefix = '[อาจารย์] ' if self.is_teacher else ''
+        return '{}{} — {}: {}'.format(prefix, self.room_id, self.sender, self.message[:40])
+
 
 class LiveClassroom(models.Model):
     room_name = models.CharField(max_length=50, primary_key=True)

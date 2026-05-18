@@ -5,7 +5,7 @@ from django.db.models import Case, When, IntegerField
 
 from .models import (
     Classrooms, ClassScheduleCenter, Locations,
-    LogSubjectInRoom, Count, LiveClassroom,
+    LogSubjectInRoom, Count, LiveClassroom, ChatMessage,
 )
 from . import config
 
@@ -83,6 +83,13 @@ class ClassroomsAdmin(admin.ModelAdmin):
         ('ข้อมูลห้องเรียน', {
             'fields': ('room_name', 'room_location', 'room_stream',
                        'room_order', 'room_status', 'room_comment'),
+        }),
+        ('💬 แชทในห้องเรียน', {
+            'fields': ('chat_pin',),
+            'description': (
+                'ตั้งรหัสลับให้อาจารย์พิมพ์เพื่อได้รับ badge "อาจารย์" ในหน้าแชท '
+                '(ว่างเปล่า = ปิดฟีเจอร์แชท)'
+            ),
         }),
         ('📡 สถานะ Live ปัจจุบัน', {
             'fields': ('live_status_detail', 'viewer_count_detail'),
@@ -556,3 +563,59 @@ class LogSubjectInRoomAdmin(admin.ModelAdmin):
 
 
 admin.site.register(LogSubjectInRoom, LogSubjectInRoomAdmin)
+
+
+# ─── ChatMessage ──────────────────────────────────────────────────────────────
+
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display   = ('created_at_fmt', 'room', 'sender_badge', 'message_preview', 'sender_ip')
+    list_filter    = ('room', 'is_teacher')
+    search_fields  = ('sender', 'message', 'room__room_name', 'sender_ip')
+    ordering       = ('-created_at',)
+    list_per_page  = 50
+    readonly_fields = ('room', 'sender', 'is_teacher', 'message', 'created_at', 'sender_ip')
+    date_hierarchy  = 'created_at'
+
+    class Media:
+        css = {'all': ('live/admin_classrooms.css',)}
+
+    def has_add_permission(self, request):
+        return False
+
+    def created_at_fmt(self, obj):
+        from django.conf import settings
+        from django.utils.timezone import localtime
+        dt = obj.created_at
+        if getattr(settings, 'USE_TZ', True) and dt.tzinfo:
+            dt = localtime(dt)
+        return dt.strftime('%Y-%m-%d %H:%M:%S')
+    created_at_fmt.short_description = 'เวลา (Bangkok)'
+    created_at_fmt.admin_order_field = 'created_at'
+
+    def sender_badge(self, obj):
+        if obj.is_teacher:
+            return mark_safe(
+                '<span class="admin-badge badge-live" style="background:#c49a1a;border-color:#a07c10;">'
+                '&#9733; อาจารย์ — {}</span>'.format(obj.sender)
+            )
+        return mark_safe(
+            '<span style="color:#374151;">{}</span>'.format(obj.sender)
+        )
+    sender_badge.short_description = 'ผู้ส่ง'
+
+    def message_preview(self, obj):
+        text = obj.message[:120]
+        return mark_safe('<span style="color:#374151;">{}</span>'.format(text))
+    message_preview.short_description = 'ข้อความ'
+
+    # Action: ลบข้อความทั้งหมดในห้อง
+    actions = ['clear_room_chat']
+
+    def clear_room_chat(self, request, queryset):
+        rooms = set(queryset.values_list('room_id', flat=True))
+        deleted, _ = ChatMessage.objects.filter(room_id__in=rooms).delete()
+        self.message_user(request, 'ลบข้อความ {} รายการจาก {} ห้อง'.format(deleted, len(rooms)))
+    clear_room_chat.short_description = 'ลบข้อความแชทในห้องที่เลือกทั้งหมด'
+
+
+admin.site.register(ChatMessage, ChatMessageAdmin)
