@@ -24,6 +24,8 @@ from django.views.decorators.http import require_GET
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.timezone import localtime, now as tz_now
 
+from django.shortcuts import redirect
+
 def _safe_localtime(dt):
     """แปลง datetime เป็น local time — รองรับทั้ง USE_TZ=True และ USE_TZ=False"""
     from django.conf import settings
@@ -162,7 +164,9 @@ def get_live_room_viewers(request, room_name):
 
 # @ratelimit(key='ip', rate='10/m', block=True)
 def searchRoom(request):
-    q=request.GET['inpuSearch']
+    q=request.GET.get('inpuSearch', '').strip()
+    if not q:
+        return redirect('/')
     now = datetime.now()
     IsDayInt=now.strftime("%w")
     if q != 'campus':

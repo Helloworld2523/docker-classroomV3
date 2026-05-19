@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 't2)hn@pv6xglj-x*@c%q2zo_s($dam1@u@3$!5fm1i!f1mmc#o'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'change-me-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -81,38 +81,14 @@ WSGI_APPLICATION = 'cyberclassroom.wsgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    # }
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'cyberclassroom2020',
-        'USER':'root',
-        'PASSWORD':'023108845',
-        #'PASSWORD':'adm!nr00t@MySQLdb',
-        'HOST': '202.41.160.89',
-        'PORT':'3306',
+        'ENGINE':   os.environ.get('DB_ENGINE',   'django.db.backends.mysql'),
+        'NAME':     os.environ.get('DB_NAME',     'cyberclassroom2020'),
+        'USER':     os.environ.get('DB_USER',     'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST':     os.environ.get('DB_HOST',     '127.0.0.1'),
+        'PORT':     os.environ.get('DB_PORT',     '3306'),
     }
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'NAME': 'cyberclassroom2020',
-    #     'USER':'root',
-    #     'PASSWORD':'Password1',
-    #     #'PASSWORD':'adm!nr00t@MySQLdb',
-    #     'HOST': '202.41.160.89',
-    #     'PORT':'3306',
-    # }
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'NAME': 'cyberclassroom2020',
-    #     'USER':'eservice00',
-    #     'PASSWORD':'ctc78589',
-    #     #'PASSWORD':'adm!nr00t@MySQLdb',
-    #     'HOST': '202.41.160.100',
-    #     'PORT':'3306',
-    # }
-
 }
 
 

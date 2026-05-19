@@ -11,6 +11,8 @@ services:
       - ./cyberclassroom:/app
     expose:
       - "8080"
+    env_file:
+      - ./cyberclassroom/.env
     environment:
       - DEBUG=True
       - TZ=Asia/Bangkok
