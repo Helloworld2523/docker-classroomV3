@@ -1,0 +1,239 @@
+{% load static humanize %}
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Dashboard — CyberClassroom RU</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+    .navbar-brand { font-weight: 700; font-size: 1.1rem; }
+    .stat-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 1.4rem 1.6rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07);
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .stat-icon {
+      width: 52px; height: 52px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .stat-val { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+    .stat-label { font-size: .8rem; color: #6c757d; margin-top: .2rem; }
+    .chart-card {
+      background: #fff; border-radius: 14px;
+      padding: 1.4rem; box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    }
+    .chart-title { font-weight: 600; font-size: .95rem; color: #333; margin-bottom: 1rem; }
+    .room-row { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; }
+    .room-bar-wrap { flex: 1; background: #f0f2f5; border-radius: 6px; height: 8px; overflow: hidden; }
+    .room-bar { height: 8px; border-radius: 6px; background: #1e3cb8; }
+    .room-name { font-size: .85rem; font-weight: 600; min-width: 80px; }
+    .room-cnt { font-size: .85rem; color: #6c757d; min-width: 50px; text-align: right; }
+    .badge-today { background: #1e3cb8; color: #fff; font-size: .7rem; padding: .2rem .5rem; border-radius: 20px; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark" style="background:linear-gradient(135deg,#1e3cb8,#102480);">
+  <div class="container-fluid px-4">
+    <span class="navbar-brand">
+      <i class="fas fa-chart-line me-2" style="color:#fbbf24;"></i>
+      Dashboard — CyberClassroom RU
+    </span>
+    <div class="d-flex gap-2">
+      <a href="/admin/" class="btn btn-sm btn-outline-light">Admin</a>
+      <a href="/" class="btn btn-sm btn-outline-light">หน้าหลัก</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- วันที่ -->
+  <p class="text-muted mb-3" style="font-size:.85rem;">
+    <i class="fas fa-calendar-day me-1"></i> ข้อมูล ณ วันที่ {{ today }}
+  </p>
+
+  <!-- ── Stat Cards ── -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#dbeafe;">
+          <i class="fas fa-users" style="color:#1e3cb8;"></i>
+        </div>
+        <div>
+          <div class="stat-val">{{ total_today|intcomma }}</div>
+          <div class="stat-label">ผู้เข้าใช้วันนี้</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fef3c7;">
+          <i class="fas fa-calendar-week" style="color:#d97706;"></i>
+        </div>
+        <div>
+          <div class="stat-val">{{ total_week|intcomma }}</div>
+          <div class="stat-label">7 วันที่ผ่านมา</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#d1fae5;">
+          <i class="fas fa-calendar-alt" style="color:#059669;"></i>
+        </div>
+        <div>
+          <div class="stat-val">{{ total_month|intcomma }}</div>
+          <div class="stat-label">เดือนนี้</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#ede9fe;">
+          <i class="fas fa-fingerprint" style="color:#7c3aed;"></i>
+        </div>
+        <div>
+          <div class="stat-val">{{ unique_ip_today|intcomma }}</div>
+          <div class="stat-label">Unique IP วันนี้</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 2: Trend + Peak Hour ── -->
+  <div class="row g-3 mb-4">
+    <!-- Trend 30 วัน -->
+    <div class="col-12 col-lg-8">
+      <div class="chart-card">
+        <div class="chart-title"><i class="fas fa-chart-area me-2" style="color:#1e3cb8;"></i>ผู้เข้าใช้ 30 วันที่ผ่านมา</div>
+        <canvas id="trendChart" height="100"></canvas>
+      </div>
+    </div>
+    <!-- Peak Hour -->
+    <div class="col-12 col-lg-4">
+      <div class="chart-card h-100">
+        <div class="chart-title"><i class="fas fa-clock me-2" style="color:#d97706;"></i>Peak Hour วันนี้</div>
+        <canvas id="hourChart" height="210"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 3: Top Rooms ── -->
+  <div class="row g-3">
+    <!-- Top วันนี้ -->
+    <div class="col-12 col-lg-6">
+      <div class="chart-card">
+        <div class="chart-title">
+          <i class="fas fa-door-open me-2" style="color:#1e3cb8;"></i>
+          ห้องยอดนิยมวันนี้
+          <span class="badge-today ms-1">TOP 10</span>
+        </div>
+        {% if top_rooms %}
+          {% with top_rooms.0.cnt as max_cnt %}
+          {% for r in top_rooms %}
+          <div class="room-row">
+            <span class="room-name text-truncate">{{ r.course_no }}</span>
+            <div class="room-bar-wrap">
+              <div class="room-bar" style="width:{% widthratio r.cnt max_cnt 100 %}%;"></div>
+            </div>
+            <span class="room-cnt">{{ r.cnt }}</span>
+          </div>
+          {% endfor %}
+          {% endwith %}
+        {% else %}
+          <p class="text-muted text-center py-3">ยังไม่มีข้อมูลวันนี้</p>
+        {% endif %}
+      </div>
+    </div>
+    <!-- Top เดือนนี้ -->
+    <div class="col-12 col-lg-6">
+      <div class="chart-card">
+        <div class="chart-title">
+          <i class="fas fa-trophy me-2" style="color:#d97706;"></i>
+          ห้องยอดนิยมเดือนนี้
+          <span class="badge-today ms-1" style="background:#059669;">TOP 10</span>
+        </div>
+        {% if top_rooms_month %}
+          {% with top_rooms_month.0.cnt as max_cnt %}
+          {% for r in top_rooms_month %}
+          <div class="room-row">
+            <span class="room-name text-truncate">{{ r.course_no }}</span>
+            <div class="room-bar-wrap">
+              <div class="room-bar" style="width:{% widthratio r.cnt max_cnt 100 %}%; background:#059669;"></div>
+            </div>
+            <span class="room-cnt">{{ r.cnt }}</span>
+          </div>
+          {% endfor %}
+          {% endwith %}
+        {% else %}
+          <p class="text-muted text-center py-3">ยังไม่มีข้อมูลเดือนนี้</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BLUE  = '#1e3cb8';
+const GOLD  = '#d97706';
+const GREEN = '#059669';
+
+// ── Trend 30 วัน ──
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels: {{ trend_labels|safe }},
+    datasets: [{
+      label: 'ผู้เข้าใช้',
+      data: {{ trend_data|safe }},
+      borderColor: BLUE,
+      backgroundColor: 'rgba(30,60,184,.08)',
+      borderWidth: 2,
+      pointRadius: 3,
+      fill: true,
+      tension: .4,
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 11 } } },
+      y: { grid: { color: '#f0f2f5' }, ticks: { font: { size: 11 } } },
+    }
+  }
+});
+
+// ── Peak Hour ──
+new Chart(document.getElementById('hourChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ hour_labels|safe }},
+    datasets: [{
+      label: 'จำนวน',
+      data: {{ hour_data|safe }},
+      backgroundColor: GOLD,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#f0f2f5' }, ticks: { font: { size: 10 } } },
+      y: { grid: { display: false }, ticks: { font: { size: 10 } } },
+    }
+  }
+});
+</script>
+</body>
+</html>

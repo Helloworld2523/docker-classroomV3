@@ -21,6 +21,7 @@ urlpatterns = [
     path('monitor-sse/', views.monitor_sse, name='monitor_sse'),  # SSE real-time push
     path('schedule-editor/', views.schedule_editor, name='schedule_editor'),
     path('debug-headers/', views.debug_headers, name='debug_headers'),
+    path('dashboard/', views.dashboard_stats, name='dashboard'),
     # สำหรับงานถ่ายทอดสด
     # path('live', views.live, name='live'),
     # path('get-live-viewers/', views.get_live_viewers, name='get-live-viewers'),

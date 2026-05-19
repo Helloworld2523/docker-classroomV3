@@ -227,6 +227,97 @@ def debug_headers(request):
     return JsonResponse(data)
 
 
+@staff_member_required
+def dashboard_stats(request):
+    from django.db.models import Count as DCount
+    from django.db.models.functions import Substr
+    from django.core.cache import cache
+    from datetime import datetime, timedelta
+
+    now         = datetime.now()
+    today_str   = now.strftime('%Y-%m-%d')
+    week_start  = (now - timedelta(days=6)).strftime('%Y-%m-%d')
+    month_start = now.strftime('%Y-%m-01')
+    days30_start = (now - timedelta(days=29)).strftime('%Y-%m-%d')
+
+    CACHE_KEY = f'dashboard_{today_str}'
+    cached = cache.get(CACHE_KEY)
+    if cached:
+        return render(request, 'live/dashboard.html', cached)
+
+    qs = LogSubjectInRoom.objects
+
+    # ── ตัวเลขสรุป ──────────────────────────────────────────────
+    total_today = qs.filter(created_at__startswith=today_str).count()
+    total_week  = qs.filter(created_at__gte=week_start).count()
+    total_month = qs.filter(created_at__gte=month_start).count()
+    unique_ip_today = (
+        qs.filter(created_at__startswith=today_str)
+          .values('user_ip').distinct().count()
+    )
+
+    # ── Top 10 ห้อง วันนี้ ──────────────────────────────────────
+    top_rooms = list(
+        qs.filter(created_at__startswith=today_str)
+          .values('course_no')
+          .annotate(cnt=DCount('id'))
+          .order_by('-cnt')[:10]
+    )
+
+    # ── Peak hour วันนี้ — query เดียว ──────────────────────────
+    hourly_qs = (
+        qs.filter(created_at__startswith=today_str)
+          .annotate(hour=Substr('created_at', 12, 2))
+          .values('hour')
+          .annotate(cnt=DCount('id'))
+          .order_by('hour')
+    )
+    hour_map = {h['hour']: h['cnt'] for h in hourly_qs}
+    all_hours    = [f'{h:02d}' for h in range(24)]
+    hour_labels  = [f'{h}:00' for h in all_hours]
+    hour_data    = [hour_map.get(h, 0) for h in all_hours]
+
+    # ── Trend 30 วัน — query เดียว (GROUP BY day) ───────────────
+    trend_qs = (
+        qs.filter(created_at__gte=days30_start)
+          .annotate(day=Substr('created_at', 1, 10))
+          .values('day')
+          .annotate(cnt=DCount('id'))
+          .order_by('day')
+    )
+    trend_map = {r['day']: r['cnt'] for r in trend_qs}
+    trend_labels = []
+    trend_data   = []
+    for i in range(29, -1, -1):
+        d = (now - timedelta(days=i)).strftime('%Y-%m-%d')
+        trend_labels.append(d[5:])
+        trend_data.append(trend_map.get(d, 0))
+
+    # ── Top 10 ห้อง เดือนนี้ ────────────────────────────────────
+    top_rooms_month = list(
+        qs.filter(created_at__gte=month_start)
+          .values('course_no')
+          .annotate(cnt=DCount('id'))
+          .order_by('-cnt')[:10]
+    )
+
+    context = {
+        'total_today':      total_today,
+        'total_week':       total_week,
+        'total_month':      total_month,
+        'unique_ip_today':  unique_ip_today,
+        'top_rooms':        top_rooms,
+        'top_rooms_month':  top_rooms_month,
+        'hour_labels':      json.dumps(hour_labels),
+        'hour_data':        json.dumps(hour_data),
+        'trend_labels':     json.dumps(trend_labels),
+        'trend_data':       json.dumps(trend_data),
+        'today':            today_str,
+    }
+    cache.set(CACHE_KEY, context, 300)  # cache 5 นาที
+    return render(request, 'live/dashboard.html', context)
+
+
     
 def _get_chat_info(subjects, now_local):
     from datetime import datetime as _dt
