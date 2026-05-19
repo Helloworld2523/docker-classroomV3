@@ -204,21 +204,27 @@ def searchSubject(request):
     return render(request,'live/searchSubject.html',context=context)
 
 def get_client_ip(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
+    # University proxy ส่ง X-Real-IP = client IP จริง
+    ip = request.META.get('HTTP_X_REAL_IP')
+    if not ip:
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        ip = x_forwarded_for.split(',')[0].strip() if x_forwarded_for else None
+    if not ip:
         ip = request.META.get('REMOTE_ADDR')
     return ip
 
 
+def debug_headers(request):
+    """ดู headers ที่ Django รับมา — ลบออกหลังใช้งาน"""
+    keys = ['REMOTE_ADDR', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP',
+            'HTTP_X_FORWARDED_HOST', 'HTTP_HOST']
+    data = {k: request.META.get(k, '—') for k in keys}
+    data['get_client_ip'] = get_client_ip(request)
+    return JsonResponse(data)
+
+
     
 def _get_chat_info(subjects, now_local):
-    """คืน dict ที่มี chat_since และ class_end สำหรับคาบปัจจุบัน
-    - chat_since: ISO datetime เวลาเริ่มคาบ (กรองแชทเฉพาะคาบนี้)
-    - class_end:  ISO datetime เวลาหมดคาบ (JS ใช้ตั้ง timer auto-clear)
-    หากไม่มีคาบกำลังเรียน ทั้งคู่เป็นเวลาปัจจุบัน
-    """
     from datetime import datetime as _dt
     now_t = now_local.time()
 
@@ -233,17 +239,33 @@ def _get_chat_info(subjects, now_local):
                 continue
         return None
 
+    # คาบที่กำลังสอนอยู่
     for subj in subjects:
         t_start = _parse(subj.time_start)
         t_end   = _parse(subj.time_end)
         if t_start and t_end and t_start <= now_t <= t_end:
             return {
-                'chat_since': _dt.combine(now_local.date(), t_start).isoformat(),
-                'class_end':  _dt.combine(now_local.date(), t_end).isoformat(),
+                'chat_since':       _dt.combine(now_local.date(), t_start).isoformat(),
+                'class_end':        _dt.combine(now_local.date(), t_end).isoformat(),
+                'class_active':     True,
+                'next_class_start': '',
             }
 
+    # หาคาบถัดไปในวันนี้
+    next_start = ''
+    for subj in subjects:
+        t_start = _parse(subj.time_start)
+        if t_start and t_start > now_t:
+            next_start = t_start.strftime('%H:%M')
+            break
+
     now_iso = now_local.isoformat()
-    return {'chat_since': now_iso, 'class_end': now_iso}
+    return {
+        'chat_since':       now_iso,
+        'class_end':        now_iso,
+        'class_active':     False,
+        'next_class_start': next_start,
+    }
 
 
 def _get_chat_since(subjects, now_local):
@@ -616,7 +638,10 @@ def chat_fetch(request, room_name):
         }
         for m in msgs
     ]
-    return JsonResponse({'messages': result})
+    resp = JsonResponse({'messages': result})
+    resp['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    resp['Pragma'] = 'no-cache'
+    return resp
 
 
 @ratelimit(key='ip', rate='10/m', method='POST', block=True)

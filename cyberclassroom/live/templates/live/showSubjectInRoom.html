@@ -564,9 +564,10 @@
     }
 }
 
-/* Sidebar: ลด max-height ให้เหลือพื้นที่เพียงพอ */
+/* Sidebar */
 .room-sidebar {
-    max-height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
 }
 
 /* ── Video section ── */
@@ -1101,7 +1102,7 @@
 
     <div class="row g-4 align-items-start">
     <!-- ── LEFT: Video ── -->
-    <div class="col-12 col-lg-8">
+    <div class="col-12 {% if room.chat_pin %}col-lg-8{% endif %}">
 
     <!-- ─── LIVE VIDEO ─── -->
     <div class="page-section">
@@ -1517,148 +1518,14 @@
 
     </div><!-- /col-lg-8 left column -->
 
-    <!-- ── RIGHT: Sidebar ── -->
-    <div class="col-12 col-lg-4">
-    <div class="room-sidebar">
-
-    <!-- ─── TODAY'S SUBJECTS ─── -->
-    <div class="page-section sidebar-section">
-        <div class="section-label">
-            <div class="label-icon green">
-                <i class="fas fa-calendar-check"></i>
-            </div>
-            <div>
-                <h5>รายวิชาที่สอนวันนี้ ({{ IsDayString }})</h5>
-                <small>{{ subjectCount }} วิชา</small>
-            </div>
-        </div>
-
-        {% if subjectCount == 0 %}
-            <div class="empty-state mb-5">
-                <div class="empty-icon"><i class="fas fa-calendar-times"></i></div>
-                <p class="fw-semibold mb-1">วันนี้ไม่มีการเรียนในห้องนี้</p>
-                <p class="small mb-0">ลองดูตารางรายวิชาทั้งหมดด้านล่าง</p>
-            </div>
-        {% else %}
-            <div class="subject-list mb-4">
-                {% for s in data_subject %}
-                <div class="subject-card-today"
-                     data-time-start="{{ s.time_start }}"
-                     data-time-end="{{ s.time_end }}">
-                    <!-- แถวบน: รหัสวิชา + ชื่อวิชา + badge สถานะ -->
-                    <div class="sct-top">
-                        <span class="course-num">{{ s.course_no }}</span>
-                        <span class="course-name">{{ s.course_name_thai }}</span>
-                        <span class="class-status-badge" style="flex-shrink:0;"></span>
-                    </div>
-                    <!-- แถวล่าง: เวลา + อาจารย์ -->
-                    <div class="sct-bottom">
-                        <span class="time-chip">
-                            <i class="fas fa-clock"></i>{{ s.time_start }}–{{ s.time_end }}
-                        </span>
-                        <span class="meta-row">
-                            <i class="fas fa-chalkboard-teacher"></i>{{ s.instructor }}
-                        </span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-
-<style>
-/* ══════════════════════════════════════
-   สถานะการ์ดวิชาวันนี้
-══════════════════════════════════════ */
-
-/* ── จบแล้ว (เทา) ── */
-.subject-card-today.status-done {
-    opacity: 0.55;
-    filter: grayscale(40%);
-    background: #f8fafc !important;
-}
-.subject-card-today.status-done::before {
-    background: linear-gradient(180deg, #94a3b8, #cbd5e1) !important;
-}
-.subject-card-today.status-done .course-num { color: #94a3b8 !important; }
-.subject-card-today.status-done .time-chip  {
-    background: rgba(148,163,184,0.12) !important;
-    color: #94a3b8 !important;
-}
-
-/* ── กำลังสอน (แดง) ── */
-.subject-card-today.status-live {
-    border-color: rgba(220,38,38,0.4) !important;
-    box-shadow: 0 4px 24px rgba(220,38,38,0.15), 0 0 0 2px rgba(220,38,38,0.1) !important;
-    background: #fff8f8 !important;
-}
-.subject-card-today.status-live::before {
-    background: linear-gradient(180deg, #dc2626, #ef4444) !important;
-}
-.subject-card-today.status-live .course-num { color: #dc2626 !important; }
-.subject-card-today.status-live .time-chip  {
-    background: rgba(220,38,38,0.1) !important;
-    color: #dc2626 !important;
-}
-
-/* ── ยังไม่ถึงเวลา (เขียว) ── */
-.subject-card-today.status-upcoming {
-    border-color: rgba(22,163,74,0.3) !important;
-    background: #f0fdf4 !important;
-}
-.subject-card-today.status-upcoming::before {
-    background: linear-gradient(180deg, #16a34a, #22c55e) !important;
-}
-.subject-card-today.status-upcoming .course-num { color: #15803d !important; }
-.subject-card-today.status-upcoming .time-chip  {
-    background: rgba(22,163,74,0.1) !important;
-    color: #15803d !important;
-}
-
-/* ── Badges ── */
-.badge-done {
-    display: inline-flex; align-items: center; gap: 0.3rem;
-    background: rgba(148,163,184,0.14);
-    color: #94a3b8;
-    border: 1px solid rgba(148,163,184,0.28);
-    border-radius: 20px;
-    padding: 0.2rem 0.6rem;
-    font-size: 0.7rem; font-weight: 600;
-    white-space: nowrap;
-}
-.badge-live {
-    display: inline-flex; align-items: center; gap: 0.32rem;
-    background: rgba(220,38,38,0.1);
-    color: #dc2626;
-    border: 1px solid rgba(220,38,38,0.3);
-    border-radius: 20px;
-    padding: 0.2rem 0.65rem;
-    font-size: 0.7rem; font-weight: 800;
-    white-space: nowrap;
-    animation: livePulse 2s ease-in-out infinite;
-}
-.badge-live .ld {
-    width: 6px; height: 6px;
-    background: #dc2626;
-    border-radius: 50%;
-    animation: blinker 1s linear infinite;
-    flex-shrink: 0;
-}
-.badge-upcoming {
-    display: inline-flex; align-items: center; gap: 0.3rem;
-    background: rgba(22,163,74,0.1);
-    color: #15803d;
-    border: 1px solid rgba(22,163,74,0.28);
-    border-radius: 20px;
-    padding: 0.2rem 0.6rem;
-    font-size: 0.7rem; font-weight: 600;
-    white-space: nowrap;
-}
-</style>
-
-<!-- ข้อมูลวิชาวันนี้ฝังเป็น JSON สำหรับ JS -->
+<!-- ข้อมูลวิชาวันนี้ฝังเป็น JSON สำหรับ JS (ต้องอยู่นอก if room.chat_pin) -->
 <script id="todaySubjectsData" type="application/json">
 [{% for s in data_subject %}{"course_no":"{{ s.course_no|escapejs }}","course_name":"{{ s.course_name_thai|escapejs }}","instructor":"{{ s.instructor|escapejs }}","time_start":"{{ s.time_start|escapejs }}","time_end":"{{ s.time_end|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
 </script>
+
+    <!-- ── RIGHT: Sidebar ── -->
+    {% if room.chat_pin %}<div class="col-12 col-lg-4">
+    <div class="room-sidebar">
 
 <script>
 (function () {
@@ -1791,50 +1658,18 @@
         }
     }
 
-    /* ── อัปเดต Card Status badges ── */
-    function updateCardStatus(nowMins) {
-        document.querySelectorAll('.subject-card-today[data-time-start]').forEach(function (card) {
-            var st = toMinutes(card.dataset.timeStart);
-            var en = toMinutes(card.dataset.timeEnd);
-            if (st === null || en === null) return;
-
-            var badge = card.querySelector('.class-status-badge');
-            if (!badge) return;
-
-            card.classList.remove('status-done', 'status-live', 'status-upcoming');
-
-            if (nowMins > en) {
-                card.classList.add('status-done');
-                badge.innerHTML = '<span class="badge-done"><i class="fas fa-check-circle"></i> สอนไปแล้ว</span>';
-
-            } else if (nowMins >= st) {
-                card.classList.add('status-live');
-                badge.innerHTML = '<span class="badge-live"><span class="ld"></span> กำลังสอน</span>';
-
-            } else {
-                card.classList.add('status-upcoming');
-                var diff = st - nowMins;
-                var h = Math.floor(diff / 60), m = diff % 60;
-                var label = h > 0 ? ('อีก ' + h + ' ชม. ' + m + ' นาที') : ('อีก ' + m + ' นาที');
-                badge.innerHTML = '<span class="badge-upcoming"><i class="fas fa-hourglass-half"></i> ' + label + '</span>';
-            }
-        });
-    }
-
     /* ── Main update loop ── */
     function tick() {
         var now     = new Date();
         var nowMins = now.getHours() * 60 + now.getMinutes();
         updateBanner(nowMins);     /* LIVE banner */
         updateUpcoming(nowMins);   /* UPCOMING banner */
-        updateCardStatus(nowMins); /* card status badges */
     }
 
     tick();
     setInterval(tick, 30000); /* ทุก 30 วินาที */
 })();
 </script>
-    </div>
 
     <!-- ─── CHAT PANEL ─── -->
     {% if room.chat_pin %}
@@ -1861,6 +1696,12 @@
             <button class="chat-tab" id="tabParticipants" onclick="switchTab('participants')">
                 <i class="fas fa-users"></i> ผู้ร่วม
             </button>
+        </div>
+
+        <!-- Before-class notice -->
+        <div class="chat-notice chat-notice-warning" id="chatBeforeClass" style="display:none;">
+            <i class="fas fa-clock chat-notice-icon" style="color:#2563eb;"></i>
+            <span id="chatBeforeClassText">ยังไม่ถึงเวลาเรียน — ข้อความอาจไม่แสดงให้ผู้อื่นเห็นจนกว่าคาบจะเริ่ม</span>
         </div>
 
         <!-- Welcome notice -->
@@ -1918,6 +1759,7 @@
 
     </div><!-- /room-sidebar -->
     </div><!-- /col-lg-4 -->
+    {% endif %}
 </div><!-- /row -->
 
 <!-- ─── CHAT STYLES ─── -->
@@ -1931,7 +1773,9 @@
     box-shadow: 0 2px 16px rgba(0,0,0,0.07);
     display: flex;
     flex-direction: column;
-    max-height: 580px;
+    height: calc(100vh - 160px);
+    max-height: 720px;
+    min-height: 480px;
 }
 
 /* Header */
@@ -1990,6 +1834,16 @@
     color: #92400e;
     line-height: 1.4;
 }
+.chat-notice-warning {
+    background: #eff6ff;
+    border-bottom-color: #bfdbfe;
+    color: #1e40af;
+}
+:root.dark-mode .chat-notice-warning {
+    background: #0f172a;
+    border-bottom-color: #1e3a8a;
+    color: #93c5fd;
+}
 .chat-notice-icon { color: #d97706; flex-shrink: 0; }
 .chat-notice span { flex: 1; }
 .chat-notice-close {
@@ -2008,10 +1862,18 @@
     color: #fcd34d;
 }
 
+/* Chat panel tab content — must stretch to fill remaining card height */
+#panelChat {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
 /* Messages box */
 .chat-messages-box {
     flex: 1;
-    height: 260px;
+    min-height: 0;
     overflow-y: auto;
     padding: 0.5rem 0.75rem;
     display: flex;
@@ -2278,9 +2140,11 @@
 {% if room.chat_pin %}
 <script>
 (function(){
-    const ROOM      = '{{ room.room_name|escapejs }}';
-    const SINCE     = '{{ chat_since|escapejs }}';
-    const CLASS_END = '{{ class_end|escapejs }}';    /* ISO datetime หมดคาบ */
+    const ROOM            = '{{ room.room_name|escapejs }}';
+    const SINCE           = '{{ chat_since|escapejs }}';
+    const CLASS_END       = '{{ class_end|escapejs }}';
+    const CLASS_ACTIVE    = {{ class_active|yesno:"true,false" }};
+    const NEXT_CLASS_START = '{{ next_class_start|escapejs }}';
     const FETCH_URL = '/chat/' + ROOM + '/messages/?since=' + encodeURIComponent(SINCE) + '&after=';
     const SEND_URL  = '/chat/' + ROOM + '/send/';
     const POLL_MS   = 3000;
@@ -2301,6 +2165,27 @@
     if (senderName) senderEl.value = senderName;
     updateTeacherBtn();
     updateEmpty();
+
+    /* ── Before-class notice ── */
+    (function(){
+        const el = document.getElementById('chatBeforeClass');
+        const textEl = document.getElementById('chatBeforeClassText');
+        if (!el) return;
+        if (!CLASS_ACTIVE) {
+            let msg = 'ยังไม่ถึงเวลาเรียน — ข้อความอาจไม่แสดงให้ผู้อื่นเห็นจนกว่าคาบจะเริ่ม';
+            if (NEXT_CLASS_START) msg = 'คาบเรียนจะเริ่ม ' + NEXT_CLASS_START + ' น. — ข้อความที่พิมพ์ตอนนี้อาจไม่แสดงให้ผู้อื่นเห็น';
+            textEl.textContent = msg;
+            el.style.display = '';
+            /* ซ่อนอัตโนมัติเมื่อถึงเวลาเรียน */
+            if (NEXT_CLASS_START) {
+                const parts = NEXT_CLASS_START.split(':');
+                const target = new Date();
+                target.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+                const ms = target - new Date();
+                if (ms > 0) setTimeout(function(){ el.style.display = 'none'; }, ms);
+            }
+        }
+    })();
 
     /* ── Welcome notice (แสดงครั้งแรกที่ใช้แชทในห้องนี้) ── */
     const welcomeEl = document.getElementById('chatWelcome');
@@ -2349,15 +2234,17 @@
     };
 
     /* ── Fetch ── */
+    let isFirstFetch = true;
     function fetchMessages(){
         if (classDone) return;
-        fetch(FETCH_URL + lastId)
+        fetch(FETCH_URL + lastId, {cache: 'no-store'})
             .then(r => r.json())
             .then(data => {
                 if (!data.messages || !data.messages.length) return;
-                const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+                const atBottom = isFirstFetch || (box.scrollHeight - box.scrollTop - box.clientHeight < 80);
                 data.messages.forEach(appendMessage);
-                if (atBottom) box.scrollTop = box.scrollHeight;
+                if (atBottom) requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+                isFirstFetch = false;
                 const now = new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
                 const countEl = document.getElementById('chatOnlineCount');
                 if (countEl) countEl.textContent = 'อัปเดต ' + now;
@@ -2394,9 +2281,13 @@
         const av = document.createElement('div');
         av.className = 'chat-avatar';
         av.style.background = m.is_teacher
-            ? 'linear-gradient(135deg,#07112a,#1e3cb8)'
+            ? 'linear-gradient(135deg,#92620a,#c4981a)'
             : avatarColor(m.sender);
-        av.textContent = getInitials(m.sender);
+        if (m.is_teacher){
+            av.innerHTML = '<i class="fas fa-star" style="font-size:0.85rem;color:#fff8dc;"></i>';
+        } else {
+            av.textContent = getInitials(m.sender);
+        }
 
         /* body */
         const body = document.createElement('div');
@@ -2500,6 +2391,10 @@
             if (data.is_teacher){
                 teacherPin = pin;
                 localStorage.setItem('chat_teacher_pin_' + ROOM, pin);
+                /* ตั้งชื่อผู้ส่งเป็นชื่อห้องอัตโนมัติ */
+                senderEl.value = ROOM.toUpperCase();
+                senderName = ROOM.toUpperCase();
+                localStorage.setItem('chat_sender_' + ROOM, senderName);
                 updateTeacherBtn();
                 showToast('เข้าสู่โหมดอาจารย์แล้ว ✓', 'success');
                 lastId = data.id; /* ซ่อน ping message */
@@ -2536,19 +2431,24 @@
 
     function escHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-    /* แปลง URL ในข้อความให้เป็น link — escape ก่อน แล้วค่อย wrap URL */
+    /* แปลง URL ในข้อความให้เป็น link — scan raw text ก่อน escape เพื่อป้องกัน entity ทับ regex */
+    const URL_RE = /((https?:\/\/|www\.)\S+)/g;
     function linkify(text){
-        const escaped = escHtml(text);
-        return escaped.replace(
-            /((https?:\/\/)[^\s<>"]{4,})/g,
-            function(url){
-                /* ตัด trailing punctuation ออก */
-                const clean = url.replace(/[.,;:!?)\]]+$/, '');
-                return '<a href="' + clean + '" target="_blank" rel="noopener noreferrer" '
-                    + 'style="color:inherit;text-decoration:underline;word-break:break-all;">'
-                    + clean + '</a>';
-            }
-        );
+        const parts = [];
+        let last = 0, m;
+        URL_RE.lastIndex = 0;
+        while ((m = URL_RE.exec(text)) !== null){
+            if (m.index > last) parts.push(escHtml(text.slice(last, m.index)));
+            const raw   = m[0].replace(/[.,;:!?)\]"']+$/, '');
+            const href  = raw.startsWith('www.') ? 'https://' + raw : raw;
+            parts.push('<a href="' + escHtml(href) + '" target="_blank" rel="noopener noreferrer" '
+                + 'style="color:inherit;text-decoration:underline;word-break:break-all;">'
+                + escHtml(raw) + '</a>');
+            last = m.index + raw.length;
+            URL_RE.lastIndex = last;
+        }
+        parts.push(escHtml(text.slice(last)));
+        return parts.join('');
     }
     function getCookie(n){
         const v = document.cookie.match('(^|;)\\s*' + n + '\\s*=\\s*([^;]+)');
@@ -2576,18 +2476,41 @@
 </script>
 {% endif %}
 
-<!-- ─── ALL SUBJECTS ─── -->
+<!-- ─── SUBJECTS SECTION (tabbed) ─── -->
 <div class="page-section pb-4">
-        <div class="section-label">
-            <div class="label-icon blue">
-                <i class="fas fa-list-ul"></i>
-            </div>
-            <div>
-                <h5>รายวิชาทั้งหมดในห้อง {{ q|upper }}</h5>
-                <small>{{ subjectCount_out }} วิชา · วันที่มีบรรยายไฮไลต์สีน้ำเงิน</small>
-            </div>
+    <div class="section-label">
+        <div class="label-icon blue"><i class="fas fa-calendar-alt"></i></div>
+        <div>
+            <h5>รายวิชาในห้อง {{ q|upper }}</h5>
+            <small>{{ subjectCount_out }} วิชา</small>
         </div>
+    </div>
 
+    <!-- ── Schedule Tabs ── -->
+    <div class="sched-tabs">
+        <button class="sched-tab active" id="stab-today" onclick="switchSchedTab('today')">
+            <i class="fas fa-calendar-day"></i> วันนี้
+            <span class="sched-tab-badge" id="todayBadge"></span>
+        </button>
+        <button class="sched-tab" id="stab-all" onclick="switchSchedTab('all')">
+            <i class="fas fa-list-ul"></i> ทั้งหมด
+        </button>
+    </div>
+
+    <!-- ── Tab: วันนี้ ── -->
+    <div id="spanel-today">
+        {% if data_subject %}
+            <div id="todaySchedList" class="today-sched-list"></div>
+        {% else %}
+            <div class="sched-empty">
+                <i class="fas fa-calendar-times"></i>
+                <span>ไม่มีรายวิชาในวันนี้ ({{ IsDayString }})</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- ── Tab: ทั้งหมด ── -->
+    <div id="spanel-all" style="display:none;">
         {% if subjectCount_out == 0 %}
             <div class="empty-state">
                 <div class="empty-icon"><i class="fas fa-inbox"></i></div>
@@ -2620,14 +2543,10 @@
                         </tr>
                         {% endifchanged %}
                         <tr class="{% if is_today == IsDayString %}today-row{% endif %}">
-                            <td class="text-center" data-label="#">
-                                <span class="row-num">{{ forloop.counter }}</span>
-                            </td>
+                            <td class="text-center" data-label="#"><span class="row-num">{{ forloop.counter }}</span></td>
                             <td data-label="วัน">
                                 <span class="day-chip {% if is_today == IsDayString %}today{% else %}other{% endif %}">
-                                    {% if is_today == IsDayString %}
-                                        <i class="fas fa-star me-1" style="font-size:0.65rem;"></i>
-                                    {% endif %}
+                                    {% if is_today == IsDayString %}<i class="fas fa-star me-1" style="font-size:0.65rem;"></i>{% endif %}
                                     {{ is_today }}
                                 </span>
                             </td>
@@ -2637,7 +2556,7 @@
                             </td>
                             <td data-label="รหัสวิชา"><span class="code-badge">{{ subject.course_no }}</span></td>
                             <td data-label="ชื่อวิชา" style="font-size:0.86rem;">{{ subject.course_name_thai }}</td>
-                            <td data-label="อาจารย์" style="font-size:0.85rem; color:var(--text-muted,#64748b);">{{ subject.instructor }}</td>
+                            <td data-label="อาจารย์" style="font-size:0.85rem;color:var(--text-muted,#64748b);">{{ subject.instructor }}</td>
                         </tr>
                         {% endwith %}
                         {% endfor %}
@@ -2650,6 +2569,250 @@
             </p>
         {% endif %}
     </div>
+</div>
+
+<!-- ─── SCHEDULE TABS STYLES ─── -->
+<style>
+.sched-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--border, #e2e8f0);
+    padding-bottom: 0;
+}
+.sched-tab {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: color 0.15s, border-color 0.15s;
+    position: relative;
+}
+.sched-tab:hover { color: #1e3cb8; }
+.sched-tab.active {
+    color: #1e3cb8;
+    border-bottom-color: #1e3cb8;
+}
+.sched-tab-badge {
+    background: #ef4444;
+    color: #fff;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    min-width: 18px;
+    text-align: center;
+    display: none;
+}
+
+/* Today schedule list */
+.today-sched-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.tsched-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 10px;
+    border: 1px solid var(--border, #e2e8f0);
+    background: var(--bg-surface, #fff);
+    transition: box-shadow 0.15s;
+}
+.tsched-row:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+
+/* Status indicator stripe */
+.tsched-stripe {
+    width: 4px;
+    border-radius: 4px;
+    align-self: stretch;
+    flex-shrink: 0;
+    min-height: 40px;
+}
+.tsched-row.status-done   .tsched-stripe { background: #cbd5e1; }
+.tsched-row.status-live   .tsched-stripe { background: #22c55e; }
+.tsched-row.status-next   .tsched-stripe { background: #1e3cb8; }
+
+/* Status badge */
+.tsched-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.status-done .tsched-badge { background: #f1f5f9; color: #94a3b8; }
+.status-live .tsched-badge {
+    background: #dcfce7; color: #15803d;
+    animation: sched-pulse 1.6s ease-in-out infinite;
+}
+.status-next .tsched-badge { background: #1e3cb8; color: #fff; }
+@keyframes sched-pulse {
+    0%,100% { opacity:1; } 50% { opacity:0.6; }
+}
+
+/* Row content */
+.tsched-time {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 88px;
+}
+.tsched-info { flex: 1; min-width: 0; }
+.tsched-code {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #1e3cb8;
+    letter-spacing: 0.02em;
+}
+.tsched-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main, #1e293b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tsched-instructor {
+    font-size: 0.75rem;
+    color: var(--text-muted, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tsched-row.status-done {
+    opacity: 0.6;
+}
+.tsched-row.status-live {
+    border-color: #86efac;
+    background: #f0fdf4;
+}
+.tsched-row.status-next {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+:root.dark-mode .tsched-row.status-live {
+    background: #052e16;
+    border-color: #166534;
+}
+:root.dark-mode .tsched-row.status-next {
+    background: #0f172a;
+    border-color: #1e3a8a;
+}
+.sched-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2.5rem 1rem;
+    color: var(--text-muted, #94a3b8);
+    font-size: 0.85rem;
+}
+.sched-empty i { font-size: 2rem; opacity: 0.4; }
+</style>
+
+<!-- ─── SCHEDULE TABS SCRIPT ─── -->
+<script>
+(function(){
+    /* ── Tab switching ── */
+    window.switchSchedTab = function(tab){
+        const isToday = tab === 'today';
+        document.getElementById('stab-today').classList.toggle('active', isToday);
+        document.getElementById('stab-all').classList.toggle('active', !isToday);
+        document.getElementById('spanel-today').style.display = isToday ? '' : 'none';
+        document.getElementById('spanel-all').style.display   = isToday ? 'none' : '';
+        if (isToday) {
+            const badge = document.getElementById('todayBadge');
+            if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
+        }
+    };
+
+    /* ── Parse time string "HH:MM" or "HH.MM" → today's Date ── */
+    function parseTime(str){
+        if (!str) return null;
+        const parts = str.trim().replace('.', ':').split(':');
+        const h = parseInt(parts[0]), m = parseInt(parts[1] || '0');
+        if (isNaN(h) || isNaN(m)) return null;
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        return d;
+    }
+
+    /* ── Compute status for a subject ── */
+    function getStatus(s){
+        const now   = new Date();
+        const start = parseTime(s.time_start);
+        const end   = parseTime(s.time_end);
+        if (!start || !end) return 'next';
+        if (now > end)   return 'done';
+        if (now >= start) return 'live';
+        return 'next';
+    }
+
+    const LABEL = { done: 'เสร็จแล้ว', live: '● กำลังสอน', next: 'ถัดไป' };
+
+    /* ── Render today's schedule ── */
+    function renderTodaySchedule(){
+        const list = document.getElementById('todaySchedList');
+        if (!list) return;
+
+        var subjects = [];
+        try { subjects = JSON.parse(document.getElementById('todaySubjectsData').textContent); }
+        catch(e) { return; }
+
+        if (!subjects.length) return;
+
+        list.innerHTML = '';
+        let liveCount = 0;
+
+        subjects.forEach(function(s){
+            const status = getStatus(s);
+            if (status === 'live') liveCount++;
+
+            const row = document.createElement('div');
+            row.className = 'tsched-row status-' + status;
+            row.innerHTML =
+                '<div class="tsched-stripe"></div>' +
+                '<div class="tsched-time"><i class="fas fa-clock me-1" style="font-size:0.7rem;opacity:0.6;"></i>' +
+                    escHtml(s.time_start) + ' – ' + escHtml(s.time_end) +
+                '</div>' +
+                '<div class="tsched-info">' +
+                    '<div class="tsched-code">' + escHtml(s.course_no) + '</div>' +
+                    '<div class="tsched-name">' + escHtml(s.course_name) + '</div>' +
+                    '<div class="tsched-instructor"><i class="fas fa-user-tie me-1" style="font-size:0.65rem;"></i>' + escHtml(s.instructor) + '</div>' +
+                '</div>' +
+                '<div class="tsched-badge">' + LABEL[status] + '</div>';
+            list.appendChild(row);
+        });
+
+        /* update live badge on tab if not visible */
+        const badge = document.getElementById('todayBadge');
+        if (badge && liveCount > 0 && document.getElementById('stab-all').classList.contains('active')){
+            badge.textContent = liveCount;
+            badge.style.display = '';
+        } else if (badge) {
+            badge.style.display = 'none';
+        }
+    }
+
+    function escHtml(s){
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    /* ── Init + update every minute ── */
+    renderTodaySchedule();
+    setInterval(renderTodaySchedule, 60000);
+})();
+</script>
 
 </div>
 
