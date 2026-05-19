@@ -568,13 +568,14 @@ admin.site.register(LogSubjectInRoom, LogSubjectInRoomAdmin)
 # ─── ChatMessage ──────────────────────────────────────────────────────────────
 
 class ChatMessageAdmin(admin.ModelAdmin):
-    list_display   = ('created_at_fmt', 'room', 'sender_badge', 'message_preview', 'sender_ip')
-    list_filter    = ('room', 'is_teacher')
-    search_fields  = ('sender', 'message', 'room__room_name', 'sender_ip')
-    ordering       = ('-created_at',)
-    list_per_page  = 50
-    readonly_fields = ('room', 'sender', 'is_teacher', 'message', 'created_at', 'sender_ip')
+    list_display    = ('created_at_fmt', 'room', 'course_badge', 'sender_badge', 'message_bubble', 'sender_ip')
+    list_filter     = ('is_teacher', 'room')
+    search_fields   = ('sender', 'message', 'room__room_name', 'sender_ip')
+    ordering        = ('-created_at',)
+    list_per_page   = 50
+    readonly_fields = ('room', 'sender', 'is_teacher', 'message_full', 'created_at', 'sender_ip')
     date_hierarchy  = 'created_at'
+    list_select_related = ('room',)
 
     class Media:
         css = {'all': ('live/admin_classrooms.css',)}
@@ -582,33 +583,72 @@ class ChatMessageAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
+    def course_badge(self, obj):
+        if obj.active_course:
+            return mark_safe(
+                '<span style="background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;'
+                'border-radius:6px;padding:2px 8px;font-size:.78rem;font-weight:600;">'
+                '{}</span>'.format(obj.active_course)
+            )
+        return mark_safe('<span style="color:#9ca3af;font-size:.78rem;">—</span>')
+    course_badge.short_description = 'วิชา'
+    course_badge.admin_order_field = 'active_course'
+
     def created_at_fmt(self, obj):
         from django.conf import settings
         from django.utils.timezone import localtime
         dt = obj.created_at
         if getattr(settings, 'USE_TZ', True) and dt.tzinfo:
             dt = localtime(dt)
-        return dt.strftime('%Y-%m-%d %H:%M:%S')
-    created_at_fmt.short_description = 'เวลา (Bangkok)'
+        return dt.strftime('%d/%m %H:%M')
+    created_at_fmt.short_description = 'เวลา'
     created_at_fmt.admin_order_field = 'created_at'
 
     def sender_badge(self, obj):
+        from django.utils.html import escape
+        name = escape(obj.sender)
         if obj.is_teacher:
             return mark_safe(
-                '<span class="admin-badge badge-live" style="background:#c49a1a;border-color:#a07c10;">'
-                '&#9733; อาจารย์ — {}</span>'.format(obj.sender)
+                '<span style="display:inline-flex;align-items:center;gap:4px;'
+                'background:#fef3c7;color:#92400e;border:1px solid #fbbf24;'
+                'border-radius:20px;padding:2px 10px;font-size:.8rem;font-weight:600;">'
+                '&#9733; {}</span>'.format(name)
             )
         return mark_safe(
-            '<span style="color:#374151;">{}</span>'.format(obj.sender)
+            '<span style="display:inline-flex;align-items:center;gap:4px;'
+            'background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;'
+            'border-radius:20px;padding:2px 10px;font-size:.8rem;">'
+            '&#128100; {}</span>'.format(name)
         )
     sender_badge.short_description = 'ผู้ส่ง'
 
-    def message_preview(self, obj):
-        text = obj.message[:120]
-        return mark_safe('<span style="color:#374151;">{}</span>'.format(text))
-    message_preview.short_description = 'ข้อความ'
+    def message_bubble(self, obj):
+        from django.utils.html import escape
+        text = escape(obj.message[:150])
+        if obj.is_teacher:
+            bg, border, color = '#fffbeb', '#fde68a', '#78350f'
+        else:
+            bg, border, color = '#f8faff', '#dbeafe', '#1e3a5f'
+        return mark_safe(
+            '<span style="display:inline-block;background:{};border:1px solid {};'
+            'color:{};border-radius:10px;padding:4px 12px;font-size:.85rem;'
+            'max-width:420px;word-break:break-word;">{}</span>'.format(
+                bg, border, color, text)
+        )
+    message_bubble.short_description = 'ข้อความ'
 
-    # Action: ลบข้อความทั้งหมดในห้อง
+    def message_full(self, obj):
+        from django.utils.html import escape
+        return mark_safe(
+            '<div style="background:#f8faff;border:1px solid #dbeafe;border-radius:10px;'
+            'padding:12px 16px;font-size:.95rem;white-space:pre-wrap;">{}</div>'.format(
+                escape(obj.message))
+        )
+    message_full.short_description = 'ข้อความ (เต็ม)'
+
+    def get_fields(self, request, obj=None):
+        return ('room', 'sender', 'is_teacher', 'message_full', 'created_at', 'sender_ip')
+
     actions = ['clear_room_chat']
 
     def clear_room_chat(self, request, queryset):

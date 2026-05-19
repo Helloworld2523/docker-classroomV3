@@ -764,12 +764,30 @@ def chat_send(request, room_name):
             room.chat_pin == teacher_pin
         )
 
+        # หาวิชาที่กำลังสอนในขณะนี้
+        now_local = datetime.now()
+        now_day  = now_local.strftime('%w')   # 0=อาทิตย์ … 6=เสาร์
+        now_time = now_local.strftime('%H:%M')
+        active_course = ''
+        try:
+            sched = ClassScheduleCenter.objects.filter(
+                room_name=room,
+                course_day=now_day,
+                time_start__lte=now_time,
+                time_end__gte=now_time,
+            ).first()
+            if sched:
+                active_course = sched.course_no
+        except Exception:
+            pass
+
         msg = ChatMessage.objects.create(
             room=room,
             sender=sender,
             is_teacher=is_teacher,
             message=message,
             sender_ip=get_client_ip(request),
+            active_course=active_course,
         )
         return JsonResponse({
             'id':         msg.id,

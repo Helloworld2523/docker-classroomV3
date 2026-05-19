@@ -111,6 +111,7 @@ class ChatMessage(models.Model):
     message    = models.TextField('ข้อความ', max_length=500)
     created_at = models.DateTimeField('เวลา', auto_now_add=True)
     sender_ip  = models.GenericIPAddressField('IP ผู้ส่ง', blank=True, null=True)
+    active_course = models.CharField('วิชาที่กำลังสอน', max_length=30, blank=True, default='')
 
     class Meta:
         verbose_name        = 'ข้อความแชท'
