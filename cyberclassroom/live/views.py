@@ -805,11 +805,25 @@ def chat_send(request, room_name):
 
 @require_POST
 def chat_student_login(request):
-    """Relay student login to eshub.ru.ac.th — คืน std_code จาก JWT access token"""
+    """
+    Login นักศึกษา 2 ขั้น:
+      1. POST /api/token/  → ได้ access JWT
+      2. GET  /vmstudentall/{std_code}/ → ตรวจ std_status_current + ดึงชื่อ
+    คืน {ok, std_code, std_name, std_status}
+    """
     import json as _json
     import urllib.request as _urllib_req
     import urllib.error as _urllib_err
     import base64 as _b64
+
+    # สถานะที่อนุญาตให้แชทได้
+    ALLOWED_STATUSES = {'A', 'B', 'C'}
+    STATUS_LABELS = {
+        'A': 'ปัจจุบัน',
+        'B': 'ขาดการลงทะเบียน 1 ภาค',
+        'C': 'ขาดการลงทะเบียน 2 ภาค',
+    }
+
     try:
         data     = _json.loads(request.body)
         username = data.get('username', '').strip()
@@ -817,19 +831,20 @@ def chat_student_login(request):
         if not username or not password:
             return JsonResponse({'ok': False, 'detail': 'กรุณากรอก username และ password'}, status=400)
 
+        # ── ขั้น 1: ขอ token ──────────────────────────────────────────
         payload = _json.dumps({'username': username, 'password': password}).encode()
-        req = _urllib_req.Request(
+        tok_req = _urllib_req.Request(
             'https://eshub.ru.ac.th/api/token/',
             data=payload,
             headers={'Content-Type': 'application/json'},
             method='POST',
         )
-        with _urllib_req.urlopen(req, timeout=10) as resp:
-            result = _json.loads(resp.read())
+        with _urllib_req.urlopen(tok_req, timeout=10) as resp:
+            tok = _json.loads(resp.read())
+        access = tok.get('access', '')
 
         # ถอด JWT payload เพื่อดึง std_code
-        access = result.get('access', '')
-        std_code = username   # fallback ถ้า decode ไม่ได้
+        std_code = username
         parts = access.split('.')
         if len(parts) >= 2:
             b64 = parts[1] + '=' * (4 - len(parts[1]) % 4)
@@ -839,9 +854,41 @@ def chat_student_login(request):
             except Exception:
                 pass
 
-        return JsonResponse({'ok': True, 'std_code': std_code})
+        # ── ขั้น 2: ดึงข้อมูลนักศึกษา ────────────────────────────────
+        std_req = _urllib_req.Request(
+            f'https://eshub.ru.ac.th/vmstudentall/{std_code}/',
+            headers={'Authorization': f'Bearer {access}'},
+            method='GET',
+        )
+        with _urllib_req.urlopen(std_req, timeout=10) as resp:
+            std_data = _json.loads(resp.read())
 
-    except _urllib_err.HTTPError:
-        return JsonResponse({'ok': False, 'detail': 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่'}, status=401)
+        # ── ตรวจสอบสถานะ ──────────────────────────────────────────────
+        std_status = str(std_data.get('std_status_current', '')).upper()
+        if std_status not in ALLOWED_STATUSES:
+            label = STATUS_LABELS.get(std_status, f'สถานะ {std_status}')
+            return JsonResponse({
+                'ok': False,
+                'detail': f'ไม่สามารถใช้แชทได้ — สถานะนักศึกษา: {label}',
+            }, status=403)
+
+        # ── ดึงชื่อ (ลอง field ไทยก่อน แล้ว fallback อังกฤษ) ────────
+        first = (std_data.get('std_firstname_th') or
+                 std_data.get('std_firstname')     or '').strip()
+        last  = (std_data.get('std_lastname_th')  or
+                 std_data.get('std_lastname')      or '').strip()
+        std_name = (first + ' ' + last).strip() if (first or last) else std_code
+
+        return JsonResponse({
+            'ok':        True,
+            'std_code':  std_code,
+            'std_name':  std_name,
+            'std_status': std_status,
+        })
+
+    except _urllib_err.HTTPError as e:
+        if e.code == 401:
+            return JsonResponse({'ok': False, 'detail': 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่'}, status=401)
+        return JsonResponse({'ok': False, 'detail': f'eshub ตอบกลับ error {e.code}'}, status=502)
     except Exception:
         return JsonResponse({'ok': False, 'detail': 'เชื่อมต่อ eshub ไม่ได้ กรุณาลองใหม่'}, status=500)

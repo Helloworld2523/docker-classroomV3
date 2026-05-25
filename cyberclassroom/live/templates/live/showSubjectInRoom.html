@@ -2168,6 +2168,7 @@
     let teacherPin  = localStorage.getItem('chat_teacher_pin_' + ROOM) || '';
     let senderName  = localStorage.getItem('chat_sender_' + ROOM) || '';
     let studentCode = sessionStorage.getItem('chat_student_' + ROOM) || '';
+    let studentName = sessionStorage.getItem('chat_student_name_' + ROOM) || '';
 
     const box      = document.getElementById('chatMessages');
     const empty    = document.getElementById('chatEmpty');
@@ -2231,17 +2232,19 @@
             if (iconEl) { iconEl.className = 'fas fa-star chat-sender-icon'; iconEl.style.color = '#c49a1a'; }
         } else if (studentCode) {
             /* นักศึกษา login แล้ว */
+            const displayLabel = studentName || studentCode;
             if (loginBtn)  loginBtn.style.display  = 'none';
             if (logoutBtn) logoutBtn.style.display = 'inline';
             if (nameDisp)  {
                 nameDisp.style.display = 'inline';
-                nameDisp.textContent   = studentCode;
+                nameDisp.textContent   = displayLabel;
                 nameDisp.style.color   = '#16a34a';
+                nameDisp.title         = `รหัส: ${studentCode}`;
             }
             if (iconEl) { iconEl.className = 'fas fa-user-check chat-sender-icon'; iconEl.style.color = '#16a34a'; }
-            /* ซิงก์ชื่อ sender */
-            senderEl.value = studentCode;
-            senderName     = studentCode;
+            /* ซิงก์ชื่อ sender — ใช้ชื่อ-นามสกุล (หรือ std_code ถ้าไม่มี) */
+            senderEl.value = displayLabel;
+            senderName     = displayLabel;
         } else {
             /* ยังไม่ได้ login */
             if (loginBtn)  loginBtn.style.display  = '';
@@ -2276,8 +2279,8 @@
             errEl.style.display = '';
             return;
         }
-        btn.disabled    = true;
-        btn.textContent = 'กำลังเข้าสู่ระบบ…';
+        btn.disabled  = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin me-1"></i> กำลังตรวจสอบ…';
         fetch('/chat/student-login/', {
             method: 'POST',
             headers: {'Content-Type':'application/json','X-CSRFToken': getCookie('csrftoken')},
@@ -2287,10 +2290,13 @@
         .then(function(data){
             if (data.ok){
                 studentCode = data.std_code;
+                studentName = data.std_name || data.std_code;
                 sessionStorage.setItem('chat_student_' + ROOM, studentCode);
+                sessionStorage.setItem('chat_student_name_' + ROOM, studentName);
                 updateIdentityUI();
                 closeStudentLogin();
-                showToast('เข้าสู่ระบบสำเร็จ — ' + studentCode, 'success');
+                const label = studentName !== studentCode ? studentName + ' (' + studentCode + ')' : studentCode;
+                showToast('เข้าสู่ระบบสำเร็จ — ' + label, 'success');
             } else {
                 errEl.textContent = data.detail || 'เข้าสู่ระบบไม่สำเร็จ';
                 errEl.style.display = '';
@@ -2301,14 +2307,16 @@
             errEl.style.display = '';
         })
         .finally(function(){
-            btn.disabled    = false;
-            btn.textContent = 'เข้าสู่ระบบ';
+            btn.disabled  = false;
+            btn.innerHTML = '<i class="fas fa-sign-in-alt me-1"></i> เข้าสู่ระบบ';
         });
     };
     window.studentLogout = function(){
         if (!confirm('ออกจากระบบนักศึกษา?')) return;
         studentCode = '';
+        studentName = '';
         sessionStorage.removeItem('chat_student_' + ROOM);
+        sessionStorage.removeItem('chat_student_name_' + ROOM);
         senderEl.value = '';
         senderName     = '';
         updateIdentityUI();
@@ -2448,7 +2456,8 @@
             return;
         }
 
-        const name = teacherPin ? senderName : studentCode;
+        /* ใช้ชื่อ-นามสกุลเป็น sender (ถ้าไม่มีให้ fallback เป็น std_code) */
+        const name = teacherPin ? senderName : (studentName || studentCode);
 
         const btn = document.getElementById('chatSendBtn');
         btn.disabled = true;
