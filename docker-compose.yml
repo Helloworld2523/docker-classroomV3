@@ -6,7 +6,10 @@ services:
     build: ./cyberclassroom
     container_name: django_v2
     restart: always
-    command: uwsgi /app/uwsgi.ini
+    command: >
+      bash -c "cd /app &&
+               python manage.py collectstatic --noinput &&
+               uwsgi /app/uwsgi.ini"
     volumes:
       - ./cyberclassroom:/app
     expose:

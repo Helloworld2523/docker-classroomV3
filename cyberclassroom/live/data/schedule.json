@@ -1,0 +1,42 @@
+{
+  "hero": {
+    "central": {
+      "term": "ภาค 2/2568",
+      "date_range": "17 พ.ย. 68 – 9 มี.ค. 69",
+      "link": "https://m-learning.ru.ac.th/",
+      "link_text": "m-learning.ru.ac.th"
+    },
+    "regional": {
+      "term": "ภาค 2/2568",
+      "date_range": "19 พ.ย. 68 – 3 มี.ค. 69",
+      "link": "https://m-learning.ru.ac.th/",
+      "link_text": "m-learning.ru.ac.th"
+    }
+  },
+  "popup": {
+    "enabled": false,
+    "title": "ช่องทางการสอบถามและแจ้งปัญหา",
+    "description": "สแกน QR Code เพื่อสอบถามหรือแจ้งปัญหาเกี่ยวกับการรับชม",
+    "image_url": "static/qr_cyberclassroom.png",
+    "button_text": "ปิด",
+    "delay_ms": 1500
+  },
+  "central": [
+    {
+      "title": "ปฐมนิเทศนักศึกษาใหม่ ส่วนกลาง",
+      "date": "2568-06-01",
+      "time": "09.00 – 12.00",
+      "location": "อาคารหอประชุมพ่อขุนรามคำแหง",
+      "note": "นักศึกษาชั้นปีที่ 1 ทุกคณะ"
+    }
+  ],
+  "regional": [
+    {
+      "title": "ปฐมนิเทศนักศึกษาใหม่ สาขาวิทยบริการ",
+      "date": "2568-06-08",
+      "time": "09.00 – 12.00",
+      "location": "แต่ละสาขาวิทยบริการ",
+      "note": "ตรวจสอบสถานที่จากสาขาของท่าน"
+    }
+  ]
+}

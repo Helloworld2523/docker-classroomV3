@@ -40,4 +40,4 @@ cyberclassroom/static/dist/
 backupV1/
 
 # Runtime data
-cyberclassroom/live/data/
+# cyberclassroom/live/data/  ← เปิดให้ขึ้น git เพื่อ sync schedule.json
