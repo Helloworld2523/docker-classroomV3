@@ -1720,9 +1720,22 @@
             </div>
             <div class="chat-input-area">
                 <div class="chat-sender-row">
-                    <div class="chat-sender-wrap">
-                        <i class="fas fa-user chat-sender-icon"></i>
-                        <input id="chatSender" type="text" placeholder="ชื่อของคุณ" class="chat-sender-input" maxlength="40">
+                    <!-- ตัวระบุตัวตน: นักศึกษา / อาจารย์ -->
+                    <div class="chat-sender-wrap" id="chatIdentityWrap">
+                        <i class="fas fa-lock chat-sender-icon" id="chatSenderIconEl" style="color:#94a3b8;"></i>
+                        <!-- ซ่อน input จริง — ใช้เก็บค่า sender ภายใน JS เท่านั้น -->
+                        <input id="chatSender" type="text" class="chat-sender-input" maxlength="40" style="display:none;" tabindex="-1">
+                        <!-- ยังไม่ได้ login -->
+                        <button id="chatLoginPromptBtn" onclick="openStudentLogin()"
+                            style="background:none;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;color:#1d4ed8;padding:0.35rem 0;flex:1;text-align:left;font-family:inherit;">
+                            เข้าสู่ระบบก่อนแชท
+                        </button>
+                        <!-- login แล้ว (ทั้ง student และ teacher) -->
+                        <span id="chatDisplayName" style="display:none;font-size:0.82rem;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                        <button id="chatLogoutBtn" onclick="studentLogout()"
+                            style="display:none;background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.72rem;padding:0 2px;flex-shrink:0;" title="ออกจากระบบนักศึกษา">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
                     </div>
                     <button id="chatTeacherBtn" onclick="chatPromptTeacher()" class="chat-teacher-btn" title="เข้าสู่โหมดอาจารย์">
                         <i class="fas fa-chalkboard-teacher"></i>
@@ -2149,11 +2162,12 @@
     const SEND_URL  = '/chat/' + ROOM + '/send/';
     const POLL_MS   = 3000;
 
-    let lastId     = 0;
-    let msgCount   = 0;
-    let classDone  = false;   /* true = หมดคาบ หยุดแสดงข้อความเก่า */
-    let teacherPin = localStorage.getItem('chat_teacher_pin_' + ROOM) || '';
-    let senderName = localStorage.getItem('chat_sender_' + ROOM) || '';
+    let lastId      = 0;
+    let msgCount    = 0;
+    let classDone   = false;   /* true = หมดคาบ หยุดแสดงข้อความเก่า */
+    let teacherPin  = localStorage.getItem('chat_teacher_pin_' + ROOM) || '';
+    let senderName  = localStorage.getItem('chat_sender_' + ROOM) || '';
+    let studentCode = sessionStorage.getItem('chat_student_' + ROOM) || '';
 
     const box      = document.getElementById('chatMessages');
     const empty    = document.getElementById('chatEmpty');
@@ -2162,8 +2176,7 @@
     const tBtn     = document.getElementById('chatTeacherBtn');
 
     /* ── ตั้งค่าเริ่มต้น ── */
-    if (senderName) senderEl.value = senderName;
-    updateTeacherBtn();
+    updateTeacherBtn();   /* จะ call updateIdentityUI() ด้วย */
     updateEmpty();
 
     /* ── Before-class notice ── */
@@ -2199,11 +2212,108 @@
         localStorage.setItem('chat_welcome_seen_' + ROOM, '1');
     };
 
-    /* ── บันทึกชื่อลง localStorage ── */
-    senderEl.addEventListener('change', function(){
-        localStorage.setItem('chat_sender_' + ROOM, this.value.trim());
-        senderName = this.value.trim();
-    });
+    /* ── updateIdentityUI — แสดงสถานะตัวตนในแถว sender ── */
+    function updateIdentityUI(){
+        const loginBtn  = document.getElementById('chatLoginPromptBtn');
+        const nameDisp  = document.getElementById('chatDisplayName');
+        const logoutBtn = document.getElementById('chatLogoutBtn');
+        const iconEl    = document.getElementById('chatSenderIconEl');
+
+        if (teacherPin) {
+            /* โหมดอาจารย์ */
+            if (loginBtn)  loginBtn.style.display  = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (nameDisp)  {
+                nameDisp.style.display = 'inline';
+                nameDisp.textContent   = senderName || ROOM.toUpperCase();
+                nameDisp.style.color   = '#c49a1a';
+            }
+            if (iconEl) { iconEl.className = 'fas fa-star chat-sender-icon'; iconEl.style.color = '#c49a1a'; }
+        } else if (studentCode) {
+            /* นักศึกษา login แล้ว */
+            if (loginBtn)  loginBtn.style.display  = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'inline';
+            if (nameDisp)  {
+                nameDisp.style.display = 'inline';
+                nameDisp.textContent   = studentCode;
+                nameDisp.style.color   = '#16a34a';
+            }
+            if (iconEl) { iconEl.className = 'fas fa-user-check chat-sender-icon'; iconEl.style.color = '#16a34a'; }
+            /* ซิงก์ชื่อ sender */
+            senderEl.value = studentCode;
+            senderName     = studentCode;
+        } else {
+            /* ยังไม่ได้ login */
+            if (loginBtn)  loginBtn.style.display  = '';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (nameDisp)  nameDisp.style.display  = 'none';
+            if (iconEl) { iconEl.className = 'fas fa-lock chat-sender-icon'; iconEl.style.color = '#94a3b8'; }
+        }
+    }
+
+    /* ── Student login modal ── */
+    window.openStudentLogin = function(){
+        const modal = document.getElementById('studentLoginModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        setTimeout(function(){ document.getElementById('loginUsername').focus(); }, 120);
+    };
+    window.closeStudentLogin = function(){
+        const modal = document.getElementById('studentLoginModal');
+        if (modal) modal.style.display = 'none';
+    };
+    window.submitStudentLogin = function(){
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const errEl    = document.getElementById('loginError');
+        const btn      = document.getElementById('loginSubmitBtn');
+        errEl.style.display = 'none';
+        if (!username || !password){
+            errEl.textContent = 'กรุณากรอก username และ password';
+            errEl.style.display = '';
+            return;
+        }
+        btn.disabled    = true;
+        btn.textContent = 'กำลังเข้าสู่ระบบ…';
+        fetch('/chat/student-login/', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json','X-CSRFToken': getCookie('csrftoken')},
+            body: JSON.stringify({username: username, password: password})
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            if (data.ok){
+                studentCode = data.std_code;
+                sessionStorage.setItem('chat_student_' + ROOM, studentCode);
+                updateIdentityUI();
+                closeStudentLogin();
+                showToast('เข้าสู่ระบบสำเร็จ — ' + studentCode, 'success');
+            } else {
+                errEl.textContent = data.detail || 'เข้าสู่ระบบไม่สำเร็จ';
+                errEl.style.display = '';
+            }
+        })
+        .catch(function(){
+            errEl.textContent = 'เชื่อมต่อไม่ได้ กรุณาลองใหม่';
+            errEl.style.display = '';
+        })
+        .finally(function(){
+            btn.disabled    = false;
+            btn.textContent = 'เข้าสู่ระบบ';
+        });
+    };
+    window.studentLogout = function(){
+        if (!confirm('ออกจากระบบนักศึกษา?')) return;
+        studentCode = '';
+        sessionStorage.removeItem('chat_student_' + ROOM);
+        senderEl.value = '';
+        senderName     = '';
+        updateIdentityUI();
+        showToast('ออกจากระบบแล้ว', 'info');
+    };
 
     /* ── กด Enter ส่งข้อความ (Shift+Enter = ขึ้นบรรทัด) ── */
     input.addEventListener('keydown', function(e){
@@ -2329,18 +2439,16 @@
 
     /* ── Send ── */
     window.chatSend = function(){
-        const msg  = input.value.trim();
-        const name = senderEl.value.trim();
+        const msg = input.value.trim();
         if (!msg) { input.focus(); return; }
-        if (!name){
-            senderEl.focus();
-            senderEl.closest('.chat-sender-wrap').style.borderColor = '#ef4444';
-            showToast('กรุณาระบุชื่อของคุณ', 'error');
+
+        /* ต้อง login ก่อน (ยกเว้นโหมดอาจารย์) */
+        if (!teacherPin && !studentCode){
+            openStudentLogin();
             return;
         }
-        senderEl.closest('.chat-sender-wrap').style.borderColor = '';
-        localStorage.setItem('chat_sender_' + ROOM, name);
-        senderName = name;
+
+        const name = teacherPin ? senderName : studentCode;
 
         const btn = document.getElementById('chatSendBtn');
         btn.disabled = true;
@@ -2373,6 +2481,9 @@
             if (confirm('ออกจากโหมดอาจารย์?')){
                 teacherPin = '';
                 localStorage.removeItem('chat_teacher_pin_' + ROOM);
+                /* ถ้ามี studentCode อยู่ก็กลับสู่โหมดนักศึกษา ไม่ต้อง login ใหม่ */
+                senderEl.value = studentCode || '';
+                senderName     = studentCode || '';
                 updateTeacherBtn();
                 showToast('ออกจากโหมดอาจารย์แล้ว', 'success');
             }
@@ -2383,7 +2494,7 @@
         fetch(SEND_URL, {
             method:'POST',
             headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
-            body: JSON.stringify({sender: senderEl.value.trim() || 'อาจารย์', message:'__ping__', teacher_pin: pin})
+            body: JSON.stringify({sender: ROOM.toUpperCase(), message:'__ping__', teacher_pin: pin})
         })
         .then(r => r.json())
         .then(data => {
@@ -2391,9 +2502,9 @@
             if (data.is_teacher){
                 teacherPin = pin;
                 localStorage.setItem('chat_teacher_pin_' + ROOM, pin);
-                /* ตั้งชื่อผู้ส่งเป็นชื่อห้องอัตโนมัติ */
+                /* ชื่อผู้ส่งเป็นชื่อห้องอัตโนมัติ */
                 senderEl.value = ROOM.toUpperCase();
-                senderName = ROOM.toUpperCase();
+                senderName     = ROOM.toUpperCase();
                 localStorage.setItem('chat_sender_' + ROOM, senderName);
                 updateTeacherBtn();
                 showToast('เข้าสู่โหมดอาจารย์แล้ว ✓', 'success');
@@ -2413,6 +2524,7 @@
             tBtn.classList.remove('active');
             tBtn.innerHTML = '<i class="fas fa-chalkboard-teacher"></i><span>อาจารย์</span>';
         }
+        updateIdentityUI();  /* sync identity area ทุกครั้ง */
     }
 
     /* ── Toast ── */
@@ -2850,5 +2962,84 @@
     setInterval(updateSessionsCount, 10000);
     updateSessionsCount();
 </script>
+
+<!-- ─── STUDENT LOGIN MODAL ─── -->
+<div id="studentLoginModal"
+    style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.55);
+           backdrop-filter:blur(4px);align-items:center;justify-content:center;"
+    onclick="if(event.target===this)closeStudentLogin()">
+    <div style="background:var(--bg-surface,#fff);border-radius:18px;padding:1.75rem 1.5rem;
+                max-width:360px;width:calc(100% - 2rem);
+                box-shadow:0 8px 40px rgba(0,0,0,0.28);position:relative;">
+        <!-- ปุ่มปิด -->
+        <button onclick="closeStudentLogin()"
+            style="position:absolute;top:0.75rem;right:1rem;background:none;border:none;
+                   font-size:1.4rem;cursor:pointer;color:#94a3b8;line-height:1;">×</button>
+
+        <!-- หัว -->
+        <div style="text-align:center;margin-bottom:1.4rem;">
+            <div style="width:54px;height:54px;
+                        background:linear-gradient(135deg,#1e3a8a,#1d4ed8);
+                        border-radius:50%;display:flex;align-items:center;justify-content:center;
+                        margin:0 auto 0.85rem;box-shadow:0 4px 16px rgba(29,78,216,0.35);">
+                <i class="fas fa-university" style="color:#fff;font-size:1.25rem;"></i>
+            </div>
+            <h6 style="font-weight:700;margin:0;color:var(--text-primary,#1e293b);">เข้าสู่ระบบนักศึกษา</h6>
+            <p style="font-size:0.78rem;color:#64748b;margin:0.3rem 0 0;">
+                ใช้บัญชีเดียวกับ <a href="https://eshub.ru.ac.th" target="_blank" rel="noopener" style="color:#1d4ed8;">eshub.ru.ac.th</a>
+            </p>
+        </div>
+
+        <!-- ฟอร์ม -->
+        <div style="margin-bottom:0.8rem;">
+            <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem;">
+                รหัสนักศึกษา / Username
+            </label>
+            <input id="loginUsername" type="text" placeholder="เช่น 6801054534" autocomplete="username"
+                style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:0.5rem 0.75rem;
+                       font-size:0.88rem;outline:none;font-family:inherit;box-sizing:border-box;
+                       background:var(--bg-base,#f8fafc);color:var(--text-primary,#1e293b);"
+                onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
+        </div>
+        <div style="margin-bottom:1rem;">
+            <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem;">
+                รหัสผ่าน
+            </label>
+            <input id="loginPassword" type="password" placeholder="รหัสผ่าน" autocomplete="current-password"
+                style="width:100%;border:1px solid #d1d5db;border-radius:8px;padding:0.5rem 0.75rem;
+                       font-size:0.88rem;outline:none;font-family:inherit;box-sizing:border-box;
+                       background:var(--bg-base,#f8fafc);color:var(--text-primary,#1e293b);"
+                onkeydown="if(event.key==='Enter')submitStudentLogin()">
+        </div>
+
+        <!-- Error -->
+        <div id="loginError"
+            style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;
+                   padding:0.5rem 0.75rem;font-size:0.8rem;color:#dc2626;margin-bottom:0.8rem;">
+        </div>
+
+        <!-- ปุ่ม submit -->
+        <button id="loginSubmitBtn" onclick="submitStudentLogin()"
+            style="width:100%;background:linear-gradient(135deg,#1e3a8a,#1d4ed8);
+                   color:#fff;border:none;border-radius:10px;padding:0.65rem;
+                   font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit;
+                   box-shadow:0 3px 12px rgba(29,78,216,0.35);transition:opacity 0.2s;">
+            <i class="fas fa-sign-in-alt me-1"></i> เข้าสู่ระบบ
+        </button>
+    </div>
+</div>
+
+<style>
+:root.dark-mode #studentLoginModal > div {
+    background: #0f172a;
+    border: 1px solid rgba(59,130,246,0.18);
+}
+:root.dark-mode #loginUsername,
+:root.dark-mode #loginPassword {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+</style>
 
 {% endblock content %}

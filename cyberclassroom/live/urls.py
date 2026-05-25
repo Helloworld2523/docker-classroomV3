@@ -13,8 +13,9 @@ urlpatterns = [
     path('getLocation/<location>/',views.getLocation,name='getLocation'),
     path('get-live-viewers/<str:room_name>/', views.get_live_room_viewers, name='get-live-viewers'),
     # Chat polling endpoints
-    path('chat/<str:room_name>/messages/', views.chat_fetch, name='chat_fetch'),
-    path('chat/<str:room_name>/send/',     views.chat_send,  name='chat_send'),
+    path('chat/<str:room_name>/messages/', views.chat_fetch,         name='chat_fetch'),
+    path('chat/<str:room_name>/send/',     views.chat_send,          name='chat_send'),
+    path('chat/student-login/',            views.chat_student_login, name='chat_student_login'),
     # path('not-available/', views.not_available, name='not_available'),
     path('live-monitor/', views.live_monitor_view, name='live_monitor'),
     path('viewer-data/', views.live_viewer_data, name='live_viewer_data'),

@@ -20,7 +20,7 @@ from .models import (Classrooms, ClassScheduleCenter, Locations,
 from django_ratelimit.decorators import ratelimit
 from django.views.decorators.cache import cache_page
 from django.contrib.admin.views.decorators import staff_member_required
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.timezone import localtime, now as tz_now
 
@@ -801,3 +801,47 @@ def chat_send(request, room_name):
         return JsonResponse({'error': 'invalid JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_POST
+def chat_student_login(request):
+    """Relay student login to eshub.ru.ac.th — คืน std_code จาก JWT access token"""
+    import json as _json
+    import urllib.request as _urllib_req
+    import urllib.error as _urllib_err
+    import base64 as _b64
+    try:
+        data     = _json.loads(request.body)
+        username = data.get('username', '').strip()
+        password = data.get('password', '').strip()
+        if not username or not password:
+            return JsonResponse({'ok': False, 'detail': 'กรุณากรอก username และ password'}, status=400)
+
+        payload = _json.dumps({'username': username, 'password': password}).encode()
+        req = _urllib_req.Request(
+            'https://eshub.ru.ac.th/api/token/',
+            data=payload,
+            headers={'Content-Type': 'application/json'},
+            method='POST',
+        )
+        with _urllib_req.urlopen(req, timeout=10) as resp:
+            result = _json.loads(resp.read())
+
+        # ถอด JWT payload เพื่อดึง std_code
+        access = result.get('access', '')
+        std_code = username   # fallback ถ้า decode ไม่ได้
+        parts = access.split('.')
+        if len(parts) >= 2:
+            b64 = parts[1] + '=' * (4 - len(parts[1]) % 4)
+            try:
+                jwt_payload = _json.loads(_b64.b64decode(b64))
+                std_code = str(jwt_payload.get('std_code', username))
+            except Exception:
+                pass
+
+        return JsonResponse({'ok': True, 'std_code': std_code})
+
+    except _urllib_err.HTTPError:
+        return JsonResponse({'ok': False, 'detail': 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่'}, status=401)
+    except Exception:
+        return JsonResponse({'ok': False, 'detail': 'เชื่อมต่อ eshub ไม่ได้ กรุณาลองใหม่'}, status=500)
