@@ -2241,6 +2241,15 @@
     const POLL_MS   = 3000;
     let   fetchSince = SINCE;   /* อัปเดตได้เมื่อขึ้นคาบใหม่ */
 
+    /* สร้าง ISO string เวลาท้องถิ่น (ไม่มี Z / timezone offset)
+     * ตรงกับรูปแบบที่ Django ส่งมาใน SINCE → ไม่มีปัญหา timezone mismatch */
+    function nowLocalISO(){
+        const d = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+             + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+
     let lastId      = 0;
     let msgCount    = 0;
     let classDone   = false;   /* true = หมดคาบ หยุดแสดงข้อความเก่า */
@@ -2691,7 +2700,7 @@
                  * ไม่ set classDone = true → polling ยังทำงานต่อเนื่อง
                  * ทุกคนในห้องจะยังเห็นข้อความกันปกติโดยไม่ต้อง refresh
                  */
-                fetchSince = new Date().toISOString();
+                fetchSince = nowLocalISO();
                 isFirstFetch = true;
                 showToast('หมดคาบแล้ว — แชทเปิดสำหรับคาบถัดไปอัตโนมัติ', 'info');
             }
