@@ -1619,6 +1619,12 @@
             <span id="chatBeforeClassText">ยังไม่ถึงเวลาเรียน — ข้อความอาจไม่แสดงให้ผู้อื่นเห็นจนกว่าคาบจะเริ่ม</span>
         </div>
 
+        <!-- End-of-day notice -->
+        <div class="chat-notice chat-notice-eod" id="chatEndOfDay" style="display:none;">
+            <i class="fas fa-moon chat-notice-icon" style="color:#7c3aed;"></i>
+            <span>หมดการเรียนการสอนประจำวันแล้ว — แชทจะเปิดใหม่วันทำการถัดไป</span>
+        </div>
+
         <!-- Welcome notice -->
         <div class="chat-notice" id="chatWelcome">
             <i class="fas fa-shield-alt chat-notice-icon"></i>
@@ -1919,6 +1925,16 @@
     border-bottom-color: #1e3a8a;
     color: #93c5fd;
 }
+.chat-notice-eod {
+    background: #f5f3ff;
+    border-bottom-color: #ddd6fe;
+    color: #5b21b6;
+}
+:root.dark-mode .chat-notice-eod {
+    background: #1e1b2e;
+    border-bottom-color: #4c1d95;
+    color: #c4b5fd;
+}
 .chat-notice-icon { color: #d97706; flex-shrink: 0; }
 .chat-notice span { flex: 1; }
 .chat-notice-close {
@@ -2215,11 +2231,12 @@
 {% if room.chat_pin %}
 <script>
 (function(){
-    const ROOM            = '{{ room.room_name|escapejs }}';
-    const SINCE           = '{{ chat_since|escapejs }}';
-    const CLASS_END       = '{{ class_end|escapejs }}';
-    const CLASS_ACTIVE    = {{ class_active|yesno:"true,false" }};
+    const ROOM             = '{{ room.room_name|escapejs }}';
+    const SINCE            = '{{ chat_since|escapejs }}';
+    const CLASS_END        = '{{ class_end|escapejs }}';
+    const CLASS_ACTIVE     = {{ class_active|yesno:"true,false" }};
     const NEXT_CLASS_START = '{{ next_class_start|escapejs }}';
+    const IS_LAST_CLASS    = {{ is_last_class|yesno:"true,false" }}; /* คาบสุดท้ายของวัน */
     const SEND_URL  = '/chat/' + ROOM + '/send/';
     const POLL_MS   = 3000;
     let   fetchSince = SINCE;   /* อัปเดตได้เมื่อขึ้นคาบใหม่ */
@@ -2639,23 +2656,44 @@
         return v ? v.pop() : '';
     }
 
+    /* ── ปิดแชทสิ้นวัน ── */
+    function closeChatForDay(){
+        classDone = true;
+        /* เคลีย UI */
+        box.innerHTML = '';
+        msgCount = 0;
+        updateEmpty();
+        /* ซ่อน input area ทั้งหมด */
+        const inputArea = document.querySelector('.chat-input-area');
+        if (inputArea) inputArea.style.display = 'none';
+        /* แสดง end-of-day banner */
+        const eod = document.getElementById('chatEndOfDay');
+        if (eod) eod.style.display = '';
+        showToast('หมดการเรียนการสอนประจำวันแล้ว', 'info');
+    }
+
     /* ── Auto-clear เมื่อหมดคาบ ── */
     (function scheduleClassEnd(){
         const endMs = new Date(CLASS_END).getTime() - Date.now();
         if (endMs <= 0) return;
         setTimeout(function(){
-            /* เคลีย UI */
-            box.innerHTML = '';
-            msgCount = 0;
-            updateEmpty();
-            /*
-             * อัปเดต fetchSince → ข้อความเก่า (คาบก่อน) จะไม่โหลดกลับมา
-             * ไม่ set classDone = true → polling ยังทำงานต่อเนื่อง
-             * ทุกคนในห้องจะยังเห็นข้อความกันปกติโดยไม่ต้อง refresh
-             */
-            fetchSince = new Date().toISOString();
-            isFirstFetch = true;
-            showToast('หมดคาบแล้ว — แชทเปิดสำหรับคาบถัดไปอัตโนมัติ', 'info');
+            if (IS_LAST_CLASS) {
+                /* คาบสุดท้ายของวัน → ปิดแชทถาวร */
+                closeChatForDay();
+            } else {
+                /* ยังมีคาบถัดไป → เคลียข้อความเก่า แต่ polling ทำงานต่อ */
+                box.innerHTML = '';
+                msgCount = 0;
+                updateEmpty();
+                /*
+                 * อัปเดต fetchSince → ข้อความเก่า (คาบก่อน) จะไม่โหลดกลับมา
+                 * ไม่ set classDone = true → polling ยังทำงานต่อเนื่อง
+                 * ทุกคนในห้องจะยังเห็นข้อความกันปกติโดยไม่ต้อง refresh
+                 */
+                fetchSince = new Date().toISOString();
+                isFirstFetch = true;
+                showToast('หมดคาบแล้ว — แชทเปิดสำหรับคาบถัดไปอัตโนมัติ', 'info');
+            }
         }, endMs);
     })();
 

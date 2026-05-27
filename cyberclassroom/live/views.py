@@ -339,11 +339,17 @@ def _get_chat_info(subjects, now_local):
         t_start = _parse(subj.time_start)
         t_end   = _parse(subj.time_end)
         if t_start and t_end and t_start <= now_t <= t_end:
+            # ตรวจว่ามีคาบอื่นในวันนี้ที่เริ่มหลังคาบนี้จบหรือไม่
+            has_next = any(
+                _parse(s.time_start) and _parse(s.time_start) > t_end
+                for s in subjects
+            )
             return {
                 'chat_since':       _dt.combine(now_local.date(), t_start).isoformat(),
                 'class_end':        _dt.combine(now_local.date(), t_end).isoformat(),
                 'class_active':     True,
                 'next_class_start': '',
+                'is_last_class':    not has_next,
             }
 
     # หาคาบถัดไปในวันนี้
@@ -360,6 +366,7 @@ def _get_chat_info(subjects, now_local):
         'class_end':        now_iso,
         'class_active':     False,
         'next_class_start': next_start,
+        'is_last_class':    False,
     }
 
 
