@@ -538,6 +538,53 @@
     .vp-shortcuts { display: none; }
 }
 
+/* ── Player info bar (Now On Air overlay) ── */
+.player-info-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
+    padding: 1.8rem 0.9rem 0.55rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    pointer-events: none;
+    z-index: 6;
+    animation: pibFadeIn 0.35s ease both;
+}
+@keyframes pibFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.pib-live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #ef4444; flex-shrink: 0;
+    animation: blinker 0.9s linear infinite;
+}
+.pib-live-label {
+    font-size: 0.6rem; font-weight: 800;
+    letter-spacing: 1.5px; color: #f87171;
+    flex-shrink: 0;
+}
+.pib-code {
+    font-size: 0.75rem; font-weight: 800;
+    color: #fecaca; white-space: nowrap; flex-shrink: 0;
+}
+.pib-sep { color: rgba(255,255,255,0.3); flex-shrink: 0; }
+.pib-name {
+    font-size: 0.82rem; font-weight: 600; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    flex: 1;
+}
+.pib-left {
+    font-size: 0.68rem; color: rgba(255,255,255,0.6);
+    white-space: nowrap; flex-shrink: 0;
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px; padding: 0.1rem 0.4rem;
+}
+@media (max-width: 575px) {
+    .pib-left { display: none; }
+}
+
 /* Mobile — Hero section */
 @media (max-width: 767px) {
     .room-hero { padding: 1.4rem 0 1.1rem; }
@@ -1200,6 +1247,16 @@
                     <!-- Keyboard hint toast -->
                     <div class="vp-hint" id="vpHint" style="display:none;"></div>
 
+                    <!-- ── Now On Air overlay (bottom of player) ── -->
+                    <div id="playerInfoBar" class="player-info-bar" style="display:none;">
+                        <span class="pib-live-dot"></span>
+                        <span class="pib-live-label">LIVE</span>
+                        <span id="pibCode" class="pib-code">—</span>
+                        <span class="pib-sep">·</span>
+                        <span id="pibName" class="pib-name">—</span>
+                        <span id="pibLeft" class="pib-left"></span>
+                    </div>
+
                 </div>
 
                 <!-- ── Shortcut legend ── -->
@@ -1527,149 +1584,7 @@
     {% if room.chat_pin %}<div class="col-12 col-lg-4">
     <div class="room-sidebar">
 
-<script>
-(function () {
-    /* ── แปลงเวลา "07.30" หรือ "07:30" → นาทีนับจากเที่ยงคืน ── */
-    function toMinutes(t) {
-        if (!t) return null;
-        const p = t.replace('.', ':').split(':');
-        return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10);
-    }
 
-    /* ── โหลดข้อมูลวิชา ── */
-    var subjects = [];
-    try {
-        subjects = JSON.parse(document.getElementById('todaySubjectsData').textContent);
-    } catch(e) {}
-
-    /* ── Banner elements — LIVE ── */
-    var banner  = document.getElementById('nowOnAirBanner');
-    var elNum   = document.getElementById('noaCourseNum');
-    var elName  = document.getElementById('noaCourseName');
-    var elInst  = document.getElementById('noaInstructor');
-    var elTime  = document.getElementById('noaTime');
-    var elLeft  = document.getElementById('noaTimeLeft');
-    var prevLiveMin = -1;
-    var noaDismissedUntil = 0;   /* timestamp ที่จะแสดงใหม่ */
-
-    /* ── Banner elements — UPCOMING ── */
-    var upcBanner  = document.getElementById('upcomingBanner');
-    var upcNum     = document.getElementById('upcCourseNum');
-    var upcName    = document.getElementById('upcCourseName');
-    var upcInst    = document.getElementById('upcInstructor');
-    var upcTime    = document.getElementById('upcTime');
-    var upcLeft    = document.getElementById('upcTimeLeft');
-    var prevUpcMin = -1;
-    var upcDismissedUntil = 0;   /* timestamp ที่จะแสดงใหม่ */
-
-    /* ── Close button handlers (dismiss 30 นาที) ── */
-    var DISMISS_MS = 30 * 60 * 1000;
-    var noaCloseBtn = document.getElementById('noaCloseBtn');
-    var upcCloseBtn = document.getElementById('upcCloseBtn');
-    if (noaCloseBtn) {
-        noaCloseBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            noaDismissedUntil = Date.now() + DISMISS_MS;
-            banner.style.display = 'none';
-        });
-    }
-    if (upcCloseBtn) {
-        upcCloseBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            upcDismissedUntil = Date.now() + DISMISS_MS;
-            upcBanner.style.display = 'none';
-        });
-    }
-
-    /* ── อัปเดต LIVE Banner ── */
-    function updateBanner(nowMins) {
-        var active = null;
-        for (var i = 0; i < subjects.length; i++) {
-            var s = subjects[i];
-            var st = toMinutes(s.time_start);
-            var en = toMinutes(s.time_end);
-            if (st !== null && en !== null && nowMins >= st && nowMins <= en) {
-                active = s; break;
-            }
-        }
-
-        if (!banner) return;
-        /* ถ้าผู้ใช้ปิดไว้ และยังไม่ถึงเวลา 30 นาที → ไม่แสดง */
-        if (Date.now() < noaDismissedUntil) { banner.style.display = 'none'; return; }
-
-        if (active) {
-            var remaining = toMinutes(active.time_end) - nowMins;
-            banner.style.display = 'block';
-            elNum.textContent = active.course_no;
-            elName.textContent = active.course_name;
-            elInst.innerHTML = '<i class="fas fa-chalkboard-teacher me-1"></i>' + active.instructor;
-            elTime.innerHTML = '<i class="fas fa-clock me-1"></i>' + active.time_start + ' – ' + active.time_end;
-            /* ── Now Playing strip ── */
-            var npEl = document.getElementById('vpNowPlaying');
-            var npTxt = document.getElementById('vpNpText');
-            if (npEl) npEl.style.display = 'block';
-            if (npTxt) npTxt.textContent = active.course_no + ' \u00b7 ' + active.course_name;
-            if (elLeft && remaining !== prevLiveMin) {
-                elLeft.textContent = remaining;
-                elLeft.classList.remove('bump');
-                void elLeft.offsetWidth;
-                elLeft.classList.add('bump');
-                prevLiveMin = remaining;
-            }
-        } else {
-            banner.style.display = 'none';
-            var npEl = document.getElementById('vpNowPlaying');
-            if (npEl) npEl.style.display = 'none';
-        }
-    }
-
-    /* ── อัปเดต UPCOMING Banner ── */
-    function updateUpcoming(nowMins) {
-        /* หาวิชาที่ยังไม่เริ่ม เรียงจากใกล้สุด */
-        var next = null;
-        for (var i = 0; i < subjects.length; i++) {
-            var s = subjects[i];
-            var st = toMinutes(s.time_start);
-            if (st !== null && st > nowMins) {
-                if (!next || st < toMinutes(next.time_start)) { next = s; }
-            }
-        }
-
-        if (!upcBanner) return;
-        /* ถ้าผู้ใช้ปิดไว้ และยังไม่ถึงเวลา 30 นาที → ไม่แสดง */
-        if (Date.now() < upcDismissedUntil) { upcBanner.style.display = 'none'; return; }
-
-        if (next) {
-            var diff = toMinutes(next.time_start) - nowMins;
-            upcBanner.style.display = 'block';
-            upcNum.textContent  = next.course_no;
-            upcName.textContent = next.course_name;
-            upcInst.innerHTML   = '<i class="fas fa-chalkboard-teacher me-1"></i>' + next.instructor;
-            upcTime.innerHTML   = '<i class="fas fa-clock me-1"></i>' + next.time_start + ' – ' + next.time_end;
-            if (upcLeft && diff !== prevUpcMin) {
-                upcLeft.textContent = diff;
-                upcLeft.classList.remove('bump');
-                void upcLeft.offsetWidth;
-                upcLeft.classList.add('bump');
-                prevUpcMin = diff;
-            }
-        } else {
-            upcBanner.style.display = 'none';
-        }
-    }
-
-    /* ── Main update loop ── */
-    function tick() {
-        var now     = new Date();
-        var nowMins = now.getHours() * 60 + now.getMinutes();
-        updateBanner(nowMins);     /* LIVE banner */
-        updateUpcoming(nowMins);   /* UPCOMING banner */
-    }
-
-    tick();
-    setInterval(tick, 30000); /* ทุก 30 วินาที */
-})();
-</script>
 
     <!-- ─── CHAT PANEL ─── -->
     {% if room.chat_pin %}
@@ -1774,6 +1689,153 @@
     </div><!-- /col-lg-4 -->
     {% endif %}
 </div><!-- /row -->
+
+<!-- ─── NOW ON AIR: banner + player overlay (ทุกห้อง ไม่จำกัดเฉพาะ chat_pin) ─── -->
+<script>
+(function () {
+    function toMinutes(t) {
+        if (!t) return null;
+        const p = t.replace('.', ':').split(':');
+        return parseInt(p[0], 10) * 60 + parseInt(p[1] || '0', 10);
+    }
+
+    var subjects = [];
+    try { subjects = JSON.parse(document.getElementById('todaySubjectsData').textContent); }
+    catch(e) {}
+
+    var banner  = document.getElementById('nowOnAirBanner');
+    var elNum   = document.getElementById('noaCourseNum');
+    var elName  = document.getElementById('noaCourseName');
+    var elInst  = document.getElementById('noaInstructor');
+    var elTime  = document.getElementById('noaTime');
+    var elLeft  = document.getElementById('noaTimeLeft');
+    var prevLiveMin = -1;
+    var noaDismissedUntil = 0;
+
+    var upcBanner  = document.getElementById('upcomingBanner');
+    var upcNum     = document.getElementById('upcCourseNum');
+    var upcName    = document.getElementById('upcCourseName');
+    var upcInst    = document.getElementById('upcInstructor');
+    var upcTime    = document.getElementById('upcTime');
+    var upcLeft    = document.getElementById('upcTimeLeft');
+    var prevUpcMin = -1;
+    var upcDismissedUntil = 0;
+
+    var pInfoBar = document.getElementById('playerInfoBar');
+    var pibCode  = document.getElementById('pibCode');
+    var pibName  = document.getElementById('pibName');
+    var pibLeft  = document.getElementById('pibLeft');
+
+    var DISMISS_MS = 30 * 60 * 1000;
+    var noaCloseBtn = document.getElementById('noaCloseBtn');
+    var upcCloseBtn = document.getElementById('upcCloseBtn');
+    if (noaCloseBtn) {
+        noaCloseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            noaDismissedUntil = Date.now() + DISMISS_MS;
+            if (banner) banner.style.display = 'none';
+        });
+    }
+    if (upcCloseBtn) {
+        upcCloseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            upcDismissedUntil = Date.now() + DISMISS_MS;
+            if (upcBanner) upcBanner.style.display = 'none';
+        });
+    }
+
+    function updateBanner(nowMins) {
+        var active = null;
+        for (var i = 0; i < subjects.length; i++) {
+            var s = subjects[i];
+            var st = toMinutes(s.time_start);
+            var en = toMinutes(s.time_end);
+            if (st !== null && en !== null && nowMins >= st && nowMins <= en) { active = s; break; }
+        }
+
+        /* แถบ LIVE (above player) */
+        if (banner) {
+            if (Date.now() < noaDismissedUntil) {
+                banner.style.display = 'none';
+            } else if (active) {
+                var remaining = toMinutes(active.time_end) - nowMins;
+                banner.style.display = 'block';
+                if (elNum)  elNum.textContent  = active.course_no;
+                if (elName) elName.textContent = active.course_name;
+                if (elInst) elInst.innerHTML   = '<i class="fas fa-chalkboard-teacher me-1"></i>' + active.instructor;
+                if (elTime) elTime.innerHTML   = '<i class="fas fa-clock me-1"></i>' + active.time_start + ' – ' + active.time_end;
+                if (elLeft && remaining !== prevLiveMin) {
+                    elLeft.textContent = remaining;
+                    elLeft.classList.remove('bump'); void elLeft.offsetWidth; elLeft.classList.add('bump');
+                    prevLiveMin = remaining;
+                }
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
+        /* NOW PLAYING strip (below player) */
+        var npEl  = document.getElementById('vpNowPlaying');
+        var npTxt = document.getElementById('vpNpText');
+        if (active) {
+            if (npEl)  npEl.style.display  = 'block';
+            if (npTxt) npTxt.textContent   = active.course_no + ' · ' + active.course_name;
+        } else {
+            if (npEl) npEl.style.display = 'none';
+        }
+
+        /* Player overlay (bottom of video) */
+        if (pInfoBar) {
+            if (active) {
+                var rem = toMinutes(active.time_end) - nowMins;
+                pInfoBar.style.display = 'flex';
+                if (pibCode) pibCode.textContent = active.course_no;
+                if (pibName) pibName.textContent = active.course_name;
+                if (pibLeft) pibLeft.textContent = rem + ' นาที';
+            } else {
+                pInfoBar.style.display = 'none';
+            }
+        }
+    }
+
+    function updateUpcoming(nowMins) {
+        var next = null;
+        for (var i = 0; i < subjects.length; i++) {
+            var s = subjects[i];
+            var st = toMinutes(s.time_start);
+            if (st !== null && st > nowMins) {
+                if (!next || st < toMinutes(next.time_start)) { next = s; }
+            }
+        }
+        if (!upcBanner) return;
+        if (Date.now() < upcDismissedUntil) { upcBanner.style.display = 'none'; return; }
+        if (next) {
+            var diff = toMinutes(next.time_start) - nowMins;
+            upcBanner.style.display = 'block';
+            if (upcNum)  upcNum.textContent  = next.course_no;
+            if (upcName) upcName.textContent = next.course_name;
+            if (upcInst) upcInst.innerHTML   = '<i class="fas fa-chalkboard-teacher me-1"></i>' + next.instructor;
+            if (upcTime) upcTime.innerHTML   = '<i class="fas fa-clock me-1"></i>' + next.time_start + ' – ' + next.time_end;
+            if (upcLeft && diff !== prevUpcMin) {
+                upcLeft.textContent = diff;
+                upcLeft.classList.remove('bump'); void upcLeft.offsetWidth; upcLeft.classList.add('bump');
+                prevUpcMin = diff;
+            }
+        } else {
+            upcBanner.style.display = 'none';
+        }
+    }
+
+    function tick() {
+        var now = new Date();
+        var nowMins = now.getHours() * 60 + now.getMinutes();
+        updateBanner(nowMins);
+        updateUpcoming(nowMins);
+    }
+    tick();
+    setInterval(tick, 30000);
+})();
+</script>
 
 <!-- ─── CHAT STYLES ─── -->
 <style>
