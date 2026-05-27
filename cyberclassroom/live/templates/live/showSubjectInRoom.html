@@ -2237,6 +2237,7 @@
     const CLASS_ACTIVE     = {{ class_active|yesno:"true,false" }};
     const NEXT_CLASS_START = '{{ next_class_start|escapejs }}';
     const IS_LAST_CLASS    = {{ is_last_class|yesno:"true,false" }}; /* คาบสุดท้ายของวัน */
+    const IS_DAY_DONE      = {{ is_day_done|yesno:"true,false" }};  /* ไม่มีคาบเหลือในวันนี้แล้ว */
     const SEND_URL  = '/chat/' + ROOM + '/send/';
     const POLL_MS   = 3000;
     let   fetchSince = SINCE;   /* อัปเดตได้เมื่อขึ้นคาบใหม่ */
@@ -2267,6 +2268,9 @@
     /* ── ตั้งค่าเริ่มต้น ── */
     updateTeacherBtn();   /* จะ call updateIdentityUI() ด้วย */
     updateEmpty();
+
+    /* ── ถ้าโหลดหลังจากคาบสุดท้ายจบแล้ว → ปิดแชทสิ้นวันทันที ── */
+    if (IS_DAY_DONE) { closeChatForDay(); }
 
     /* ── Before-class notice ── */
     (function(){

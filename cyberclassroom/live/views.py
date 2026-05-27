@@ -350,6 +350,7 @@ def _get_chat_info(subjects, now_local):
                 'class_active':     True,
                 'next_class_start': '',
                 'is_last_class':    not has_next,
+                'is_day_done':      False,
             }
 
     # หาคาบถัดไปในวันนี้
@@ -367,6 +368,7 @@ def _get_chat_info(subjects, now_local):
         'class_active':     False,
         'next_class_start': next_start,
         'is_last_class':    False,
+        'is_day_done':      not bool(next_start),  # ไม่มีคาบเหลือในวันนี้
     }
 
 
