@@ -2220,9 +2220,9 @@
     const CLASS_END       = '{{ class_end|escapejs }}';
     const CLASS_ACTIVE    = {{ class_active|yesno:"true,false" }};
     const NEXT_CLASS_START = '{{ next_class_start|escapejs }}';
-    const FETCH_URL = '/chat/' + ROOM + '/messages/?since=' + encodeURIComponent(SINCE) + '&after=';
     const SEND_URL  = '/chat/' + ROOM + '/send/';
     const POLL_MS   = 3000;
+    let   fetchSince = SINCE;   /* อัปเดตได้เมื่อขึ้นคาบใหม่ */
 
     let lastId      = 0;
     let msgCount    = 0;
@@ -2417,7 +2417,8 @@
     let isFirstFetch = true;
     function fetchMessages(){
         if (classDone) return;
-        fetch(FETCH_URL + lastId, {cache: 'no-store'})
+        const url = '/chat/' + ROOM + '/messages/?since=' + encodeURIComponent(fetchSince) + '&after=' + lastId;
+        fetch(url, {cache: 'no-store'})
             .then(r => r.json())
             .then(data => {
                 if (!data.messages || !data.messages.length) return;
@@ -2638,17 +2639,50 @@
         return v ? v.pop() : '';
     }
 
-    /* ── Auto-clear เมื่อหมดคาบ ── */
+    /* ── Auto-clear เมื่อหมดคาบ + resume เมื่อคาบถัดไปเริ่ม ── */
     (function scheduleClassEnd(){
         const endMs = new Date(CLASS_END).getTime() - Date.now();
         if (endMs <= 0) return;
+
         setTimeout(function(){
-            classDone = true;        /* หยุด fetch รอบใหม่ */
-            box.innerHTML = '';      /* เคลีย UI */
+            classDone = true;
+            box.innerHTML = '';
             msgCount = 0;
-            /* lastId ไม่ reset — ป้องกันข้อความเก่ากลับมา */
             updateEmpty();
-            showToast('หมดคาบแล้ว — แชทจะเริ่มใหม่เมื่อเริ่มคาบถัดไป', 'info');
+
+            /* หาคาบถัดไปจาก todaySubjectsData */
+            var nextStart = NEXT_CLASS_START;
+            var subjects = [];
+            try { subjects = JSON.parse(document.getElementById('todaySubjectsData').textContent); } catch(e) {}
+            if (!nextStart && subjects.length) {
+                var now = new Date();
+                var nowMins = now.getHours() * 60 + now.getMinutes();
+                for (var i = 0; i < subjects.length; i++) {
+                    var p = (subjects[i].time_start || '').replace('.', ':').split(':');
+                    var sm = parseInt(p[0]) * 60 + parseInt(p[1] || '0');
+                    if (sm > nowMins) { nextStart = subjects[i].time_start; break; }
+                }
+            }
+
+            if (nextStart) {
+                var parts = nextStart.split(':');
+                var target = new Date();
+                target.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+                var resumeMs = target - new Date();
+                showToast('หมดคาบแล้ว — แชทจะเปิดอีกครั้ง ' + nextStart + ' น.', 'info');
+                if (resumeMs > 0) {
+                    setTimeout(function(){
+                        /* อัปเดต since เป็นเวลาเริ่มคาบใหม่ */
+                        fetchSince = new Date().toISOString();
+                        classDone  = false;
+                        isFirstFetch = true;
+                        showToast('เริ่มคาบใหม่ — แชทเปิดใช้งานแล้ว ✓', 'success');
+                        fetchMessages();   /* poll ทันที ไม่ต้องรอ interval */
+                    }, resumeMs);
+                }
+            } else {
+                showToast('หมดคาบแล้ว — ไม่มีคาบถัดไปในวันนี้', 'info');
+            }
         }, endMs);
     })();
 
