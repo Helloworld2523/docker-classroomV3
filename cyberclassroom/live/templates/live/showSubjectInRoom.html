@@ -2438,6 +2438,7 @@
         fetch(url, {cache: 'no-store'})
             .then(r => r.json())
             .then(data => {
+                if (classDone) return;   /* guard: อาจถูกปิดระหว่าง fetch in-flight */
                 if (!data.messages || !data.messages.length) return;
                 const atBottom = isFirstFetch || (box.scrollHeight - box.scrollTop - box.clientHeight < 80);
                 data.messages.forEach(appendMessage);
