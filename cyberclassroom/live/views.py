@@ -15,7 +15,8 @@ from django import template
 #from django.db.models import Count
 from . import config
 from .models import (Classrooms, ClassScheduleCenter, Locations,
-                     LogSubjectInRoom, Count, LiveClassroom, ChatMessage)
+                     LogSubjectInRoom, Count, LiveClassroom, ChatMessage, BannedStudent)
+from .profanity import censor_message, has_profanity
 
 from django_ratelimit.decorators import ratelimit
 from django.views.decorators.cache import cache_page
@@ -758,11 +759,16 @@ def chat_send(request, room_name):
         sender      = data.get('sender', '').strip()[:80]
         message     = data.get('message', '').strip()[:500]
         teacher_pin = data.get('teacher_pin', '').strip()
+        std_code    = data.get('std_code', '').strip()[:20]
 
         if not sender:
             return JsonResponse({'error': 'กรุณาระบุชื่อ'}, status=400)
         if not message:
             return JsonResponse({'error': 'ข้อความว่างเปล่า'}, status=400)
+
+        # ตรวจสอบ ban (เฉพาะนักศึกษาที่ login ด้วย std_code)
+        if std_code and BannedStudent.objects.filter(std_code=std_code).exists():
+            return JsonResponse({'banned': True}, status=403)
 
         room = get_object_or_404(Classrooms, room_name=room_name)
 
@@ -790,11 +796,22 @@ def chat_send(request, room_name):
         except Exception:
             pass
 
+        # ตรวจคำหยาบ — ถ้าพบและมี std_code ให้ ban ทันที (ยกเว้นอาจารย์)
+        found_profanity = has_profanity(message)
+        if found_profanity and std_code and not is_teacher:
+            BannedStudent.objects.get_or_create(
+                std_code=std_code,
+                defaults={'ban_reason': f'ใช้ถ้อยคำไม่เหมาะสม: "{message[:100]}"'},
+            )
+            return JsonResponse({'banned': True}, status=403)
+
+        censored = censor_message(message)
         msg = ChatMessage.objects.create(
             room=room,
             sender=sender,
             is_teacher=is_teacher,
-            message=message,
+            message=censored,
+            message_raw=message if found_profanity else '',
             sender_ip=get_client_ip(request),
             active_course=active_course,
         )

@@ -108,9 +108,11 @@ class ChatMessage(models.Model):
                                    related_name='chat_messages', verbose_name='ห้องเรียน')
     sender     = models.CharField('ชื่อผู้ส่ง', max_length=80)
     is_teacher = models.BooleanField('อาจารย์', default=False)
-    message    = models.TextField('ข้อความ', max_length=500)
-    created_at = models.DateTimeField('เวลา', auto_now_add=True)
-    sender_ip  = models.GenericIPAddressField('IP ผู้ส่ง', blank=True, null=True)
+    message     = models.TextField('ข้อความ (แสดงผล)', max_length=500)
+    message_raw = models.TextField('ข้อความต้นฉบับ', max_length=500, blank=True, default='',
+                                   help_text='เก็บข้อความก่อน censor — ว่างเปล่าหมายความว่าไม่มีคำหยาบ')
+    created_at  = models.DateTimeField('เวลา', auto_now_add=True)
+    sender_ip   = models.GenericIPAddressField('IP ผู้ส่ง', blank=True, null=True)
     active_course = models.CharField('วิชาที่กำลังสอน', max_length=30, blank=True, default='')
 
     class Meta:
@@ -122,6 +124,19 @@ class ChatMessage(models.Model):
     def __str__(self):
         prefix = '[อาจารย์] ' if self.is_teacher else ''
         return '{}{} — {}: {}'.format(prefix, self.room_id, self.sender, self.message[:40])
+
+
+class BannedStudent(models.Model):
+    std_code   = models.CharField('รหัสนักศึกษา', max_length=20, unique=True)
+    banned_at  = models.DateTimeField('เวลาที่ถูก ban', auto_now_add=True)
+    ban_reason = models.TextField('เหตุผล', blank=True, default='ใช้ถ้อยคำไม่เหมาะสมในระบบแชท')
+
+    class Meta:
+        verbose_name        = 'นักศึกษาที่ถูกระงับแชท'
+        verbose_name_plural = 'รายชื่อนักศึกษาที่ถูกระงับแชท'
+
+    def __str__(self):
+        return self.std_code
 
 
 class LiveClassroom(models.Model):

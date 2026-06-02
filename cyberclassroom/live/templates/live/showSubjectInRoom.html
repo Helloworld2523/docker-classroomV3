@@ -2559,15 +2559,19 @@
         fetch(SEND_URL, {
             method: 'POST',
             headers: {'Content-Type':'application/json','X-CSRFToken': getCookie('csrftoken')},
-            body: JSON.stringify({ sender: name, message: msg, teacher_pin: teacherPin })
+            body: JSON.stringify({ sender: name, message: msg, teacher_pin: teacherPin, std_code: studentCode })
         })
         .then(r => {
             if (r.status === 429){ showToast('ส่งถี่เกินไป กรุณารอสักครู่', 'error'); return null; }
-            if (r.status === 403){ showToast('เซสชันหมดอายุ กรุณารีเฟรชหน้า', 'error'); return null; }
-            return r.json();
+            return r.json().then(data => ({ status: r.status, data }));
         })
-        .then(data => {
-            if (!data) return;
+        .then(res => {
+            if (!res) return;
+            const { status, data } = res;
+            if (data.banned) {
+                showChatBannedUI();
+                return;
+            }
             if (data.error){ showToast(data.error, 'error'); return; }
             input.value = '';
             appendMessage(data);
@@ -2575,7 +2579,7 @@
             box.scrollTop = box.scrollHeight;
         })
         .catch(() => showToast('เชื่อมต่อไม่ได้ กรุณาลองใหม่', 'error'))
-        .finally(() => { btn.disabled = false; });
+        .finally(() => { if (!input.disabled) btn.disabled = false; });
     };
 
     /* ── Teacher login ── */
@@ -2628,6 +2632,37 @@
             tBtn.innerHTML = '<i class="fas fa-chalkboard-teacher"></i><span>อาจารย์</span>';
         }
         updateIdentityUI();  /* sync identity area ทุกครั้ง */
+    }
+
+    /* ── Ban UI — แสดงแทน input area เมื่อถูกระงับแชท ── */
+    function showChatBannedUI(){
+        const inputArea = document.querySelector('.chat-input-area');
+        if (inputArea){
+            inputArea.innerHTML = [
+                '<div style="padding:1rem 0.9rem;background:#fff1f2;border-top:2px solid #fca5a5;border-radius:0 0 12px 12px;">',
+                '  <div style="display:flex;align-items:flex-start;gap:0.6rem;margin-bottom:0.75rem;">',
+                '    <span style="font-size:1.35rem;line-height:1;">&#128683;</span>',
+                '    <div>',
+                '      <div style="font-weight:700;color:#be123c;font-size:0.9rem;margin-bottom:0.2rem;">บัญชีของคุณถูกระงับการใช้งานแชท</div>',
+                '      <div style="color:#9f1239;font-size:0.8rem;line-height:1.5;">เนื่องจากใช้ถ้อยคำไม่สุภาพในระบบแชท<br>กรุณาติดต่อแอดมินเพื่อขอปลดระงับ</div>',
+                '    </div>',
+                '  </div>',
+                '  <div style="display:flex;flex-direction:column;gap:0.45rem;">',
+                '    <a href="tel:023108849" style="display:flex;align-items:center;gap:0.5rem;background:#fff;border:1px solid #fecdd3;border-radius:8px;padding:0.45rem 0.75rem;text-decoration:none;color:#be123c;font-size:0.82rem;font-weight:600;">',
+                '      <i class="fas fa-phone-alt" style="width:14px;text-align:center;"></i> แจ้งปัญหาได้ที่ 02-310-8849',
+                '    </a>',
+                '    <a href="https://www.facebook.com/rucyberclassroomfanpage/" target="_blank" style="display:flex;align-items:center;gap:0.5rem;background:#fff;border:1px solid #fecdd3;border-radius:8px;padding:0.45rem 0.75rem;text-decoration:none;color:#1d4ed8;font-size:0.82rem;font-weight:600;">',
+                '      <i class="fab fa-facebook-square" style="width:14px;text-align:center;color:#1877f2;"></i> Rucyberclassroom Fanpage',
+                '    </a>',
+                '    <a href="https://lin.ee/BNqViwp" target="_blank" style="display:flex;align-items:center;gap:0.5rem;background:#06c755;border:1px solid #06c755;border-radius:8px;padding:0.45rem 0.75rem;text-decoration:none;color:#fff;font-size:0.82rem;font-weight:700;">',
+                '      <i class="fab fa-line" style="width:14px;text-align:center;font-size:1rem;"></i>',
+                '      <span><span style="font-size:0.85rem;">เพิ่มเพื่อน LINE</span><br><span style="font-weight:400;font-size:0.75rem;opacity:0.92;">สอบถามและส่งปัญหา</span></span>',
+                '      <i class="fas fa-chevron-right" style="margin-left:auto;font-size:0.7rem;opacity:0.8;"></i>',
+                '    </a>',
+                '  </div>',
+                '</div>',
+            ].join('');
+        }
     }
 
     /* ── Toast ── */

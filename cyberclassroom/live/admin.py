@@ -5,7 +5,7 @@ from django.db.models import Case, When, IntegerField
 
 from .models import (
     Classrooms, ClassScheduleCenter, Locations,
-    LogSubjectInRoom, Count, LiveClassroom, ChatMessage,
+    LogSubjectInRoom, Count, LiveClassroom, ChatMessage, BannedStudent,
 )
 from . import config
 
@@ -568,12 +568,12 @@ admin.site.register(LogSubjectInRoom, LogSubjectInRoomAdmin)
 # ─── ChatMessage ──────────────────────────────────────────────────────────────
 
 class ChatMessageAdmin(admin.ModelAdmin):
-    list_display    = ('created_at_fmt', 'room', 'course_badge', 'sender_badge', 'message_bubble', 'sender_ip')
+    list_display    = ('created_at_fmt', 'room', 'course_badge', 'sender_badge', 'message_bubble', 'profanity_badge', 'sender_ip')
     list_filter     = ('is_teacher', 'room')
     search_fields   = ('sender', 'message', 'room__room_name', 'sender_ip')
     ordering        = ('-created_at',)
     list_per_page   = 50
-    readonly_fields = ('room', 'sender', 'is_teacher', 'message_full', 'created_at', 'sender_ip')
+    readonly_fields = ('room', 'sender', 'is_teacher', 'message_full', 'message_raw_display', 'created_at', 'sender_ip')
     date_hierarchy  = 'created_at'
     list_select_related = ('room',)
 
@@ -644,10 +644,30 @@ class ChatMessageAdmin(admin.ModelAdmin):
             'padding:12px 16px;font-size:.95rem;white-space:pre-wrap;">{}</div>'.format(
                 escape(obj.message))
         )
-    message_full.short_description = 'ข้อความ (เต็ม)'
+    message_full.short_description = 'ข้อความ (แสดงผล)'
+
+    def message_raw_display(self, obj):
+        from django.utils.html import escape
+        if not obj.message_raw:
+            return mark_safe('<span style="color:#9ca3af;">—</span>')
+        return mark_safe(
+            '<div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;'
+            'padding:12px 16px;font-size:.95rem;white-space:pre-wrap;color:#be123c;">{}</div>'.format(
+                escape(obj.message_raw))
+        )
+    message_raw_display.short_description = 'ข้อความต้นฉบับ (มีคำหยาบ)'
+
+    def profanity_badge(self, obj):
+        if obj.message_raw:
+            return mark_safe(
+                '<span style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;'
+                'border-radius:6px;padding:2px 8px;font-size:.75rem;font-weight:600;">⚠ มีคำหยาบ</span>'
+            )
+        return ''
+    profanity_badge.short_description = ''
 
     def get_fields(self, request, obj=None):
-        return ('room', 'sender', 'is_teacher', 'message_full', 'created_at', 'sender_ip')
+        return ('room', 'sender', 'is_teacher', 'message_full', 'message_raw_display', 'created_at', 'sender_ip')
 
     actions = ['clear_room_chat']
 
@@ -659,3 +679,35 @@ class ChatMessageAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ChatMessage, ChatMessageAdmin)
+
+
+# ─── BannedStudent ────────────────────────────────────────────────────────────
+
+class BannedStudentAdmin(admin.ModelAdmin):
+    list_display    = ('std_code', 'banned_at_fmt', 'ban_reason_short')
+    search_fields   = ('std_code', 'ban_reason')
+    ordering        = ('-banned_at',)
+    readonly_fields = ('std_code', 'banned_at', 'ban_reason')
+    list_per_page   = 50
+    actions         = ['unban_selected']
+
+    def has_add_permission(self, request):
+        return False
+
+    def banned_at_fmt(self, obj):
+        return obj.banned_at.strftime('%d/%m/%Y %H:%M')
+    banned_at_fmt.short_description = 'เวลาที่ถูก ban'
+    banned_at_fmt.admin_order_field = 'banned_at'
+
+    def ban_reason_short(self, obj):
+        return obj.ban_reason[:80] + ('…' if len(obj.ban_reason) > 80 else '')
+    ban_reason_short.short_description = 'เหตุผล'
+
+    def unban_selected(self, request, queryset):
+        count = queryset.count()
+        queryset.delete()
+        self.message_user(request, 'ปลดแบน {} รหัสนักศึกษา เรียบร้อยแล้ว'.format(count))
+    unban_selected.short_description = 'ปลดแบน (unban) รหัสที่เลือก'
+
+
+admin.site.register(BannedStudent, BannedStudentAdmin)
