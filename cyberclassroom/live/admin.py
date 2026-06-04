@@ -734,6 +734,10 @@ class HolidayDateAdmin(admin.ModelAdmin):
     list_per_page  = 50
     date_hierarchy = 'date_start'
     list_filter    = ('banner_type',)
+
+    class Media:
+        js = ('live/admin_datepicker_th.js',)
+
     fieldsets = (
         ('📋 ข้อมูลประกาศ', {
             'fields': ('banner_type', 'name', 'note'),
