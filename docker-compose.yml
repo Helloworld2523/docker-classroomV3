@@ -2,9 +2,9 @@ version: "3.7"
 
 services:
 
-  django_v2:
+  django_v3:
     build: ./cyberclassroom
-    container_name: django_v2
+    container_name: django_v3
     restart: always
     command: >
       bash -c "cd /app &&
