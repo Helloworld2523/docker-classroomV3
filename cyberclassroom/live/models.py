@@ -126,6 +126,38 @@ class ChatMessage(models.Model):
         return '{}{} — {}: {}'.format(prefix, self.room_id, self.sender, self.message[:40])
 
 
+class HolidayDate(models.Model):
+    TYPE_HOLIDAY   = 'holiday'
+    TYPE_SEMESTER  = 'semester'
+    TYPE_MAINTAIN  = 'maintain'
+    TYPE_GENERAL   = 'general'
+    BANNER_TYPES = [
+        (TYPE_HOLIDAY,  '🎌 วันหยุดราชการ'),
+        (TYPE_SEMESTER, '🎓 ปิดภาคการศึกษา'),
+        (TYPE_MAINTAIN, '🔧 แจ้งซ่อมบำรุง'),
+        (TYPE_GENERAL,  '📢 ประกาศทั่วไป'),
+    ]
+
+    banner_type = models.CharField('ประเภท', max_length=20,
+                                   choices=BANNER_TYPES, default=TYPE_HOLIDAY)
+    date_start  = models.DateField('วันเริ่มต้น')
+    date_end    = models.DateField('วันสิ้นสุด',
+                                   help_text='ถ้าเป็นวันเดียวให้ใส่วันเดียวกับวันเริ่มต้น')
+    name        = models.CharField('ชื่อ / หัวข้อ', max_length=100)
+    note        = models.CharField('หมายเหตุ', max_length=200, blank=True,
+                                   help_text='เช่น ไม่มีการเรียนการสอน / งดถ่ายทอดสด')
+
+    class Meta:
+        verbose_name        = 'ประกาศ / แบนเนอร์'
+        verbose_name_plural = 'ประกาศ / แบนเนอร์'
+        ordering            = ['date_start']
+
+    def __str__(self):
+        if self.date_start == self.date_end:
+            return f'{self.date_start.strftime("%d/%m/%Y")} — {self.name}'
+        return f'{self.date_start.strftime("%d/%m/%Y")} ถึง {self.date_end.strftime("%d/%m/%Y")} — {self.name}'
+
+
 class BannedStudent(models.Model):
     std_code   = models.CharField('รหัสนักศึกษา', max_length=20, unique=True)
     banned_at  = models.DateTimeField('เวลาที่ถูก ban', auto_now_add=True)

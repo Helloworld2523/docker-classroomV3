@@ -58,6 +58,22 @@
         </nav>
     </header>
 
+    {% if today_holiday %}
+    <!-- ═══ ANNOUNCEMENT BANNER ═══ -->
+    {% with t=today_holiday.banner_type %}
+    <div style="
+        background:{% if t == 'holiday' %}linear-gradient(90deg,#78350f,#b45309,#d97706){% elif t == 'semester' %}linear-gradient(90deg,#4c1d95,#6d28d9,#7c3aed){% elif t == 'maintain' %}linear-gradient(90deg,#78350f,#b45309,#f59e0b){% else %}linear-gradient(90deg,#1e3a8a,#1d4ed8,#3b82f6){% endif %};
+        color:#fff;padding:0.65rem 1rem;text-align:center;font-size:0.88rem;font-weight:600;
+        letter-spacing:0.3px;box-shadow:0 2px 8px rgba(0,0,0,0.25);
+    ">
+        <span style="font-size:1.05rem;">{% if t == 'holiday' %}🎌{% elif t == 'semester' %}🎓{% elif t == 'maintain' %}🔧{% else %}📢{% endif %}</span>
+        &nbsp;
+        <strong>{{ today_holiday.name }}</strong>
+        {% if today_holiday.note %}&nbsp;·&nbsp;<span style="font-weight:400;opacity:0.92;">{{ today_holiday.note }}</span>{% endif %}
+    </div>
+    {% endwith %}
+    {% endif %}
+
     <!-- Page content -->
     <main style="min-height: calc(100vh - 140px);">
         <div class="py-4">

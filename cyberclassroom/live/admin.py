@@ -5,7 +5,7 @@ from django.db.models import Case, When, IntegerField
 
 from .models import (
     Classrooms, ClassScheduleCenter, Locations,
-    LogSubjectInRoom, Count, LiveClassroom, ChatMessage, BannedStudent,
+    LogSubjectInRoom, Count, LiveClassroom, ChatMessage, BannedStudent, HolidayDate,
 )
 from . import config
 
@@ -723,3 +723,69 @@ class BannedStudentAdmin(admin.ModelAdmin):
 
 
 admin.site.register(BannedStudent, BannedStudentAdmin)
+
+
+# ─── HolidayDate (ประกาศ / แบนเนอร์) ─────────────────────────────────────────
+
+class HolidayDateAdmin(admin.ModelAdmin):
+    list_display   = ('type_badge', 'date_range_fmt', 'name', 'note', 'status_badge')
+    search_fields  = ('name', 'note')
+    ordering       = ('date_start',)
+    list_per_page  = 50
+    date_hierarchy = 'date_start'
+    list_filter    = ('banner_type',)
+    fieldsets = (
+        ('📋 ข้อมูลประกาศ', {
+            'fields': ('banner_type', 'name', 'note'),
+        }),
+        ('📅 ช่วงเวลา', {
+            'fields': ('date_start', 'date_end'),
+            'description': 'ถ้าเป็นวันเดียวให้ใส่วันเดียวกันทั้งสองช่อง',
+        }),
+    )
+
+    # สี/ไอคอนตามประเภท
+    _TYPE_STYLE = {
+        'holiday':  ('🎌', '#78350f', '#fef3c7', '#fbbf24'),
+        'semester': ('🎓', '#4c1d95', '#f3e8ff', '#c4b5fd'),
+        'maintain': ('🔧', '#78350f', '#fffbeb', '#fcd34d'),
+        'general':  ('📢', '#1e3a8a', '#eff6ff', '#93c5fd'),
+    }
+
+    def type_badge(self, obj):
+        icon, color, bg, border = self._TYPE_STYLE.get(
+            obj.banner_type, ('📢', '#1e3a8a', '#eff6ff', '#93c5fd'))
+        label = obj.get_banner_type_display()
+        return mark_safe(
+            f'<span style="background:{bg};color:{color};border:1px solid {border};'
+            f'border-radius:6px;padding:2px 10px;font-size:.78rem;font-weight:600;">'
+            f'{label}</span>'
+        )
+    type_badge.short_description = 'ประเภท'
+
+    def date_range_fmt(self, obj):
+        if obj.date_start == obj.date_end:
+            return obj.date_start.strftime('%d/%m/%Y')
+        return f'{obj.date_start.strftime("%d/%m/%Y")} – {obj.date_end.strftime("%d/%m/%Y")}'
+    date_range_fmt.short_description = 'ช่วงเวลา'
+    date_range_fmt.admin_order_field = 'date_start'
+
+    def status_badge(self, obj):
+        from datetime import date
+        today = date.today()
+        if obj.date_start <= today <= obj.date_end:
+            return mark_safe(
+                '<span style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24;'
+                'border-radius:6px;padding:2px 10px;font-size:.78rem;font-weight:700;">'
+                '⚡ แสดงอยู่</span>'
+            )
+        if obj.date_end < today:
+            return mark_safe('<span style="color:#94a3b8;font-size:.78rem;">ผ่านแล้ว</span>')
+        return mark_safe(
+            '<span style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;'
+            'border-radius:6px;padding:2px 10px;font-size:.78rem;">กำลังจะมาถึง</span>'
+        )
+    status_badge.short_description = 'สถานะ'
+
+
+admin.site.register(HolidayDate, HolidayDateAdmin)
