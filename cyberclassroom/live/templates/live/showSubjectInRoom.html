@@ -1149,7 +1149,7 @@
 
     <div class="row g-4 align-items-start">
     <!-- ── LEFT: Video ── -->
-    <div class="col-12 {% if room.chat_pin %}col-lg-8{% endif %}">
+    <div id="videoColumn" class="col-12 {% if room.chat_pin %}col-lg-8{% endif %}">
 
     <!-- ─── LIVE VIDEO ─── -->
     <div class="page-section">
@@ -1581,7 +1581,7 @@
 </script>
 
     <!-- ── RIGHT: Sidebar ── -->
-    {% if room.chat_pin %}<div class="col-12 col-lg-4">
+    {% if room.chat_pin %}<div id="chatColumn" class="col-12 col-lg-4">
     <div class="room-sidebar">
 
 
@@ -2627,9 +2627,27 @@
         if (teacherPin){
             tBtn.classList.add('active');
             tBtn.innerHTML = '<i class="fas fa-star"></i><span>กำลังสอน</span>';
+            /* โหมดอาจารย์ — ซ่อน video แสดงแต่แชท */
+            const videoCol = document.getElementById('videoColumn');
+            const chatCol  = document.getElementById('chatColumn');
+            if (videoCol) videoCol.style.display = 'none';
+            if (chatCol){
+                chatCol.className = 'col-12';
+                chatCol.style.maxWidth = '680px';
+                chatCol.style.margin   = '0 auto';
+            }
         } else {
             tBtn.classList.remove('active');
             tBtn.innerHTML = '<i class="fas fa-chalkboard-teacher"></i><span>อาจารย์</span>';
+            /* กลับโหมดปกติ — แสดง video คืน */
+            const videoCol = document.getElementById('videoColumn');
+            const chatCol  = document.getElementById('chatColumn');
+            if (videoCol) videoCol.style.display = '';
+            if (chatCol){
+                chatCol.className = 'col-12 col-lg-4';
+                chatCol.style.maxWidth = '';
+                chatCol.style.margin   = '';
+            }
         }
         updateIdentityUI();  /* sync identity area ทุกครั้ง */
     }
@@ -2650,9 +2668,6 @@
                 '  <div style="display:flex;flex-direction:column;gap:0.45rem;">',
                 '    <a href="tel:023108849" style="display:flex;align-items:center;gap:0.5rem;background:#fff;border:1px solid #fecdd3;border-radius:8px;padding:0.45rem 0.75rem;text-decoration:none;color:#be123c;font-size:0.82rem;font-weight:600;">',
                 '      <i class="fas fa-phone-alt" style="width:14px;text-align:center;"></i> แจ้งปัญหาได้ที่ 02-310-8849',
-                '    </a>',
-                '    <a href="https://www.facebook.com/rucyberclassroomfanpage/" target="_blank" style="display:flex;align-items:center;gap:0.5rem;background:#fff;border:1px solid #fecdd3;border-radius:8px;padding:0.45rem 0.75rem;text-decoration:none;color:#1d4ed8;font-size:0.82rem;font-weight:600;">',
-                '      <i class="fab fa-facebook-square" style="width:14px;text-align:center;color:#1877f2;"></i> Rucyberclassroom Fanpage',
                 '    </a>',
                 '    <a href="https://lin.ee/BNqViwp" target="_blank" style="display:flex;align-items:center;gap:0.5rem;background:#06c755;border:1px solid #06c755;border-radius:8px;padding:0.45rem 0.75rem;text-decoration:none;color:#fff;font-size:0.82rem;font-weight:700;">',
                 '      <i class="fab fa-line" style="width:14px;text-align:center;font-size:1rem;"></i>',

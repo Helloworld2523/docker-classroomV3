@@ -687,12 +687,9 @@ class BannedStudentAdmin(admin.ModelAdmin):
     list_display    = ('std_code', 'banned_at_fmt', 'ban_reason_short')
     search_fields   = ('std_code', 'ban_reason')
     ordering        = ('-banned_at',)
-    readonly_fields = ('std_code', 'banned_at', 'ban_reason')
+    readonly_fields = ('banned_at',)
     list_per_page   = 50
     actions         = ['unban_selected']
-
-    def has_add_permission(self, request):
-        return False
 
     def banned_at_fmt(self, obj):
         return obj.banned_at.strftime('%d/%m/%Y %H:%M')
