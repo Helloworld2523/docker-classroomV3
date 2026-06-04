@@ -69,6 +69,7 @@ class ClassroomsAdmin(admin.ModelAdmin):
         'live_badge',         # LIVE / offline badge
         'viewer_count_display',
         'room_status_badge',
+        'chat_status_badge',  # เปิด/ปิด chat
         'stream_preview_link',
     )
     list_display_links = ('room_info',)
@@ -203,6 +204,20 @@ class ClassroomsAdmin(admin.ModelAdmin):
             return mark_safe('<span class="admin-badge badge-open">เปิด</span>')
         return mark_safe('<span class="admin-badge badge-closed">ปิด</span>')
     room_status_badge.short_description = 'สถานะ'
+
+    def chat_status_badge(self, obj):
+        if obj.chat_pin:
+            return mark_safe(
+                '<span style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;'
+                'border-radius:6px;padding:2px 10px;font-size:.78rem;font-weight:600;">'
+                '💬 เปิด</span>'
+            )
+        return mark_safe(
+            '<span style="background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;'
+            'border-radius:6px;padding:2px 10px;font-size:.78rem;">'
+            '— ปิด</span>'
+        )
+    chat_status_badge.short_description = 'แชท'
 
     def stream_preview_link(self, obj):
         url = '/showSubjectInRoom/{}/'.format(obj.room_name)
