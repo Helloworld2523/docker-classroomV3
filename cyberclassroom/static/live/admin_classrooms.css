@@ -1,0 +1,147 @@
+/* ── Admin Classrooms — badge styles ─────────────────────────────────── */
+
+.admin-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* 🔴 LIVE */
+.badge-live {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    animation: livePulse 2s ease-in-out infinite;
+}
+@keyframes livePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+    50%       { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+}
+
+/* ⚫ ออฟไลน์ */
+.badge-offline {
+    background: rgba(100, 116, 139, 0.12);
+    color: #64748b;
+    border: 1px solid rgba(100, 116, 139, 0.25);
+}
+
+/* 👥 ผู้ชม */
+.badge-viewers {
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* เปิด/ปิด */
+.badge-open {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.badge-closed {
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ▶ เปิดดู link */
+.admin-stream-link {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb !important;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: background 0.15s;
+}
+.admin-stream-link:hover {
+    background: rgba(59, 130, 246, 0.22);
+}
+
+/* ── Mini video player in list ────────────────────────────────────────── */
+.admin-mini-player {
+    position: relative;
+    width: 200px;
+    background: #0f172a;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.admin-mini-player video {
+    display: block;
+    width: 200px;
+    height: 113px;   /* 16:9 */
+    object-fit: contain;
+    background: #000;
+}
+.admin-mini-player .player-offline {
+    width: 200px;
+    height: 113px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1e293b;
+    color: #475569;
+    font-size: 0.75rem;
+    border-radius: 6px;
+}
+.admin-mini-player .player-live-dot {
+    position: absolute;
+    top: 5px;
+    left: 7px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+}
+
+/* ── Make the list rows taller to fit the video ───────────────────────── */
+#result_list tbody tr td {
+    vertical-align: middle;
+}
+
+/* ── Live Monitor changelist header stats ─────────────────────────────── */
+.live-monitor-stats {
+    display: flex;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.live-monitor-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+}
+.live-monitor-stat .stat-val {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #0369a1;
+    line-height: 1;
+}
+.live-monitor-stat .stat-lbl {
+    font-size: 0.72rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.live-monitor-refresh-note {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    margin-bottom: 8px;
+}
