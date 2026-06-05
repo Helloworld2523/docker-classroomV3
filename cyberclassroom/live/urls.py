@@ -23,6 +23,7 @@ urlpatterns = [
     path('schedule-editor/', views.schedule_editor, name='schedule_editor'),
     path('debug-headers/', views.debug_headers, name='debug_headers'),
     path('dashboard/', views.dashboard_stats, name='dashboard'),
+    path('admin-api/course-search/', views.course_search_proxy, name='course_search_proxy'),
     # สำหรับงานถ่ายทอดสด
     # path('live', views.live, name='live'),
     # path('get-live-viewers/', views.get_live_viewers, name='get-live-viewers'),

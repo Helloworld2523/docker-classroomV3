@@ -1,4 +1,5 @@
 import datetime
+from django import forms
 from django.contrib import admin
 from django.utils.html import mark_safe
 from django.db.models import Case, When, IntegerField
@@ -44,12 +45,203 @@ def _live_set():
     }
 
 
+# ─── ClassScheduleCenter Form ────────────────────────────────────────────────
+
+_SECTION_CHOICES = [
+    ('', '— ไม่มี section —'),
+    ('01','01'), ('02','02'), ('03','03'), ('04','04'), ('05','05'),
+    ('06','06'), ('07','07'), ('08','08'), ('09','09'), ('10','10'),
+    ('11','11'), ('12','12'), ('13','13'), ('14','14'), ('15','15'),
+    ('A','A'), ('B','B'), ('C','C'), ('D','D'), ('E','E'),
+]
+
+_DAY_CHOICES_EN = [
+    ('1','Monday'),
+    ('2','Tuesday'),
+    ('3','Wednesday'),
+    ('4','Thursday'),
+    ('5','Friday'),
+    ('6','Saturday'),
+    ('7','Sunday'),
+]
+
+class ClassScheduleCenterForm(forms.ModelForm):
+    # รหัสวิชา — รองรับหลายรหัสคั่นด้วย , หรือขึ้นบรรทัดใหม่
+    course_no  = forms.CharField(
+        label='รหัสวิชา',
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'placeholder': 'กรอกรหัสวิชาได้หลายรหัส คั่นด้วย , หรือ Enter\nเช่น ENG1111, ENG1110',
+            'style': 'font-family:monospace;font-size:0.9rem;',
+        }),
+        help_text=mark_safe('''
+กรอกรหัสเดียว หรือหลายรหัสพร้อมกัน คั่นด้วย , (comma) หรือขึ้นบรรทัดใหม่<br>
+<button type="button" onclick="csmOpen()"
+style="margin-top:0.5rem;padding:0.4rem 1rem;background:#1d4ed8;color:#fff;
+border:none;border-radius:6px;font-size:0.82rem;cursor:pointer;
+font-weight:600;box-shadow:0 2px 6px rgba(29,78,216,0.3);">
+🔍 ค้นหาวิชาจาก RU</button>
+<div id="csmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;width:90%;max-width:680px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.25);overflow:hidden;">
+    <div style="background:#1d4ed8;color:#fff;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-weight:700;">🔍 ค้นหารายวิชาจาก RU</span>
+      <button type="button" onclick="csmClose()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;">×</button>
+    </div>
+    <div style="padding:0.85rem 1.25rem;border-bottom:1px solid #e5e7eb;">
+      <input id="csmQ" type="text" placeholder="พิมพ์รหัสหรือชื่อวิชา..."
+        style="width:100%;padding:0.5rem 0.75rem;border:1px solid #d1d5db;border-radius:8px;font-size:0.9rem;outline:none;box-sizing:border-box;">
+      <div id="csmStat" style="font-size:0.78rem;color:#6b7280;margin-top:0.4rem;"></div>
+    </div>
+    <div style="overflow-y:auto;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+        <thead><tr style="background:#f9fafb;">
+          <th style="padding:0.6rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">รหัสวิชา</th>
+          <th style="padding:0.6rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">ชื่อวิชา</th>
+          <th style="padding:0.6rem;text-align:center;border-bottom:1px solid #e5e7eb;">Sec</th>
+          <th style="padding:0.6rem;text-align:center;border-bottom:1px solid #e5e7eb;">หน่วยกิต</th>
+          <th style="border-bottom:1px solid #e5e7eb;"></th>
+        </tr></thead>
+        <tbody id="csmBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+function csmOpen(){
+  document.getElementById("csmModal").style.display="flex";
+  document.getElementById("csmQ").value="";
+  document.getElementById("csmBody").innerHTML="";
+  csmFetch("");
+  setTimeout(function(){document.getElementById("csmQ").focus();},100);
+  document.getElementById("csmQ").oninput=function(){clearTimeout(window._csmT);window._csmT=setTimeout(function(){csmFetch(document.getElementById("csmQ").value.trim());},350);};
+}
+function csmClose(){document.getElementById("csmModal").style.display="none";}
+function csmFetch(q){
+  document.getElementById("csmStat").textContent="กำลังโหลด...";
+  document.getElementById("csmBody").innerHTML="";
+  var directUrl="https://sevkn.ru.ac.th/mregis/show_re.jsp?STUDENTID=6299999991";
+  fetch(directUrl)
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.error){document.getElementById("csmStat").textContent="⚠ "+d.error;return;}
+    /* API คืน {errString, rec:[...]} หรือ {courses:[...]} */
+    var raw=d.rec||d.courses||[];
+    /* กรองตาม q */
+    var rows=q?raw.filter(function(c){
+      var cn=String(c.COURSENO||c.course_no||"").toUpperCase();
+      var nm=String(c.cName||c.course_name||"").toUpperCase();
+      return cn.includes(q.toUpperCase())||nm.includes(q.toUpperCase());
+    }):raw;
+    rows=rows.slice(0,100);
+    document.getElementById("csmStat").textContent="พบ "+rows.length+" รายการ";
+    var tb=document.getElementById("csmBody");
+    tb.innerHTML="";
+    if(!rows.length){tb.innerHTML="<tr><td colspan=5 style=\\"padding:1.5rem;text-align:center;color:#9ca3af;\\">ไม่พบรายวิชา</td></tr>";return;}
+    rows.forEach(function(c){
+      var tr=document.createElement("tr");
+      tr.style.borderBottom="1px solid #f3f4f6";
+      /* รองรับทั้ง 2 format */
+      var cn=c.COURSENO||c.course_no||"";
+      var nm=c.cName||c.course_name||"";
+      var sec=String(c.section||c.sect||"");
+      var cr=c.credit||"";
+      tr.innerHTML="<td style=\\"padding:0.5rem 1rem;font-weight:600;color:#1e3a8a;\\">"+cn+"</td><td style=\\"padding:0.5rem 1rem;\\">"+nm+"</td><td style=\\"padding:0.5rem;text-align:center;\\">"+sec+"</td><td style=\\"padding:0.5rem;text-align:center;\\">"+cr+"</td><td style=\\"padding:0.5rem;text-align:center;\\"><button type=\\"button\\" style=\\"background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:0.3rem 0.75rem;font-size:0.8rem;cursor:pointer;\\">โหลด</button></td>";
+      tr.querySelector("button").onclick=function(){
+        var ta=document.querySelector("textarea[name=course_no]")||document.getElementById("id_course_no");
+        if(ta){var cur=ta.value.trim();ta.value=cur?cur+", "+cn:cn;}
+        var th=document.querySelector("input[name=course_name_thai]")||document.getElementById("id_course_name_thai");
+        if(th&&(!th.value||th.value==="-"))th.value=nm;
+        var secEl=document.querySelector("select[name=section]")||document.getElementById("id_section");
+        if(secEl&&sec){for(var i=0;i<secEl.options.length;i++){if(secEl.options[i].value===sec){secEl.selectedIndex=i;break;}}}
+        csmClose();
+      };
+      tb.appendChild(tr);
+    });
+  })
+  .catch(function(){document.getElementById("csmStat").textContent="⚠ เชื่อมต่อไม่ได้";});
+}
+document.addEventListener("click",function(e){if(e.target===document.getElementById("csmModal"))csmClose();});
+</script>
+'''),
+    )
+    section    = forms.ChoiceField(
+        choices=_SECTION_CHOICES,
+        required=False,
+        label='ตอนเรียน (Section)',
+        help_text='เลือก section หรือปล่อยว่างถ้าไม่มี',
+    )
+    course_day = forms.MultipleChoiceField(
+        choices=_DAY_CHOICES_EN,
+        label='วันที่เรียน',
+        widget=forms.CheckboxSelectMultiple,
+        help_text='เลือกได้หลายวัน — ระบบจะสร้างแถวแยกให้อัตโนมัติ',
+    )
+    time_start = forms.TimeField(
+        label='เริ่มเรียน',
+        widget=forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
+        input_formats=['%H:%M'],
+        help_text='รูปแบบ HH:MM เช่น 08:30',
+    )
+    time_end = forms.TimeField(
+        label='สิ้นสุด',
+        widget=forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
+        input_formats=['%H:%M'],
+        help_text='รูปแบบ HH:MM เช่น 17:00',
+    )
+
+    class Meta:
+        model  = ClassScheduleCenter
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Edit mode → รหัสวิชาเป็น text input เดียว และวันเป็น single choice
+        if self.instance and self.instance.pk:
+            self.fields['course_no'] = forms.CharField(
+                label='รหัสวิชา',
+                initial=self.instance.course_no,
+            )
+            self.fields['course_day'] = forms.ChoiceField(
+                choices=_DAY_CHOICES_EN,
+                label='วันที่เรียน',
+                initial=self.instance.course_day,
+            )
+
+    def clean_course_no(self):
+        raw = self.cleaned_data.get('course_no', '')
+        # แยกรหัสวิชาจาก comma และ newline แล้ว strip ช่องว่าง
+        import re
+        codes = [c.strip().upper() for c in re.split(r'[,\n]+', raw) if c.strip()]
+        if not codes:
+            raise forms.ValidationError('กรุณากรอกรหัสวิชาอย่างน้อย 1 รหัส')
+        self._course_codes = codes
+        # ส่ง code แรกกลับให้ model validation ผ่าน
+        return codes[0]
+
+    def clean_time_start(self):
+        t = self.cleaned_data.get('time_start')
+        return t.strftime('%H:%M') if t else ''
+
+    def clean_time_end(self):
+        t = self.cleaned_data.get('time_end')
+        return t.strftime('%H:%M') if t else ''
+
+    def clean_section(self):
+        return self.cleaned_data.get('section', '')
+
+    def clean_course_day(self):
+        days = self.cleaned_data.get('course_day', [])
+        self._selected_days = days if isinstance(days, list) else [days]
+        return self._selected_days[0] if self._selected_days else '1'
+
+
 # ─── ClassScheduleCenter inline ───────────────────────────────────────────────
 
 class ClassScheduleCenterInline(admin.TabularInline):
-    model = ClassScheduleCenter
-    extra = 0
-    fields = ('course_no', 'course_name_thai', 'instructor',
+    model  = ClassScheduleCenter
+    form   = ClassScheduleCenterForm
+    extra  = 0
+    fields = ('course_no', 'section', 'course_name_thai', 'instructor',
               'course_day', 'time_start', 'time_end')
     exclude = ['added_by', 'created_at', 'updated_at']
     ordering = ('time_start',)
@@ -365,21 +557,67 @@ admin.site.register(Count, CountAdmin)
 # ─── ClassScheduleCenter ──────────────────────────────────────────────────────
 
 class ClassScheduleCenterAdmin(admin.ModelAdmin):
-    list_display  = ('course_no', 'course_name_thai', 'instructor',
-                     'course_day', 'time_start', 'time_end', 'room_name')
+    form          = ClassScheduleCenterForm
+    list_display  = ('course_no', 'section', 'course_name_thai', 'instructor',
+                     'course_day_display', 'time_start', 'time_end', 'room_name')
     list_per_page = 25
-    list_editable = ('course_day', 'time_start', 'time_end')
-    search_fields = ('course_no', 'room_name__room_name', 'course_name_thai', 'instructor')
+    search_fields = ('course_no', 'section', 'room_name__room_name', 'course_name_thai', 'instructor')
     list_filter   = ('course_day', 'room_name')
     exclude       = ('added_by', 'created_at', 'updated_at')
 
+    _DAY_NAMES = dict(_DAY_CHOICES_EN)
+
+    def course_day_display(self, obj):
+        return self._DAY_NAMES.get(str(obj.course_day), obj.course_day)
+    course_day_display.short_description = 'วันที่เรียน'
+    course_day_display.admin_order_field = 'course_day'
+
     def save_model(self, request, obj, form, change):
-        now = datetime.datetime.now()
-        if not obj.pk:
-            obj.created_at = str(now)
-        obj.updated_at = str(now)
-        obj.added_by   = request.user.username
-        super(ClassScheduleCenterAdmin, self).save_model(request, obj, form, change)
+        now   = datetime.datetime.now()
+        days  = getattr(form, '_selected_days', [form.cleaned_data.get('course_day')])
+        codes = getattr(form, '_course_codes',  [obj.course_no])
+
+        if change:
+            # Edit mode — บันทึกปกติ
+            obj.updated_at = str(now)
+            obj.added_by   = request.user.username
+            super().save_model(request, obj, form, change)
+            return
+
+        # Add mode — วน course_code × วัน → สร้างทุก combination
+        created_count = 0
+        skipped_count = 0
+        for code in codes:
+            for day in days:
+                _, created = ClassScheduleCenter.objects.get_or_create(
+                    course_no  = code,
+                    section    = obj.section,
+                    room_name  = obj.room_name,
+                    course_day = day,
+                    time_start = obj.time_start,
+                    defaults={
+                        'course_name_thai': obj.course_name_thai,
+                        'course_name_eng':  obj.course_name_eng,
+                        'instructor':       obj.instructor,
+                        'time_end':         obj.time_end,
+                        'added_by':         request.user.username,
+                        'created_at':       str(now),
+                        'updated_at':       str(now),
+                    }
+                )
+                if created:
+                    created_count += 1
+                else:
+                    skipped_count += 1
+
+        total = len(codes) * len(days)
+        msg = f'สร้างตารางเรียน {created_count}/{total} รายการ'
+        if len(codes) > 1:
+            msg += f' | รหัสวิชา: {", ".join(codes)}'
+        msg += f' | วัน: {", ".join(self._DAY_NAMES.get(d, d) for d in days)}'
+        if skipped_count:
+            msg += f' (ข้าม {skipped_count} รายการที่มีอยู่แล้ว)'
+        self.message_user(request, msg)
 
 
 admin.site.register(ClassScheduleCenter, ClassScheduleCenterAdmin)
@@ -736,7 +974,7 @@ class HolidayDateAdmin(admin.ModelAdmin):
     list_filter    = ('banner_type',)
 
     class Media:
-        js = ('live/admin_datepicker_th.js',)
+        js = ('live/admin_datepicker_th.js', 'live/admin_course_search.js')
 
     fieldsets = (
         ('📋 ข้อมูลประกาศ', {

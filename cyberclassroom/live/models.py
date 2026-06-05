@@ -44,10 +44,13 @@ class Classrooms(models.Model):
         return self.room_name
 
 class ClassScheduleCenter(models.Model):
-    course_no = models.CharField('รหัสวิชา',max_length=30,primary_key=True,)
-    course_name_thai = models.CharField('ชื่อวิชา TH',max_length=50,blank=True, default='-')
-    course_name_eng = models.CharField('ชื่อวิชา EN',max_length=50,blank=True, default='-')
-    instructor = models.CharField('อาจารย์ผู้สอน',max_length=200,blank=True, default='-')
+    course_no        = models.CharField('รหัสวิชา', max_length=30)
+    section          = models.CharField('ตอนเรียน (Section)', max_length=10,
+                                        blank=True, default='',
+                                        help_text='เช่น 01, 02, A, B — ว่างได้ถ้าไม่มี section')
+    course_name_thai = models.CharField('ชื่อวิชา TH', max_length=50, blank=True, default='-')
+    course_name_eng  = models.CharField('ชื่อวิชา EN', max_length=50, blank=True, default='-')
+    instructor       = models.CharField('อาจารย์ผู้สอน', max_length=200, blank=True, default='-')
     DAY_LIST=(
         ('1','Monday'),
         ('2','Tuesday'),
@@ -74,11 +77,14 @@ class ClassScheduleCenter(models.Model):
     updated_at=models.CharField( max_length=50,blank=True)
 
     class Meta:
-        verbose_name="รายการวิชาเรียน"
-        verbose_name_plural="ข้อมูลวิชาเรียน"
-        ordering = ('time_start',)
+        verbose_name        = 'รายการวิชาเรียน'
+        verbose_name_plural = 'ข้อมูลวิชาเรียน'
+        ordering            = ('time_start',)
+        unique_together     = ('course_no', 'section', 'room_name', 'course_day', 'time_start')
 
     def __str__(self):
+        if self.section:
+            return f'{self.course_no} (Sec {self.section})'
         return self.course_no
 
 

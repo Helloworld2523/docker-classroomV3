@@ -535,6 +535,49 @@ def getLocation(request,location):
     }
     return render(request,'live/getLocation.html',context=context)   
 
+@staff_member_required
+def course_search_proxy(request):
+    """
+    Proxy ดึงข้อมูลรายวิชาจาก sevkn.ru.ac.th
+    เพื่อหลีกเลี่ยง CORS และให้ admin ค้นหาวิชาได้จาก popup
+    รองรับ ?q=<keyword> สำหรับกรองฝั่ง server
+    """
+    import urllib.request as _req
+    import urllib.error  as _err
+
+    API_URL = 'https://sevkn.ru.ac.th/mregis/show_re.jsp?STUDENTID=6299999991'
+    q = request.GET.get('q', '').strip().upper()
+
+    try:
+        with _req.urlopen(API_URL, timeout=10) as resp:
+            raw = resp.read().decode('utf-8', errors='replace')
+        data = json.loads(raw)
+    except _err.URLError:
+        return JsonResponse({'error': 'เชื่อมต่อ sevkn.ru.ac.th ไม่ได้'}, status=502)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'error': 'รูปแบบข้อมูลไม่ถูกต้อง'}, status=502)
+
+    # กรองตาม keyword ถ้ามี
+    if q:
+        data = [
+            c for c in data
+            if q in str(c.get('COURSENO', '')).upper()
+            or q in str(c.get('cName', '')).upper()
+        ]
+
+    # ส่งเฉพาะ field ที่ต้องการ
+    result = [
+        {
+            'course_no':   c.get('COURSENO', ''),
+            'course_name': c.get('cName', ''),
+            'section':     str(c.get('section', '')),
+            'credit':      c.get('credit', ''),
+        }
+        for c in data[:100]  # จำกัด 100 รายการ
+    ]
+    return JsonResponse({'courses': result})
+
+
 def error_404_view(request, exception):
     return render(request, 'live/404.html')
 
