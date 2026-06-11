@@ -221,7 +221,47 @@
       </div>
     </div>
 
-    <!-- ══ ส่วนที่ 3: JSON Editor (สำหรับขั้นสูง) ══ -->
+    <!-- ══ ส่วนที่ 3: ตั้งค่าค้นหาวิชา ══ -->
+    <div class="sch-card">
+      <div class="sch-card-head">
+        <h2>🔍 ตั้งค่าค้นหาวิชา <small style="font-weight:400;color:#94a3b8;">(popup ค้นหาวิชาในหน้า admin เพิ่มตารางเรียน)</small></h2>
+      </div>
+      <div class="sch-card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+          <div>
+            <div class="fld">
+              <label>ปีการศึกษาที่แสดงใน dropdown</label>
+              <textarea id="cs_years" rows="4"
+                style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box;font-family:monospace;resize:vertical;"
+                placeholder="2568&#10;2567&#10;2569"></textarea>
+              <span style="font-size:11px;color:#94a3b8;">ใส่ทีละบรรทัด เรียงตามต้องการ</span>
+            </div>
+          </div>
+          <div>
+            <div class="fld">
+              <label>ปีการศึกษาเริ่มต้น (default)</label>
+              <input type="text" id="cs_default_year" placeholder="2568">
+            </div>
+          </div>
+          <div>
+            <div class="fld">
+              <label>ภาคเรียนเริ่มต้น (default)</label>
+              <select id="cs_default_sem" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box;">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3 (ฤดูร้อน)</option>
+              </select>
+            </div>
+            <div style="margin-top:8px;padding:10px;background:#eff6ff;border-radius:8px;font-size:12px;color:#1e40af;line-height:1.6;">
+              💡 ค่า default ใช้เมื่อเปิด popup ครั้งแรก<br>
+              หลังจากนั้นระบบจำค่าที่เลือกล่าสุดให้อัตโนมัติ
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ส่วนที่ 4: JSON Editor (สำหรับขั้นสูง) ══ -->
     <div class="sch-card">
       <div class="sch-card-head">
         <h2>⚙️ แก้ไข JSON ขั้นสูง <small style="font-weight:400;color:#94a3b8;">(ส่วนเต็มของไฟล์ schedule.json)</small></h2>
@@ -281,6 +321,12 @@ function populate(data) {
   document.getElementById('r_date').value      = r.date_range|| '';
   document.getElementById('r_link').value      = r.link      || '';
   document.getElementById('r_link_text').value = r.link_text || '';
+  // course_search
+  const cs = data.course_search || {};
+  const csYears = Array.isArray(cs.years) ? cs.years.join('\n') : (cs.years || '2568');
+  document.getElementById('cs_years').value        = csYears;
+  document.getElementById('cs_default_year').value = cs.default_year     || '2568';
+  document.getElementById('cs_default_sem').value  = cs.default_semester || '1';
   // popup
   const p = data.popup || {};
   document.getElementById('p_enabled').checked = p.enabled === true;
@@ -318,6 +364,12 @@ function buildUpdatedJSON() {
     date_range: document.getElementById('r_date').value.trim(),
     link:       document.getElementById('r_link').value.trim(),
     link_text:  document.getElementById('r_link_text').value.trim(),
+  };
+  const csYearsRaw = document.getElementById('cs_years').value;
+  data.course_search = {
+    years:            csYearsRaw.split(/[\n,]+/).map(function(s){return s.trim();}).filter(Boolean),
+    default_year:     document.getElementById('cs_default_year').value.trim(),
+    default_semester: document.getElementById('cs_default_sem').value,
   };
   data.popup = {
     enabled:     document.getElementById('p_enabled').checked,

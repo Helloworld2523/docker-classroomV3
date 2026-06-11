@@ -535,47 +535,90 @@ def getLocation(request,location):
     }
     return render(request,'live/getLocation.html',context=context)   
 
+def _load_course_search_meta():
+    """อ่าน course_search config จาก schedule.json"""
+    try:
+        with open(SCHEDULE_JSON_PATH, 'r', encoding='utf-8') as f:
+            cfg = json.load(f).get('course_search', {})
+        return {
+            'years':            cfg.get('years', ['2568']),
+            'default_year':     cfg.get('default_year', '2568'),
+            'default_semester': cfg.get('default_semester', '1'),
+        }
+    except Exception:
+        return {'years': ['2568'], 'default_year': '2568', 'default_semester': '1'}
+
+
 @staff_member_required
 def course_search_proxy(request):
     """
-    Proxy ดึงข้อมูลรายวิชาจาก sevkn.ru.ac.th
-    เพื่อหลีกเลี่ยง CORS และให้ admin ค้นหาวิชาได้จาก popup
-    รองรับ ?q=<keyword> สำหรับกรองฝั่ง server
+    Proxy POST ไป ruconnext.ru.ac.th/ru-connext-api-v2/mr30/data
+    รับ course_year, course_semester, q จาก request
     """
     import urllib.request as _req
     import urllib.error  as _err
 
-    API_URL = 'https://sevkn.ru.ac.th/mregis/show_re.jsp?STUDENTID=6299999991'
-    q = request.GET.get('q', '').strip().upper()
+    API_URL = 'https://ruconnext.ru.ac.th/ru-connext-api-v2/mr30/data'
+    meta = _load_course_search_meta()
 
+    params = request.POST if request.method == 'POST' else request.GET
+
+    # ถ้าขอแค่ meta
+    if params.get('meta_only'):
+        return JsonResponse({'meta': meta})
+
+    course_year     = params.get('course_year',     meta['default_year']).strip()
+    course_semester = params.get('course_semester', meta['default_semester']).strip()
+    q = params.get('q', '').strip().upper()
+
+    payload = json.dumps({
+        'course_year':     course_year,
+        'course_semester': course_semester,
+    }).encode('utf-8')
+
+    req = _req.Request(
+        API_URL,
+        data=payload,
+        headers={'Content-Type': 'application/json'},
+        method='POST',
+    )
     try:
-        with _req.urlopen(API_URL, timeout=10) as resp:
+        with _req.urlopen(req, timeout=15) as resp:
             raw = resp.read().decode('utf-8', errors='replace')
         data = json.loads(raw)
-    except _err.URLError:
-        return JsonResponse({'error': 'เชื่อมต่อ sevkn.ru.ac.th ไม่ได้'}, status=502)
+    except _err.URLError as e:
+        return JsonResponse({'error': f'เชื่อมต่อ API ไม่ได้: {e.reason}'}, status=502)
     except (json.JSONDecodeError, ValueError):
         return JsonResponse({'error': 'รูปแบบข้อมูลไม่ถูกต้อง'}, status=502)
 
-    # กรองตาม keyword ถ้ามี
+    if isinstance(data, list):
+        rows = data
+    elif isinstance(data, dict):
+        rows = data.get('RECORD') or data.get('data') or data.get('courses') or data.get('result') or []
+    else:
+        rows = []
+
     if q:
-        data = [
-            c for c in data
-            if q in str(c.get('COURSENO', '')).upper()
-            or q in str(c.get('cName', '')).upper()
+        rows = [
+            c for c in rows
+            if q in str(c.get('COURSENO', '') or c.get('course_no', '')).upper()
+            or q in str(c.get('cName', '') or c.get('course_name', '')).upper()
         ]
 
-    # ส่งเฉพาะ field ที่ต้องการ
-    result = [
-        {
-            'course_no':   c.get('COURSENO', ''),
-            'course_name': c.get('cName', ''),
-            'section':     str(c.get('section', '')),
-            'credit':      c.get('credit', ''),
-        }
-        for c in data[:100]  # จำกัด 100 รายการ
-    ]
-    return JsonResponse({'courses': result})
+    result = []
+    for c in rows[:200]:
+        result.append({
+            'course_no':   c.get('course_no',     ''),
+            'course_name': c.get('show_ru30',     ''),
+            'credit':      c.get('course_credit', ''),
+            'section':     str(c.get('section',   '')),
+            'time_period': c.get('time_period',   ''),
+            'course_room': c.get('course_room',   ''),
+            'examdate':    c.get('course_examdate',''),
+            'day_name_s':  c.get('day_name_s',    ''),
+            'instructor':  c.get('course_instructor', ''),
+        })
+    return JsonResponse({'courses': result, 'total': len(result), 'meta': meta})
 
 
 def error_404_view(request, exception):

@@ -81,24 +81,48 @@ border:none;border-radius:6px;font-size:0.82rem;cursor:pointer;
 font-weight:600;box-shadow:0 2px 6px rgba(29,78,216,0.3);">
 🔍 ค้นหาวิชาจาก RU</button>
 <div id="csmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;width:90%;max-width:680px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.25);overflow:hidden;">
-    <div style="background:#1d4ed8;color:#fff;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;">
+  <div style="background:#fff;border-radius:12px;width:96%;max-width:960px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.25);overflow:hidden;">
+    <div style="background:#1d4ed8;color:#fff;padding:0.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;">
       <span style="font-weight:700;">🔍 ค้นหารายวิชาจาก RU</span>
-      <button type="button" onclick="csmClose()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;">×</button>
+      <button type="button" onclick="csmClose()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1;">×</button>
     </div>
-    <div style="padding:0.85rem 1.25rem;border-bottom:1px solid #e5e7eb;">
-      <input id="csmQ" type="text" placeholder="พิมพ์รหัสหรือชื่อวิชา..."
+    <!-- ตั้งค่าปีการศึกษา / ภาคเรียน -->
+    <div style="padding:0.6rem 1.25rem;background:#eff6ff;border-bottom:1px solid #bfdbfe;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <label style="font-size:0.82rem;color:#1e40af;font-weight:600;">ปีการศึกษา:
+        <select id="csmYear" style="margin-left:0.4rem;padding:0.25rem 0.5rem;border:1px solid #93c5fd;border-radius:6px;font-size:0.82rem;">
+          <option value="2568" selected>2568</option>
+          <option value="2567">2567</option>
+          <option value="2566">2566</option>
+          <option value="2569">2569</option>
+        </select>
+      </label>
+      <label style="font-size:0.82rem;color:#1e40af;font-weight:600;">ภาคเรียน:
+        <select id="csmSem" style="margin-left:0.4rem;padding:0.25rem 0.5rem;border:1px solid #93c5fd;border-radius:6px;font-size:0.82rem;">
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+          <option value="3">3 (ฤดูร้อน)</option>
+        </select>
+      </label>
+      <button type="button" onclick="csmFetch(document.getElementById(\'csmQ\').value.trim())"
+        style="padding:0.25rem 0.85rem;background:#1d4ed8;color:#fff;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer;">
+        โหลดใหม่
+      </button>
+    </div>
+    <div style="padding:0.75rem 1.25rem;border-bottom:1px solid #e5e7eb;">
+      <input id="csmQ" type="text" placeholder="พิมพ์รหัสหรือชื่อวิชาเพื่อกรอง..."
         style="width:100%;padding:0.5rem 0.75rem;border:1px solid #d1d5db;border-radius:8px;font-size:0.9rem;outline:none;box-sizing:border-box;">
       <div id="csmStat" style="font-size:0.78rem;color:#6b7280;margin-top:0.4rem;"></div>
     </div>
     <div style="overflow-y:auto;flex:1;">
       <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
-        <thead><tr style="background:#f9fafb;">
-          <th style="padding:0.6rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">รหัสวิชา</th>
-          <th style="padding:0.6rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">ชื่อวิชา</th>
-          <th style="padding:0.6rem;text-align:center;border-bottom:1px solid #e5e7eb;">Sec</th>
-          <th style="padding:0.6rem;text-align:center;border-bottom:1px solid #e5e7eb;">หน่วยกิต</th>
-          <th style="border-bottom:1px solid #e5e7eb;"></th>
+        <thead><tr style="background:#f9fafb;position:sticky;top:0;">
+          <th style="padding:0.6rem 0.75rem;text-align:left;border-bottom:1px solid #e5e7eb;white-space:nowrap;">รหัสวิชา</th>
+          <th style="padding:0.6rem 0.75rem;text-align:left;border-bottom:1px solid #e5e7eb;">ชื่อวิชา</th>
+          <th style="padding:0.6rem 0.5rem;text-align:center;border-bottom:1px solid #e5e7eb;">วัน</th>
+          <th style="padding:0.6rem 0.5rem;text-align:center;border-bottom:1px solid #e5e7eb;">เวลา</th>
+          <th style="padding:0.6rem 0.5rem;text-align:center;border-bottom:1px solid #e5e7eb;">ห้อง</th>
+          <th style="padding:0.6rem 0.5rem;text-align:center;border-bottom:1px solid #e5e7eb;">วันสอบ</th>
+          <th style="padding:0.6rem 0.5rem;text-align:center;border-bottom:1px solid #e5e7eb;">หน่วยกิต</th>
         </tr></thead>
         <tbody id="csmBody"></tbody>
       </table>
@@ -106,58 +130,177 @@ font-weight:600;box-shadow:0 2px 6px rgba(29,78,216,0.3);">
   </div>
 </div>
 <script>
+var _csmCache={};var _csmMetaLoaded=false;
 function csmOpen(){
   document.getElementById("csmModal").style.display="flex";
   document.getElementById("csmQ").value="";
   document.getElementById("csmBody").innerHTML="";
-  csmFetch("");
-  setTimeout(function(){document.getElementById("csmQ").focus();},100);
-  document.getElementById("csmQ").oninput=function(){clearTimeout(window._csmT);window._csmT=setTimeout(function(){csmFetch(document.getElementById("csmQ").value.trim());},350);};
+  document.getElementById("csmStat").textContent="กำลังโหลด...";
+  _csmCache={};
+  document.getElementById("csmQ").oninput=function(){
+    clearTimeout(window._csmT);
+    window._csmT=setTimeout(function(){csmFetch(document.getElementById("csmQ").value.trim());},400);
+  };
+  if(!_csmMetaLoaded){
+    /* โหลด meta ก่อน เพื่อ build dropdown ปีการศึกษา */
+    fetch("/admin-api/course-search/?meta_only=1",{credentials:"same-origin"})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      _csmBuildYearDropdown(d.meta||{});
+      _csmMetaLoaded=true;
+      csmFetch("");
+      setTimeout(function(){document.getElementById("csmQ").focus();},100);
+    })
+    .catch(function(){csmFetch("");});
+  } else {
+    csmFetch("");
+    setTimeout(function(){document.getElementById("csmQ").focus();},100);
+  }
+  document.getElementById("csmYear").onchange=function(){
+    localStorage.setItem("csm_year",this.value);_csmCache={};csmFetch(document.getElementById("csmQ").value.trim());
+  };
+  document.getElementById("csmSem").onchange=function(){
+    localStorage.setItem("csm_sem",this.value);_csmCache={};csmFetch(document.getElementById("csmQ").value.trim());
+  };
+}
+function _csmBuildYearDropdown(meta){
+  var sel=document.getElementById("csmYear");
+  var savedYear=localStorage.getItem("csm_year")||meta.default_year||"2568";
+  var savedSem=localStorage.getItem("csm_sem")||meta.default_semester||"1";
+  var years=meta.years||[savedYear];
+  sel.innerHTML="";
+  years.forEach(function(y){
+    var o=document.createElement("option");
+    o.value=y;o.textContent=y;
+    if(y===savedYear)o.selected=true;
+    sel.appendChild(o);
+  });
+  document.getElementById("csmSem").value=savedSem;
 }
 function csmClose(){document.getElementById("csmModal").style.display="none";}
 function csmFetch(q){
+  var year=document.getElementById("csmYear").value;
+  var sem=document.getElementById("csmSem").value;
+  var cacheKey=year+"|"+sem;
   document.getElementById("csmStat").textContent="กำลังโหลด...";
   document.getElementById("csmBody").innerHTML="";
-  var directUrl="https://sevkn.ru.ac.th/mregis/show_re.jsp?STUDENTID=6299999991";
-  fetch(directUrl)
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(d.error){document.getElementById("csmStat").textContent="⚠ "+d.error;return;}
-    /* API คืน {errString, rec:[...]} หรือ {courses:[...]} */
-    var raw=d.rec||d.courses||[];
-    /* กรองตาม q */
-    var rows=q?raw.filter(function(c){
-      var cn=String(c.COURSENO||c.course_no||"").toUpperCase();
-      var nm=String(c.cName||c.course_name||"").toUpperCase();
-      return cn.includes(q.toUpperCase())||nm.includes(q.toUpperCase());
-    }):raw;
-    rows=rows.slice(0,100);
-    document.getElementById("csmStat").textContent="พบ "+rows.length+" รายการ";
+  function render(rows){
+    var qUp=q.toUpperCase();
+    var filtered=q?rows.filter(function(c){
+      return String(c.course_no||"").toUpperCase().includes(qUp)||
+             String(c.course_name||"").toUpperCase().includes(qUp);
+    }):rows;
+    document.getElementById("csmStat").textContent="พบ "+filtered.length+" รายการ (ทั้งหมด "+rows.length+")";
     var tb=document.getElementById("csmBody");
     tb.innerHTML="";
-    if(!rows.length){tb.innerHTML="<tr><td colspan=5 style=\\"padding:1.5rem;text-align:center;color:#9ca3af;\\">ไม่พบรายวิชา</td></tr>";return;}
-    rows.forEach(function(c){
+    if(!filtered.length){
+      tb.innerHTML="<tr><td colspan=7 style=\\"padding:1.5rem;text-align:center;color:#9ca3af;\\">ไม่พบรายวิชา</td></tr>";
+      return;
+    }
+    filtered.forEach(function(c){
       var tr=document.createElement("tr");
       tr.style.borderBottom="1px solid #f3f4f6";
-      /* รองรับทั้ง 2 format */
-      var cn=c.COURSENO||c.course_no||"";
-      var nm=c.cName||c.course_name||"";
-      var sec=String(c.section||c.sect||"");
+      tr.onmouseover=function(){tr.style.background="#eff6ff";};
+      tr.onmouseout=function(){tr.style.background="";};
+      var cn=c.course_no||"";
+      var nm=c.course_name||"";
+      var sec=String(c.section||"");
       var cr=c.credit||"";
-      tr.innerHTML="<td style=\\"padding:0.5rem 1rem;font-weight:600;color:#1e3a8a;\\">"+cn+"</td><td style=\\"padding:0.5rem 1rem;\\">"+nm+"</td><td style=\\"padding:0.5rem;text-align:center;\\">"+sec+"</td><td style=\\"padding:0.5rem;text-align:center;\\">"+cr+"</td><td style=\\"padding:0.5rem;text-align:center;\\"><button type=\\"button\\" style=\\"background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:0.3rem 0.75rem;font-size:0.8rem;cursor:pointer;\\">โหลด</button></td>";
+      var tp=c.time_period||"";
+      var rm=c.course_room||"";
+      var ex=c.examdate||"";
+      var dy=c.day_name_s||"";
+      function esc(s){var d=document.createElement("div");d.textContent=String(s||"");return d.innerHTML;}
+      tr.innerHTML=
+        "<td style=\\"padding:0.5rem 0.75rem;white-space:nowrap;\\">"+
+          "<div style=\\"font-weight:700;color:#1e3a8a;font-size:0.88rem;\\">"+esc(cn)+"</div>"+
+          "<button type=\\"button\\" style=\\"margin-top:3px;background:#1d4ed8;color:#fff;border:none;border-radius:5px;padding:0.2rem 0.6rem;font-size:0.75rem;cursor:pointer;width:100%;\\" title=\\"โหลดวิชานี้\\">"+
+            "&#8595; โหลด"+
+          "</button>"+
+        "</td>"+
+        "<td style=\\"padding:0.5rem 0.75rem;font-size:0.84rem;\\">"+esc(nm)+"</td>"+
+        "<td style=\\"padding:0.5rem;text-align:center;font-size:0.8rem;font-weight:600;color:#1d4ed8;\\">"+esc(dy)+"</td>"+
+        "<td style=\\"padding:0.5rem;text-align:center;font-size:0.8rem;white-space:nowrap;\\">"+esc(tp)+"</td>"+
+        "<td style=\\"padding:0.5rem;text-align:center;font-size:0.8rem;\\">"+esc(rm)+"</td>"+
+        "<td style=\\"padding:0.5rem;text-align:center;font-size:0.8rem;white-space:nowrap;\\">"+esc(ex)+"</td>"+
+        "<td style=\\"padding:0.5rem;text-align:center;font-size:0.85rem;\\">"+esc(cr)+"</td>";
       tr.querySelector("button").onclick=function(){
+        /* รหัสวิชา */
         var ta=document.querySelector("textarea[name=course_no]")||document.getElementById("id_course_no");
         if(ta){var cur=ta.value.trim();ta.value=cur?cur+", "+cn:cn;}
+        /* ชื่อวิชา TH */
         var th=document.querySelector("input[name=course_name_thai]")||document.getElementById("id_course_name_thai");
-        if(th&&(!th.value||th.value==="-"))th.value=nm;
+        if(th)th.value=nm;
+        /* section */
         var secEl=document.querySelector("select[name=section]")||document.getElementById("id_section");
         if(secEl&&sec){for(var i=0;i<secEl.options.length;i++){if(secEl.options[i].value===sec){secEl.selectedIndex=i;break;}}}
+        /* เวลา: "0830-1100" → "08:30" / "11:00" */
+        if(tp){
+          var parts=tp.split("-");
+          function toHHMM(t){t=t.trim();if(t.length===4)return t.slice(0,2)+":"+t.slice(2);return t;}
+          var tsEl=document.querySelector("input[name=time_start]")||document.getElementById("id_time_start");
+          var teEl=document.querySelector("input[name=time_end]")||document.getElementById("id_time_end");
+          if(tsEl&&parts[0])tsEl.value=toHHMM(parts[0]);
+          if(teEl&&parts[1])teEl.value=toHHMM(parts[1]);
+        }
+        /* วันที่เรียน: แปลง day_name_s → tick checkbox
+           greedy 2-char ก่อน: TH=4 TU=2 SA=6 SU=7 จากนั้น M=1 W=3 F=5 */
+        if(dy){
+          var _D2=[["TH","4"],["TU","2"],["SA","6"],["SU","7"]];
+          var _D1=[["M","1"],["W","3"],["F","5"]];
+          var dayMap=[];var s=dy.toUpperCase();var ci=0;
+          while(ci<s.length){
+            var matched2=false;
+            for(var di=0;di<_D2.length;di++){
+              if(s.substr(ci,2)===_D2[di][0]){dayMap.push(_D2[di][1]);ci+=2;matched2=true;break;}
+            }
+            if(!matched2){
+              for(var di=0;di<_D1.length;di++){
+                if(s[ci]===_D1[di][0]){dayMap.push(_D1[di][1]);break;}
+              }
+              ci++;
+            }
+          }
+          document.querySelectorAll("input[name=course_day]").forEach(function(cb){
+            cb.checked=dayMap.indexOf(cb.value)!==-1;
+          });
+        }
+        /* อาจารย์ผู้สอน */
+        var instrEl=document.querySelector("input[name=instructor]")||document.getElementById("id_instructor");
+        if(instrEl&&c.instructor)instrEl.value=c.instructor;
+        /* ห้องเรียน — FK dropdown, match by value or text */
+        var rmEl=document.querySelector("select[name=room_name]")||document.getElementById("id_room_name");
+        if(rmEl&&rm){
+          var matched=false;
+          var rmUp=rm.trim().toUpperCase();
+          for(var i=0;i<rmEl.options.length;i++){
+            if(rmEl.options[i].value.toUpperCase()===rmUp||rmEl.options[i].text.toUpperCase().includes(rmUp)){
+              rmEl.selectedIndex=i;matched=true;break;
+            }
+          }
+          if(!matched)document.getElementById("csmStat").textContent="⚠ ไม่พบห้อง "+rm+" ใน dropdown";
+        }
         csmClose();
       };
       tb.appendChild(tr);
     });
+  }
+  /* ใช้ cache ถ้ามีแล้ว */
+  if(_csmCache[cacheKey]){render(_csmCache[cacheKey]);return;}
+  var fd=new FormData();
+  fd.append("course_year",year);
+  fd.append("course_semester",sem);
+  var csrf=document.cookie.split(";").map(function(c){return c.trim();}).filter(function(c){return c.startsWith("csrftoken=");}).map(function(c){return c.split("=")[1];})[0]||"";
+  fd.append("csrfmiddlewaretoken",csrf);
+  fetch("/admin-api/course-search/",{method:"POST",body:fd,credentials:"same-origin"})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.error){document.getElementById("csmStat").textContent="⚠ "+d.error;return;}
+    var rows=d.courses||[];
+    _csmCache[cacheKey]=rows;
+    render(rows);
   })
-  .catch(function(){document.getElementById("csmStat").textContent="⚠ เชื่อมต่อไม่ได้";});
+  .catch(function(e){document.getElementById("csmStat").textContent="⚠ เชื่อมต่อไม่ได้: "+e;});
 }
 document.addEventListener("click",function(e){if(e.target===document.getElementById("csmModal"))csmClose();});
 </script>
@@ -563,6 +706,46 @@ class ClassScheduleCenterAdmin(admin.ModelAdmin):
     search_fields = ('course_no', 'section', 'room_name__room_name', 'course_name_thai', 'instructor')
     list_filter   = ('course_day', 'room_name')
     exclude       = ('added_by', 'created_at', 'updated_at')
+    change_list_template = 'admin/classschedulecenter_changelist.html'
+
+    def get_urls(self):
+        from django.urls import path as _path
+        urls = super().get_urls()
+        custom = [
+            _path('clear-by-room/', self.admin_site.admin_view(self.clear_by_room_view),
+                  name='live_classschedulecenter_clear_by_room'),
+        ]
+        return custom + urls
+
+    def clear_by_room_view(self, request):
+        from django.shortcuts import render as _render, redirect as _redirect
+        from django.contrib import messages as _messages
+        from django.db.models import Count as _Count
+
+        # สร้าง summary ต่อห้อง
+        rooms = (
+            ClassScheduleCenter.objects
+            .values('room_name_id')
+            .annotate(row_count=_Count('id'), course_count=_Count('course_no', distinct=True))
+            .order_by('room_name_id')
+        )
+
+        if request.method == 'POST':
+            selected = request.POST.getlist('rooms')
+            if not selected:
+                _messages.warning(request, 'กรุณาเลือกห้องเรียนอย่างน้อย 1 ห้อง')
+            else:
+                deleted, _ = ClassScheduleCenter.objects.filter(room_name_id__in=selected).delete()
+                _messages.success(request, f'ลบข้อมูลตารางเรียน {deleted} แถว จากห้อง: {", ".join(selected)}')
+                return _redirect('../')
+
+        context = {
+            **self.admin_site.each_context(request),
+            'rooms': list(rooms),
+            'opts': self.model._meta,
+            'title': 'ลบตารางเรียนตามห้องเรียน',
+        }
+        return _render(request, 'admin/classschedulecenter_clear_by_room.html', context)
 
     _DAY_NAMES = dict(_DAY_CHOICES_EN)
 

@@ -21,6 +21,14 @@
     "button_text": "ปิด",
     "delay_ms": 1500
   },
+  "course_search": {
+    "years": [
+      "2569",
+      "2568"
+    ],
+    "default_year": "2569",
+    "default_semester": "1"
+  },
   "central": [
     {
       "title": "ปฐมนิเทศนักศึกษาใหม่ ส่วนกลาง",
