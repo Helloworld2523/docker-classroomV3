@@ -585,6 +585,62 @@
     .pib-left { display: none; }
 }
 
+/* ── Status banner (cancelled / closed) ── */
+.vp-status-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 1.4rem 1rem 0.65rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    pointer-events: none;
+    z-index: 7;
+    animation: pibFadeIn 0.35s ease both;
+}
+.vp-status-bar.cancelled {
+    background: linear-gradient(to top, rgba(120,53,15,0.95) 0%, rgba(120,53,15,0.4) 70%, transparent 100%);
+}
+.vp-status-bar.closed {
+    background: linear-gradient(to top, rgba(127,29,29,0.95) 0%, rgba(127,29,29,0.4) 70%, transparent 100%);
+}
+.vp-status-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+.vp-status-bar.cancelled .vp-status-icon { color: #fcd34d; }
+.vp-status-bar.closed    .vp-status-icon { color: #fca5a5; }
+.vp-status-texts { flex: 1; overflow: hidden; }
+.vp-status-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.vp-status-bar.cancelled .vp-status-title { color: #fcd34d; }
+.vp-status-bar.closed    .vp-status-title { color: #fca5a5; }
+.vp-status-sub {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.72);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+}
+.vp-status-badge {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+}
+.vp-status-bar.cancelled .vp-status-badge { background: #fef3c7; color: #92400e; }
+.vp-status-bar.closed    .vp-status-badge { background: #fee2e2; color: #991b1b; }
+
 /* Mobile — Hero section */
 @media (max-width: 767px) {
     .room-hero { padding: 1.4rem 0 1.1rem; }
@@ -1267,6 +1323,18 @@
                     <span><kbd>P</kbd> Picture-in-Picture</span>
                 </div>
 
+                <!-- ── Status banner: งดบรรยาย / ปิดคอร์ส (ใต้วิดีโอ) ── -->
+                <div style="width:100%;max-width:860px;margin:0 auto;">
+                    <div id="vpStatusBar" style="display:none;border-radius:0 0 10px 10px;padding:0.5rem 0.9rem;align-items:center;gap:0.6rem;">
+                        <i id="vpStatusIcon" class="fas fa-pause-circle" style="font-size:1.1rem;flex-shrink:0;" aria-hidden="true"></i>
+                        <div style="flex:1;overflow:hidden;min-width:0;">
+                            <div id="vpStatusTitle" style="font-size:0.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+                            <div id="vpStatusSub" style="font-size:0.72rem;opacity:0.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;"></div>
+                        </div>
+                        <span id="vpStatusBadge" style="flex-shrink:0;font-size:0.68rem;font-weight:700;padding:2px 9px;border-radius:20px;"></span>
+                    </div>
+                </div>
+
                 <!-- ── Now Playing strip ── -->
                 <div id="vpNowPlaying" class="vp-now-playing" style="display:none;">
                     <div class="vp-np-inner">
@@ -1576,8 +1644,11 @@
     </div><!-- /col-lg-8 left column -->
 
 <!-- ข้อมูลวิชาวันนี้ฝังเป็น JSON สำหรับ JS (ต้องอยู่นอก if room.chat_pin) -->
+<script id="cancelReasonsData" type="application/json">
+{ {% for sid, reason in cancel_reasons.items %}"{{ sid }}":"{{ reason|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %} }
+</script>
 <script id="todaySubjectsData" type="application/json">
-[{% for s in data_subject %}{"course_no":"{{ s.course_no|escapejs }}","course_name":"{{ s.course_name_thai|escapejs }}","instructor":"{{ s.instructor|escapejs }}","time_start":"{{ s.time_start|escapejs }}","time_end":"{{ s.time_end|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
+[{% for s in data_subject %}{"course_no":"{{ s.course_no|escapejs }}","course_name":"{{ s.course_name_thai|escapejs }}","instructor":"{{ s.instructor|escapejs }}","time_start":"{{ s.time_start|escapejs }}","time_end":"{{ s.time_end|escapejs }}","sid":{{ s.id }},"cancelled":{% if s.id in cancelled_ids %}true{% else %}false{% endif %},"closed":{% if s.closed_date and today_date >= s.closed_date %}true{% else %}false{% endif %},"closed_reason":"{{ s.closed_reason|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
 </script>
 
     <!-- ── RIGHT: Sidebar ── -->
@@ -1708,6 +1779,10 @@
     var subjects = [];
     try { subjects = JSON.parse(document.getElementById('todaySubjectsData').textContent); }
     catch(e) {}
+    try {
+        var _cr = JSON.parse(document.getElementById('cancelReasonsData').textContent);
+        subjects.forEach(function(s){ s.cancel_reason = _cr[String(s.sid)] || ''; });
+    } catch(e) {}
 
     var banner  = document.getElementById('nowOnAirBanner');
     var elNum   = document.getElementById('noaCourseNum');
@@ -1790,9 +1865,39 @@
             if (npEl) npEl.style.display = 'none';
         }
 
+        /* Status banner: งดบรรยาย / ปิดคอร์ส */
+        var vpSB      = document.getElementById('vpStatusBar');
+        var vpSIcon   = document.getElementById('vpStatusIcon');
+        var vpSTitle  = document.getElementById('vpStatusTitle');
+        var vpSSub    = document.getElementById('vpStatusSub');
+        var vpSBadge  = document.getElementById('vpStatusBadge');
+        if (vpSB) {
+            if (active && (active.closed || active.cancelled)) {
+                vpSB.style.display = 'flex';
+                if (active.closed) {
+                    vpSB.style.background = '#7f1d1d';
+                    vpSB.style.color = '#fca5a5';
+                    if (vpSIcon)  { vpSIcon.className = 'fas fa-ban'; vpSIcon.style.color = '#fca5a5'; }
+                    if (vpSTitle) { vpSTitle.textContent = 'ปิดคอร์สแล้ว'; vpSTitle.style.color = '#fca5a5'; }
+                    if (vpSSub)   { vpSSub.textContent = active.closed_reason || (active.course_no + ' · ' + active.course_name); vpSSub.style.color = 'rgba(252,165,165,0.8)'; }
+                    if (vpSBadge) { vpSBadge.textContent = 'ปิดถาวร'; vpSBadge.style.background = '#fee2e2'; vpSBadge.style.color = '#991b1b'; }
+                } else {
+                    vpSB.style.background = '#78350f';
+                    vpSB.style.color = '#fcd34d';
+                    if (vpSIcon)  { vpSIcon.className = 'fas fa-pause-circle'; vpSIcon.style.color = '#fcd34d'; }
+                    if (vpSTitle) { vpSTitle.textContent = 'งดบรรยายวันนี้'; vpSTitle.style.color = '#fcd34d'; }
+                    var reason = active.cancel_reason || '';
+                    if (vpSSub)   { vpSSub.textContent = reason ? (active.course_no + ' · ' + reason) : active.course_no + ' · ' + active.course_name; vpSSub.style.color = 'rgba(252,211,77,0.8)'; }
+                    if (vpSBadge) { vpSBadge.textContent = 'วันนี้'; vpSBadge.style.background = '#fef3c7'; vpSBadge.style.color = '#92400e'; }
+                }
+            } else {
+                vpSB.style.display = 'none';
+            }
+        }
+
         /* Player overlay (bottom of video) */
         if (pInfoBar) {
-            if (active) {
+            if (active && !active.closed && !active.cancelled) {
                 var rem = toMinutes(active.time_end) - nowMins;
                 pInfoBar.style.display = 'flex';
                 if (pibCode) pibCode.textContent = active.course_no;
@@ -2846,7 +2951,14 @@
                                 <i class="fas fa-clock me-1" style="color:#94a3b8;font-size:0.75rem;"></i>
                                 {{ subject.time_start }} – {{ subject.time_end }}
                             </td>
-                            <td data-label="รหัสวิชา"><span class="code-badge">{{ subject.course_no }}</span></td>
+                            <td data-label="รหัสวิชา">
+                              <span class="code-badge">{{ subject.course_no }}</span>
+                              {% if subject.closed_date and today_date >= subject.closed_date %}
+                                <span style="display:inline-block;margin-top:3px;background:#fee2e2;color:#991b1b;font-size:0.7rem;font-weight:600;padding:1px 7px;border-radius:20px;">ปิดคอร์สแล้ว</span>
+                              {% elif is_today == IsDayString and subject.id in cancelled_ids %}
+                                <span style="display:inline-block;margin-top:3px;background:#fef3c7;color:#92400e;font-size:0.7rem;font-weight:600;padding:1px 7px;border-radius:20px;">งดวันนี้</span>
+                              {% endif %}
+                            </td>
                             <td data-label="ชื่อวิชา" style="font-size:0.86rem;">{{ subject.course_name_thai }}</td>
                             <td data-label="อาจารย์" style="font-size:0.85rem;color:var(--text-muted,#64748b);">{{ subject.instructor }}</td>
                         </tr>
@@ -3058,8 +3170,12 @@
         if (!list) return;
 
         var subjects = [];
+        var cancelReasons = {};
         try { subjects = JSON.parse(document.getElementById('todaySubjectsData').textContent); }
         catch(e) { return; }
+        try { cancelReasons = JSON.parse(document.getElementById('cancelReasonsData').textContent); }
+        catch(e) {}
+        subjects.forEach(function(s){ s.cancel_reason = cancelReasons[String(s.sid)] || ''; });
 
         if (!subjects.length) return;
 
@@ -3067,22 +3183,45 @@
         let liveCount = 0;
 
         subjects.forEach(function(s){
-            const status = getStatus(s);
+            const isClosed    = !!s.closed;
+            const isCancelled = !!s.cancelled;
+            const status = (isClosed || isCancelled) ? 'done' : getStatus(s);
             if (status === 'live') liveCount++;
+
+            /* badge ขวา */
+            var badgeHtml;
+            if (isClosed) {
+                badgeHtml = '<div class="tsched-badge" style="background:#fee2e2;color:#991b1b;">ปิดคอร์สแล้ว</div>';
+            } else if (isCancelled) {
+                badgeHtml = '<div class="tsched-badge" style="background:#fef3c7;color:#92400e;">งดวันนี้</div>';
+            } else {
+                badgeHtml = '<div class="tsched-badge">' + LABEL[status] + '</div>';
+            }
+
+            /* notice ใต้ชื่อวิชา */
+            var noticeHtml = '';
+            if (isClosed && s.closed_reason) {
+                noticeHtml = '<div style="font-size:0.72rem;color:#991b1b;margin-top:2px;"><i class="fas fa-ban me-1"></i>' + escHtml(s.closed_reason) + '</div>';
+            } else if (isCancelled) {
+                var reason = s.cancel_reason || 'งดบรรยายวันนี้';
+                noticeHtml = '<div style="font-size:0.72rem;color:#92400e;margin-top:2px;"><i class="fas fa-calendar-times me-1"></i>' + escHtml(reason) + '</div>';
+            }
 
             const row = document.createElement('div');
             row.className = 'tsched-row status-' + status;
+            if (isClosed || isCancelled) row.style.opacity = '0.72';
             row.innerHTML =
                 '<div class="tsched-stripe"></div>' +
                 '<div class="tsched-time"><i class="fas fa-clock me-1" style="font-size:0.7rem;opacity:0.6;"></i>' +
                     escHtml(s.time_start) + ' – ' + escHtml(s.time_end) +
                 '</div>' +
                 '<div class="tsched-info">' +
-                    '<div class="tsched-code">' + escHtml(s.course_no) + '</div>' +
+                    '<div class="tsched-code" style="' + (isClosed||isCancelled?'text-decoration:line-through;opacity:0.6;':'') + '">' + escHtml(s.course_no) + '</div>' +
                     '<div class="tsched-name">' + escHtml(s.course_name) + '</div>' +
+                    noticeHtml +
                     '<div class="tsched-instructor"><i class="fas fa-user-tie me-1" style="font-size:0.65rem;"></i>' + escHtml(s.instructor) + '</div>' +
                 '</div>' +
-                '<div class="tsched-badge">' + LABEL[status] + '</div>';
+                badgeHtml;
             list.appendChild(row);
         });
 

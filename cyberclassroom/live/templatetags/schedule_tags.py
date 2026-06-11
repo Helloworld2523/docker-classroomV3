@@ -53,11 +53,21 @@ def get_popup_config():
 
 @register.simple_tag(takes_context=True)
 def get_room_schedule(context, room):
+    from datetime import date
+    from live.models import ClassCancellation
+    today = date.today()
     today_weekday = datetime.today().weekday() + 1
-    # ดึงข้อมูลที่กรองแล้ว
     schedules = room.classschedulecenter_set.filter(course_day=today_weekday).order_by('time_start')
 
-    # เพิ่ม schedules ลงใน context เพื่อให้ template เข้าถึงได้
+    # งดบรรยายวันนี้
+    cancelled_ids = set(
+        ClassCancellation.objects.filter(
+            schedule__in=schedules,
+            cancel_date=today,
+        ).values_list('schedule_id', flat=True)
+    )
+
     context['today_schedules'] = schedules
+    context['today_cancelled_ids'] = cancelled_ids
     context['is_today_schedule_empty'] = not schedules.exists()
-    return '' # simple_tag ต้อง return string แต่เราใส่ข้อมูลใน context แล้ว
+    return ''

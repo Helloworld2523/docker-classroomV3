@@ -5,7 +5,7 @@ from django.utils.html import mark_safe
 from django.db.models import Case, When, IntegerField
 
 from .models import (
-    Classrooms, ClassScheduleCenter, Locations,
+    Classrooms, ClassScheduleCenter, ClassCancellation, Locations,
     LogSubjectInRoom, Count, LiveClassroom, ChatMessage, BannedStudent, HolidayDate,
 )
 from . import config
@@ -190,14 +190,17 @@ function csmFetch(q){
       return String(c.course_no||"").toUpperCase().includes(qUp)||
              String(c.course_name||"").toUpperCase().includes(qUp);
     }):rows;
-    document.getElementById("csmStat").textContent="พบ "+filtered.length+" รายการ (ทั้งหมด "+rows.length+")";
+    var display=filtered.slice(0,200);
+    var statMsg="พบ "+filtered.length+" รายการ จากทั้งหมด "+rows.length+" รายการ";
+    if(filtered.length>200)statMsg+=" (แสดง 200 รายการแรก — พิมพ์เพื่อกรองเพิ่ม)";
+    document.getElementById("csmStat").textContent=statMsg;
     var tb=document.getElementById("csmBody");
     tb.innerHTML="";
     if(!filtered.length){
       tb.innerHTML="<tr><td colspan=7 style=\\"padding:1.5rem;text-align:center;color:#9ca3af;\\">ไม่พบรายวิชา</td></tr>";
       return;
     }
-    filtered.forEach(function(c){
+    display.forEach(function(c){
       var tr=document.createElement("tr");
       tr.style.borderBottom="1px solid #f3f4f6";
       tr.onmouseover=function(){tr.style.background="#eff6ff";};
@@ -339,9 +342,11 @@ document.addEventListener("click",function(e){if(e.target===document.getElementB
         super().__init__(*args, **kwargs)
         # Edit mode → รหัสวิชาเป็น text input เดียว และวันเป็น single choice
         if self.instance and self.instance.pk:
+            _orig_help = self.fields['course_no'].help_text
             self.fields['course_no'] = forms.CharField(
                 label='รหัสวิชา',
                 initial=self.instance.course_no,
+                help_text=_orig_help,
             )
             self.fields['course_day'] = forms.ChoiceField(
                 choices=_DAY_CHOICES_EN,
@@ -379,9 +384,31 @@ document.addEventListener("click",function(e){if(e.target===document.getElementB
 
 # ─── ClassScheduleCenter inline ───────────────────────────────────────────────
 
+class ClassScheduleCenterInlineForm(forms.ModelForm):
+    section    = forms.ChoiceField(choices=_SECTION_CHOICES, required=False, label='Section')
+    course_day = forms.ChoiceField(choices=_DAY_CHOICES_EN, label='วันที่เรียน')
+    time_start = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'), input_formats=['%H:%M'])
+    time_end   = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'), input_formats=['%H:%M'])
+
+    class Meta:
+        model  = ClassScheduleCenter
+        fields = '__all__'
+
+    def clean_time_start(self):
+        t = self.cleaned_data.get('time_start')
+        return t.strftime('%H:%M') if t else ''
+
+    def clean_time_end(self):
+        t = self.cleaned_data.get('time_end')
+        return t.strftime('%H:%M') if t else ''
+
+    def clean_section(self):
+        return self.cleaned_data.get('section', '')
+
+
 class ClassScheduleCenterInline(admin.TabularInline):
     model  = ClassScheduleCenter
-    form   = ClassScheduleCenterForm
+    form   = ClassScheduleCenterInlineForm
     extra  = 0
     fields = ('course_no', 'section', 'course_name_thai', 'instructor',
               'course_day', 'time_start', 'time_end')
@@ -698,6 +725,20 @@ admin.site.register(Count, CountAdmin)
 
 # ─── ClassScheduleCenter ──────────────────────────────────────────────────────
 
+class ClassCancellationInline(admin.TabularInline):
+    model   = ClassCancellation
+    extra   = 1
+    fields  = ('cancel_date', 'reason', 'created_by')
+    readonly_fields = ('created_by',)
+    verbose_name        = 'งดบรรยาย'
+    verbose_name_plural = 'งดบรรยายวันใดบ้าง'
+
+    def save_new_objects(self, formset, commit=True):
+        for form in formset.new_objects:
+            form.created_by = formset.request.user.username
+        return super().save_new_objects(formset, commit)
+
+
 class ClassScheduleCenterAdmin(admin.ModelAdmin):
     form          = ClassScheduleCenterForm
     list_display  = ('course_no', 'section', 'course_name_thai', 'instructor',
@@ -706,7 +747,25 @@ class ClassScheduleCenterAdmin(admin.ModelAdmin):
     search_fields = ('course_no', 'section', 'room_name__room_name', 'course_name_thai', 'instructor')
     list_filter   = ('course_day', 'room_name')
     exclude       = ('added_by', 'created_at', 'updated_at')
+    readonly_fields = ('closed_status_display',)
     change_list_template = 'admin/classschedulecenter_changelist.html'
+    inlines = [ClassCancellationInline]
+
+    def closed_status_display(self, obj):
+        if not obj.pk:
+            return '-'
+        import datetime
+        today = datetime.date.today()
+        if obj.closed_date and today >= obj.closed_date:
+            return mark_safe(
+                f'<span style="color:#991b1b;font-weight:700;">🔴 ปิดคอร์สแล้ว ตั้งแต่ {obj.closed_date}</span>'
+            )
+        if obj.closed_date:
+            return mark_safe(
+                f'<span style="color:#92400e;">🟡 กำหนดปิด {obj.closed_date}</span>'
+            )
+        return mark_safe('<span style="color:#166534;">🟢 เปิดสอนปกติ</span>')
+    closed_status_display.short_description = 'สถานะคอร์ส'
 
     def get_urls(self):
         from django.urls import path as _path
@@ -803,6 +862,20 @@ class ClassScheduleCenterAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ClassScheduleCenter, ClassScheduleCenterAdmin)
+
+
+@admin.register(ClassCancellation)
+class ClassCancellationAdmin(admin.ModelAdmin):
+    list_display  = ('schedule', 'cancel_date', 'reason', 'created_by', 'created_at')
+    list_filter   = ('cancel_date', 'schedule__room_name')
+    search_fields = ('schedule__course_no', 'reason')
+    date_hierarchy = 'cancel_date'
+    ordering      = ('-cancel_date',)
+
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by:
+            obj.created_by = request.user.username
+        super().save_model(request, obj, form, change)
 
 
 # ─── Locations ────────────────────────────────────────────────────────────────

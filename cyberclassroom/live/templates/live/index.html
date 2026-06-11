@@ -176,6 +176,25 @@
                 {% else %}
                     <ul class="schedule-list">
                         {% for schedule in today_schedules %}
+                        {% if schedule.closed_date and today_date >= schedule.closed_date %}
+                        <li class="schedule-item" style="opacity:0.6;">
+                            <i class="fas fa-ban si-dot" style="color:#dc2626;"></i>
+                            <div class="flex-grow-1">
+                                <div style="text-decoration:line-through;color:var(--text-muted);">{{ schedule.course_no }}</div>
+                                <div style="font-size:0.77rem;color:var(--text-muted);">{{ schedule.time_start }}–{{ schedule.time_end }}</div>
+                            </div>
+                            <span style="flex-shrink:0;font-size:0.68rem;font-weight:700;background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:20px;white-space:nowrap;">ปิดคอร์สแล้ว</span>
+                        </li>
+                        {% elif schedule.id in today_cancelled_ids %}
+                        <li class="schedule-item" style="opacity:0.6;">
+                            <i class="fas fa-pause-circle si-dot" style="color:#d97706;"></i>
+                            <div class="flex-grow-1">
+                                <div style="text-decoration:line-through;color:var(--text-muted);">{{ schedule.course_no }}</div>
+                                <div style="font-size:0.77rem;color:var(--text-muted);">{{ schedule.time_start }}–{{ schedule.time_end }}</div>
+                            </div>
+                            <span style="flex-shrink:0;font-size:0.68rem;font-weight:700;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:20px;white-space:nowrap;">งดบรรยาย</span>
+                        </li>
+                        {% else %}
                         <li class="schedule-item {% if schedule|is_current_class_time %}is-live{% endif %}">
                             <i class="fas fa-circle si-dot"></i>
                             <div class="flex-grow-1">
@@ -188,6 +207,7 @@
                                 </span>
                             {% endif %}
                         </li>
+                        {% endif %}
                         {% endfor %}
                     </ul>
                 {% endif %}

@@ -87,6 +87,7 @@ def index(request):
         'offline':'true',
         'schedule_central':  schedule.get('central', []),
         'schedule_regional': schedule.get('regional', []),
+        'today_date': now.date(),
     }
     return render(request,'live/index.html',context=context)
 
@@ -397,6 +398,22 @@ def showSubjectInRoom(request, room):
     ).order_by('time_start')
     subjectCount = data_subject.count()
 
+    # งดบรรยายวันนี้: set ของ schedule id ที่มี ClassCancellation วันนี้
+    import datetime as _dt
+    from .models import ClassCancellation as _CC
+    today_date = _dt.date.today()
+    cancelled_ids = set(
+        _CC.objects.filter(
+            schedule__in=data_subject,
+            cancel_date=today_date
+        ).values_list('schedule_id', flat=True)
+    )
+    # ดึง reason ด้วย
+    cancel_reasons = {
+        c.schedule_id: c.reason
+        for c in _CC.objects.filter(schedule__in=data_subject, cancel_date=today_date)
+    }
+
     # สร้าง mapping ชื่อวันอังกฤษ
     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     rotated_days = day_order[datetime.today().weekday():] + day_order[:datetime.today().weekday()]
@@ -462,6 +479,9 @@ def showSubjectInRoom(request, room):
         'room_comment': data_classroom.room_comment,
         'sessions_total': countOnline,
         'valid_locations': valid_locations,
+        'cancelled_ids':   cancelled_ids,
+        'cancel_reasons':  cancel_reasons,
+        'today_date':      today_date,
         **_get_chat_info(data_subject, now),
     }
 
@@ -606,7 +626,7 @@ def course_search_proxy(request):
         ]
 
     result = []
-    for c in rows[:200]:
+    for c in rows:
         result.append({
             'course_no':   c.get('course_no',     ''),
             'course_name': c.get('show_ru30',     ''),

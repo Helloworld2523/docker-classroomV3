@@ -75,6 +75,9 @@ class ClassScheduleCenter(models.Model):
     added_by = models.CharField( max_length=50,blank=True)
     created_at=models.CharField( max_length=50,blank=True)
     updated_at=models.CharField( max_length=50,blank=True)
+    closed_date   = models.DateField('ปิดคอร์สตั้งแต่วันที่', null=True, blank=True,
+                                     help_text='ถ้ากำหนด → วันนั้นและหลังจากนั้นจะแสดง "ปิดคอร์สแล้ว"')
+    closed_reason = models.CharField('เหตุผลที่ปิดคอร์ส', max_length=200, blank=True, default='')
 
     class Meta:
         verbose_name        = 'รายการวิชาเรียน'
@@ -86,6 +89,25 @@ class ClassScheduleCenter(models.Model):
         if self.section:
             return f'{self.course_no} (Sec {self.section})'
         return self.course_no
+
+
+class ClassCancellation(models.Model):
+    schedule    = models.ForeignKey(ClassScheduleCenter, on_delete=models.CASCADE,
+                                    verbose_name='วิชา', related_name='cancellations')
+    cancel_date = models.DateField('วันที่งดบรรยาย')
+    reason      = models.CharField('เหตุผล', max_length=200, blank=True, default='',
+                                   help_text='เช่น อาจารย์ติดภารกิจ, ป่วย, ไปสัมมนา')
+    created_by  = models.CharField(max_length=50, blank=True)
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name        = 'งดบรรยาย'
+        verbose_name_plural = 'งดบรรยาย'
+        ordering            = ['-cancel_date']
+        unique_together     = ('schedule', 'cancel_date')
+
+    def __str__(self):
+        return f'{self.schedule} — งด {self.cancel_date}'
 
 
 class LogSubjectInRoom(models.Model):
