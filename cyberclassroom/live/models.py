@@ -44,7 +44,7 @@ class Classrooms(models.Model):
         return self.room_name
 
 class ClassScheduleCenter(models.Model):
-    course_no        = models.CharField('รหัสวิชา', max_length=30)
+    course_no        = models.CharField('รหัสวิชา', max_length=100)
     section          = models.CharField('ตอนเรียน (Section)', max_length=10,
                                         blank=True, default='',
                                         help_text='เช่น 01, 02, A, B — ว่างได้ถ้าไม่มี section')

@@ -185,11 +185,21 @@ function csmFetch(q){
   document.getElementById("csmStat").textContent="กำลังโหลด...";
   document.getElementById("csmBody").innerHTML="";
   function render(rows){
-    var qUp=q.toUpperCase();
-    var filtered=q?rows.filter(function(c){
-      return String(c.course_no||"").toUpperCase().includes(qUp)||
-             String(c.course_name||"").toUpperCase().includes(qUp);
+    var terms=q?q.toUpperCase().split("_").map(function(t){return t.trim();}).filter(function(t){return t.length>0;}):[];
+    var filtered=terms.length?rows.filter(function(c){
+      var cn=String(c.course_no||"").toUpperCase();
+      var nm=String(c.course_name||"").toUpperCase();
+      return terms.some(function(t){return cn.includes(t)||nm.includes(t);});
     }):rows;
+    if(terms.length>1){
+      filtered=filtered.slice().sort(function(a,b){
+        var ai=terms.findIndex(function(t){return String(a.course_no||"").toUpperCase().includes(t);});
+        var bi=terms.findIndex(function(t){return String(b.course_no||"").toUpperCase().includes(t);});
+        if(ai<0)ai=terms.length;
+        if(bi<0)bi=terms.length;
+        return ai-bi;
+      });
+    }
     var display=filtered.slice(0,200);
     var statMsg="พบ "+filtered.length+" รายการ จากทั้งหมด "+rows.length+" รายการ";
     if(filtered.length>200)statMsg+=" (แสดง 200 รายการแรก — พิมพ์เพื่อกรองเพิ่ม)";
@@ -228,9 +238,14 @@ function csmFetch(q){
         "<td style=\\"padding:0.5rem;text-align:center;font-size:0.8rem;white-space:nowrap;\\">"+esc(ex)+"</td>"+
         "<td style=\\"padding:0.5rem;text-align:center;font-size:0.85rem;\\">"+esc(cr)+"</td>";
       tr.querySelector("button").onclick=function(){
-        /* รหัสวิชา */
+        /* รหัสวิชา — ถ้า search หลาย code (คั่นด้วย _) ให้ใส่ทุก code พร้อมกัน */
         var ta=document.querySelector("textarea[name=course_no]")||document.getElementById("id_course_no");
-        if(ta){var cur=ta.value.trim();ta.value=cur?cur+", "+cn:cn;}
+        if(ta){
+          var qRaw=document.getElementById("csmQ").value.trim();
+          var qTerms=qRaw.split("_").map(function(t){return t.trim().toUpperCase();}).filter(function(t){return t.length>0;});
+          var fillVal=qTerms.length>1?qTerms.join("_"):cn;
+          ta.value=fillVal;
+        }
         /* ชื่อวิชา TH */
         var th=document.querySelector("input[name=course_name_thai]")||document.getElementById("id_course_name_thai");
         if(th)th.value=nm;
@@ -306,6 +321,22 @@ function csmFetch(q){
   .catch(function(e){document.getElementById("csmStat").textContent="⚠ เชื่อมต่อไม่ได้: "+e;});
 }
 document.addEventListener("click",function(e){if(e.target===document.getElementById("csmModal"))csmClose();});
+/* ── section เปลี่ยน → ต่อท้าย _section ใน course_no ── */
+(function(){
+  function _syncSec(){
+    var ta=document.querySelector("textarea[name=course_no]")||document.getElementById("id_course_no");
+    var se=document.querySelector("select[name=section]")||document.getElementById("id_section");
+    if(!ta||!se)return;
+    var sec=se.value.trim();
+    /* ลบ _Sxx หรือ _section เก่าออกก่อน (ถ้ามี) */
+    var raw=ta.value.trim().replace(/_S?[0-9A-Ea-e]$/i,"");
+    ta.value=sec?raw+"_S"+sec:raw;
+  }
+  document.addEventListener("change",function(e){
+    var el=e.target;
+    if(el&&(el.name==="section"||el.id==="id_section"))_syncSec();
+  });
+})();
 </script>
 '''),
     )
@@ -356,13 +387,12 @@ document.addEventListener("click",function(e){if(e.target===document.getElementB
 
     def clean_course_no(self):
         raw = self.cleaned_data.get('course_no', '')
-        # แยกรหัสวิชาจาก comma และ newline แล้ว strip ช่องว่าง
         import re
+        # แยกเฉพาะ comma และ newline — _ คงไว้เป็นส่วนหนึ่งของ course_no
         codes = [c.strip().upper() for c in re.split(r'[,\n]+', raw) if c.strip()]
         if not codes:
             raise forms.ValidationError('กรุณากรอกรหัสวิชาอย่างน้อย 1 รหัส')
         self._course_codes = codes
-        # ส่ง code แรกกลับให้ model validation ผ่าน
         return codes[0]
 
     def clean_time_start(self):
