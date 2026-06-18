@@ -140,6 +140,11 @@
                     <span class="chip-dot"></span>มีเรียนวันนี้
                 </span>
                 {% endif %}
+                {% if room.chat_pin %}
+                <span class="channel-thumb-badge channel-thumb-badge--chat">
+                    <i class="fas fa-comments" style="margin-right:3px;font-size:0.7rem;"></i>แชทกับผู้สอน
+                </span>
+                {% endif %}
                 <div class="channel-thumb-name">
                     <div class="ch-icon"><i class="fas fa-tv"></i></div>
                     <h5>{{ room.room_name }}</h5>

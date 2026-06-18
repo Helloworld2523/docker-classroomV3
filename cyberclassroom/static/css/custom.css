@@ -599,6 +599,13 @@ a, button, .btn { touch-action: manipulation; }
   letter-spacing: 0.04em;
   backdrop-filter: blur(6px);
 }
+/* Chat badge — above today badge */
+.channel-thumb-badge--chat {
+  bottom: 36px;
+  background: rgba(99,102,241,0.25);
+  border-color: rgba(99,102,241,0.5);
+  color: #c7d2fe;
+}
 .channel-thumb-badge .chip-dot {
   width: 5px; height: 5px;
   background: #4ade80;
