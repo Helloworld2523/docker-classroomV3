@@ -22,10 +22,7 @@
     "delay_ms": 1500
   },
   "course_search": {
-    "years": [
-      "2569",
-      "2568"
-    ],
+    "years": ["2568", "2567"],
     "default_year": "2569",
     "default_semester": "1"
   },
