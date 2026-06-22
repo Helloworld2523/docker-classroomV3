@@ -1450,17 +1450,17 @@
                     function initHls() {
                         if (hls) { hls.destroy(); }
                         hls = new Hls({
-                            /* ── Low-Latency tuning (กลุ่ม 3) ── */
+                            /* ── Stable mode (ลด buffering) ── */
                             enableWorker:              true,
-                            lowLatencyMode:            true,   // HLS.js LL-HLS mode
-                            maxBufferLength:           10,     // buffer สูงสุด 10 วิ (ลด delay)
-                            maxMaxBufferLength:        20,     // ไม่ให้ buffer เกิน 20 วิ
-                            liveSyncDurationCount:     2,      // sync กับ live edge ห่าง 2 segment
-                            liveMaxLatencyDurationCount: 4,    // ถ้า delay > 4 segment ให้ catch-up
-                            liveDurationInfinity:      true,   // treat live เป็น infinite duration
-                            highBufferWatchdogPeriod:  2,      // ตรวจ buffer สูงเกิน ทุก 2 วิ
-                            nudgeMaxRetry:             5,      // nudge playback ถ้า stall
-                            maxFragLookUpTolerance:    0.2,
+                            lowLatencyMode:            false,  // ปิด LL mode — ลดการ catch-up
+                            maxBufferLength:           30,     // buffer 30 วิ รองรับ network สะดุด
+                            maxMaxBufferLength:        60,     // ขยายได้สูงสุด 60 วิ
+                            liveSyncDurationCount:     3,      // ห่าง live edge 3 segment
+                            liveMaxLatencyDurationCount: 6,    // catch-up เมื่อ delay > 6 segment
+                            liveDurationInfinity:      true,
+                            highBufferWatchdogPeriod:  5,      // ตรวจ buffer ทุก 5 วิ (ไม่ถี่เกิน)
+                            nudgeMaxRetry:             5,
+                            maxFragLookUpTolerance:    0.3,
                             /* ── Network tuning ── */
                             xhrSetup: function(xhr) {
                                 xhr.withCredentials = false;
