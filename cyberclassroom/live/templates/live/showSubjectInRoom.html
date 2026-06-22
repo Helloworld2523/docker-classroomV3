@@ -1287,6 +1287,7 @@
                 <div class="vp-wrap" id="vpWrap">
                     <video id="my_video"
                         controls autoplay muted preload="auto"
+                        playsinline webkit-playsinline
                         style="width:100%;height:100%;object-fit:contain;display:block;">
                         <source src="{{ server }}{{ q|lower }}/playlist.m3u8" type="application/x-mpegURL">
                     </video>
