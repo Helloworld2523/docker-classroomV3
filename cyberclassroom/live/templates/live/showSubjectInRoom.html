@@ -470,6 +470,19 @@
     border-radius: 0 0 10px 10px;
     overflow: hidden;
 }
+/* iOS CSS fake fullscreen — ครอบทั้งจอโดย HLS.js ยังทำงานต่อ */
+.vp-wrap.vp-ios-fs {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100vw !important; height: 100vh !important;
+    max-width: none !important;
+    aspect-ratio: unset !important;
+    border-radius: 0 !important;
+    z-index: 9999 !important;
+}
+.vp-body-fs {
+    overflow: hidden !important;
+}
 
 /* Reconnecting overlay */
 .vp-overlay {
@@ -1345,7 +1358,7 @@
                     </div>
                 </div>
 
-                <script src="https://unpkg.com/hls.js@latest"></script>
+                <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
                 <script>
                 (function () {
                     const SRC      = '{{ server }}{{ q|lower }}/playlist.m3u8';
@@ -1386,17 +1399,48 @@
                         });
                     }
 
-                    /* ── Fullscreen ── */
+                    /* ── Fullscreen (CSS fake fullscreen บน iOS, native บน Android/Desktop) ── */
                     const fsBtn  = document.getElementById('vpFsBtn');
                     const fsIcon = document.getElementById('vpFsIcon');
+                    const isIOS  = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    let iosFsActive = false;
+
+                    function isInFullscreen() {
+                        return iosFsActive || !!(document.fullscreenElement || document.webkitFullscreenElement);
+                    }
                     function syncFsUI() {
-                        fsIcon.className = document.fullscreenElement ? 'fas fa-compress' : 'fas fa-expand';
+                        fsIcon.className = isInFullscreen() ? 'fas fa-compress' : 'fas fa-expand';
+                    }
+                    function enterFs() {
+                        if (isIOS) {
+                            /* CSS fake fullscreen — HLS.js ยังอยู่กับ video ตลอด ไม่หยุด */
+                            iosFsActive = true;
+                            wrap.classList.add('vp-ios-fs');
+                            document.body.classList.add('vp-body-fs');
+                            syncFsUI();
+                        } else if (wrap.requestFullscreen) {
+                            wrap.requestFullscreen();
+                        } else if (wrap.webkitRequestFullscreen) {
+                            wrap.webkitRequestFullscreen();
+                        }
+                    }
+                    function exitFs() {
+                        if (isIOS) {
+                            iosFsActive = false;
+                            wrap.classList.remove('vp-ios-fs');
+                            document.body.classList.remove('vp-body-fs');
+                            syncFsUI();
+                        } else if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        } else if (document.webkitExitFullscreen) {
+                            document.webkitExitFullscreen();
+                        }
                     }
                     fsBtn.addEventListener('click', () => {
-                        if (!document.fullscreenElement) wrap.requestFullscreen();
-                        else document.exitFullscreen();
+                        isInFullscreen() ? exitFs() : enterFs();
                     });
                     document.addEventListener('fullscreenchange', syncFsUI);
+                    document.addEventListener('webkitfullscreenchange', syncFsUI);
 
                     /* ── Picture-in-Picture ── */
                     const pipBtn = document.getElementById('vpPipBtn');
@@ -1451,18 +1495,21 @@
                     function initHls() {
                         if (hls) { hls.destroy(); }
                         hls = new Hls({
-                            /* ── Stable mode (ลด buffering) ── */
+                            /* ── Single quality 720p — Stable tuning ── */
                             enableWorker:              true,
-                            lowLatencyMode:            false,  // ปิด LL mode — ลดการ catch-up
-                            maxBufferLength:           30,     // buffer 30 วิ รองรับ network สะดุด
-                            maxMaxBufferLength:        60,     // ขยายได้สูงสุด 60 วิ
-                            liveSyncDurationCount:     3,      // ห่าง live edge 3 segment
-                            liveMaxLatencyDurationCount: 6,    // catch-up เมื่อ delay > 6 segment
+                            lowLatencyMode:            false,
+                            maxBufferLength:           45,     // buffer 45 วิ รองรับ network กระตุก
+                            maxMaxBufferLength:        90,     // ceiling สูงสุด 90 วิ
+                            maxBufferHole:             0.5,    // ยอมรับ gap เล็กน้อยโดยไม่ pause
+                            maxStarvationDelay:        4,      // รอก่อนถือว่า stall
+                            maxLoadingDelay:           4,      // รอโหลด segment ก่อน rebuffer
+                            liveSyncDurationCount:     4,
+                            liveMaxLatencyDurationCount: 8,
                             liveDurationInfinity:      true,
-                            highBufferWatchdogPeriod:  5,      // ตรวจ buffer ทุก 5 วิ (ไม่ถี่เกิน)
-                            nudgeMaxRetry:             5,
+                            highBufferWatchdogPeriod:  10,
+                            nudgeMaxRetry:             8,
+                            nudgeOffset:               0.2,
                             maxFragLookUpTolerance:    0.3,
-                            /* ── Network tuning ── */
                             xhrSetup: function(xhr) {
                                 xhr.withCredentials = false;
                             },
@@ -1518,11 +1565,7 @@
                             const ahead = buf.end(buf.length - 1) - video.currentTime;
                             document.getElementById('vpBufferVal').textContent = ahead.toFixed(1);
 
-                            /* Auto catch-up: ถ้า buffer สะสมเกิน 18 วิ ให้ข้ามไปใกล้ live edge */
-                            if (ahead > 18 && !video.paused) {
-                                video.currentTime = buf.end(buf.length - 1) - 2;
-                                showHint('⚡ Catch-up — ลด delay อัตโนมัติ');
-                            }
+                            /* ปิด auto catch-up — ไม่กระโดดตำแหน่ง ป้องกันหมุน */
                         }
 
                         /* Live latency */
@@ -1543,17 +1586,16 @@
                         if (!video.muted) localStorage.setItem('vp_volume', video.volume);
                     }, 2000);
 
-                    /* ── Playback speed nudge เมื่อ stall (กลุ่ม 3) ── */
+                    /* ── Stall recovery: รอ HLS.js จัดการเอง ไม่ seek เอง ── */
                     video.addEventListener('waiting', () => {
-                        /* ถ้ารอนานเกิน 4 วิ ให้ลอง seek ไป live edge */
                         clearTimeout(video._stallTimer);
                         video._stallTimer = setTimeout(() => {
+                            /* ถ้า stall นานเกิน 8 วิ และ buffer ว่าง → reconnect */
                             if (video.paused || !hls) return;
                             const buf = video.buffered;
-                            if (buf.length) {
-                                video.currentTime = buf.end(buf.length - 1) - 0.5;
-                            }
-                        }, 4000);
+                            const ahead = buf.length ? buf.end(buf.length - 1) - video.currentTime : 0;
+                            if (ahead < 0.5) initHls();
+                        }, 8000);
                     });
                     video.addEventListener('playing', () => clearTimeout(video._stallTimer));
 
