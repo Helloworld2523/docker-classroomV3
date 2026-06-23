@@ -50,7 +50,7 @@ class ClassScheduleCenter(models.Model):
                                         help_text='เช่น 01, 02, A, B — ว่างได้ถ้าไม่มี section')
     course_name_thai = models.CharField('ชื่อวิชา TH', max_length=255, blank=True, default='-')
     course_name_eng  = models.CharField('ชื่อวิชา EN', max_length=255, blank=True, default='-')
-    instructor       = models.CharField('อาจารย์ผู้สอน', max_length=200, blank=True, default='-')
+    instructor       = models.CharField('อาจารย์ผู้สอน', max_length=255, blank=True, default='-')
     DAY_LIST=(
         ('1','Monday'),
         ('2','Tuesday'),

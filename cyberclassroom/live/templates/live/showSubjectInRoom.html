@@ -1495,18 +1495,18 @@
                     function initHls() {
                         if (hls) { hls.destroy(); }
                         hls = new Hls({
-                            /* ── Single quality 720p — Stable tuning ── */
+                            /* ── Single quality 720p + Chat optimized ── */
                             enableWorker:              true,
                             lowLatencyMode:            false,
-                            maxBufferLength:           45,     // buffer 45 วิ รองรับ network กระตุก
-                            maxMaxBufferLength:        90,     // ceiling สูงสุด 90 วิ
-                            maxBufferHole:             0.5,    // ยอมรับ gap เล็กน้อยโดยไม่ pause
-                            maxStarvationDelay:        4,      // รอก่อนถือว่า stall
-                            maxLoadingDelay:           4,      // รอโหลด segment ก่อน rebuffer
-                            liveSyncDurationCount:     4,
-                            liveMaxLatencyDurationCount: 8,
+                            maxBufferLength:           12,     // buffer 12 วิ — ลด bandwidth ที่ video ใช้ล่วงหน้า
+                            maxMaxBufferLength:        25,     // ceiling 25 วิ
+                            maxBufferHole:             0.5,
+                            maxStarvationDelay:        4,
+                            maxLoadingDelay:           4,
+                            liveSyncDurationCount:     3,
+                            liveMaxLatencyDurationCount: 5,
                             liveDurationInfinity:      true,
-                            highBufferWatchdogPeriod:  10,
+                            highBufferWatchdogPeriod:  5,
                             nudgeMaxRetry:             8,
                             nudgeOffset:               0.2,
                             maxFragLookUpTolerance:    0.3,
@@ -2387,7 +2387,7 @@
     const IS_LAST_CLASS    = {{ is_last_class|yesno:"true,false" }}; /* คาบสุดท้ายของวัน */
     const IS_DAY_DONE      = {{ is_day_done|yesno:"true,false" }};  /* ไม่มีคาบเหลือในวันนี้แล้ว */
     const SEND_URL  = '/chat/' + ROOM + '/send/';
-    const POLL_MS   = 3000;
+    const POLL_MS   = 2000;
     let   fetchSince = SINCE;   /* อัปเดตได้เมื่อขึ้นคาบใหม่ */
 
     /* สร้าง ISO string เวลาท้องถิ่น (ไม่มี Z / timezone offset)
