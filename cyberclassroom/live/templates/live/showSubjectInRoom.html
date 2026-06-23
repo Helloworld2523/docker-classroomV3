@@ -734,6 +734,73 @@ video::-webkit-media-controls-fullscreen-button {
 .dark-mode .code-badge { background: rgba(59,130,246,0.12); }
 .dark-mode .row-num { background: rgba(255,255,255,0.06); color: #94a3b8; }
 .dark-mode .video-section-wrapper { background: rgba(17,28,53,0.9); border-color: rgba(59,130,246,0.15); }
+
+/* ── Mobile split-screen (เฉพาะมือถือ + มีห้องแชท) ── */
+@media (max-width: 991px) {
+    body.has-chat .row.g-4 {
+        gap: 0 !important;
+    }
+    body.has-chat #videoColumn {
+        padding: 0 !important;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    body.has-chat #videoColumn .page-section { margin: 0; }
+    body.has-chat #videoColumn .video-section-wrapper {
+        border-radius: 0;
+        margin-bottom: 0 !important;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+    }
+    body.has-chat #videoColumn .vp-shortcuts { display: none; }
+    body.has-chat #videoColumn .subject-list-section,
+    body.has-chat #videoColumn .noaBox { display: none; }
+    body.has-chat #chatColumn {
+        padding: 0 !important;
+        border-top: 1px solid rgba(59,130,246,0.2);
+    }
+    body.has-chat #chatColumn .room-sidebar { padding: 0; }
+    body.has-chat #chatColumn .chat-card {
+        margin: 0 !important;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        height: 52vh;
+        display: flex;
+        flex-direction: column;
+    }
+    body.has-chat #chatColumn .chat-card-header { border-radius: 0; flex-shrink: 0; }
+    body.has-chat #chatColumn #panelChat {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    body.has-chat #chatColumn .chat-messages-box {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+    }
+    body.has-chat #chatColumn .chat-input-area { flex-shrink: 0; }
+
+    /* Compact chat สำหรับมือถือ */
+    body.has-chat #chatColumn .chat-card-header { padding: 0.4rem 0.75rem; }
+    body.has-chat #chatColumn .chat-tab-bar { min-height: 34px; }
+    body.has-chat #chatColumn .chat-tab-btn { padding: 0.3rem 0.75rem; font-size: 0.78rem; }
+    body.has-chat #chatColumn .chat-messages-box { padding: 0.35rem 0.6rem; }
+    body.has-chat #chatColumn .chat-bubble { padding: 0.3rem 0.55rem; font-size: 0.8rem; }
+    body.has-chat #chatColumn .chat-avatar { width: 22px; height: 22px; font-size: 0.6rem; }
+    body.has-chat #chatColumn .chat-meta { font-size: 0.68rem; }
+    body.has-chat #chatColumn .chat-msg-row { gap: 5px; margin-bottom: 0.3rem; }
+    body.has-chat #chatColumn .chat-input-area { padding: 0.45rem 0.65rem; }
+    body.has-chat #chatColumn .chat-compose-input { font-size: 0.82rem; min-height: 34px; }
+    body.has-chat #chatColumn .chat-sender-row { margin-bottom: 0.35rem; }
+    body.has-chat #chatColumn .chat-notice { padding: 0.4rem 0.6rem; font-size: 0.78rem; }
+    body.has-chat #chatColumn .chat-notice-close { top: 4px; right: 6px; }
+}
 </style>
 
 <!-- ══════════════ ROOM HERO ══════════════ -->
@@ -1224,6 +1291,7 @@ video::-webkit-media-controls-fullscreen-button {
     </div>
     {% endif %}
 
+    {% if room.chat_pin %}<script>document.body.classList.add('has-chat');</script>{% endif %}
     <div class="row g-4 align-items-start">
     <!-- ── LEFT: Video ── -->
     <div id="videoColumn" class="col-12 {% if room.chat_pin %}col-lg-8{% endif %}">
