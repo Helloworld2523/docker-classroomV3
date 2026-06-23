@@ -470,6 +470,19 @@
     border-radius: 0 0 10px 10px;
     overflow: hidden;
 }
+/* iOS CSS fake fullscreen — ครอบทั้งจอโดย HLS.js ยังทำงานต่อ */
+.vp-wrap.vp-ios-fs {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100vw !important; height: 100vh !important;
+    max-width: none !important;
+    aspect-ratio: unset !important;
+    border-radius: 0 !important;
+    z-index: 9999 !important;
+}
+.vp-body-fs {
+    overflow: hidden !important;
+}
 
 /* Reconnecting overlay */
 .vp-overlay {
@@ -1287,6 +1300,7 @@
                 <div class="vp-wrap" id="vpWrap">
                     <video id="my_video"
                         controls autoplay muted preload="auto"
+                        playsinline webkit-playsinline
                         style="width:100%;height:100%;object-fit:contain;display:block;">
                         <source src="{{ server }}{{ q|lower }}/playlist.m3u8" type="application/x-mpegURL">
                     </video>
@@ -1344,7 +1358,7 @@
                     </div>
                 </div>
 
-                <script src="https://unpkg.com/hls.js@latest"></script>
+                <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
                 <script>
                 (function () {
                     const SRC      = '{{ server }}{{ q|lower }}/playlist.m3u8';
@@ -1385,17 +1399,48 @@
                         });
                     }
 
-                    /* ── Fullscreen ── */
+                    /* ── Fullscreen (CSS fake fullscreen บน iOS, native บน Android/Desktop) ── */
                     const fsBtn  = document.getElementById('vpFsBtn');
                     const fsIcon = document.getElementById('vpFsIcon');
+                    const isIOS  = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    let iosFsActive = false;
+
+                    function isInFullscreen() {
+                        return iosFsActive || !!(document.fullscreenElement || document.webkitFullscreenElement);
+                    }
                     function syncFsUI() {
-                        fsIcon.className = document.fullscreenElement ? 'fas fa-compress' : 'fas fa-expand';
+                        fsIcon.className = isInFullscreen() ? 'fas fa-compress' : 'fas fa-expand';
+                    }
+                    function enterFs() {
+                        if (isIOS) {
+                            /* CSS fake fullscreen — HLS.js ยังอยู่กับ video ตลอด ไม่หยุด */
+                            iosFsActive = true;
+                            wrap.classList.add('vp-ios-fs');
+                            document.body.classList.add('vp-body-fs');
+                            syncFsUI();
+                        } else if (wrap.requestFullscreen) {
+                            wrap.requestFullscreen();
+                        } else if (wrap.webkitRequestFullscreen) {
+                            wrap.webkitRequestFullscreen();
+                        }
+                    }
+                    function exitFs() {
+                        if (isIOS) {
+                            iosFsActive = false;
+                            wrap.classList.remove('vp-ios-fs');
+                            document.body.classList.remove('vp-body-fs');
+                            syncFsUI();
+                        } else if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        } else if (document.webkitExitFullscreen) {
+                            document.webkitExitFullscreen();
+                        }
                     }
                     fsBtn.addEventListener('click', () => {
-                        if (!document.fullscreenElement) wrap.requestFullscreen();
-                        else document.exitFullscreen();
+                        isInFullscreen() ? exitFs() : enterFs();
                     });
                     document.addEventListener('fullscreenchange', syncFsUI);
+                    document.addEventListener('webkitfullscreenchange', syncFsUI);
 
                     /* ── Picture-in-Picture ── */
                     const pipBtn = document.getElementById('vpPipBtn');
@@ -1450,18 +1495,21 @@
                     function initHls() {
                         if (hls) { hls.destroy(); }
                         hls = new Hls({
-                            /* ── Low-Latency tuning (กลุ่ม 3) ── */
+                            /* ── Single quality 720p + Chat optimized ── */
                             enableWorker:              true,
-                            lowLatencyMode:            true,   // HLS.js LL-HLS mode
-                            maxBufferLength:           10,     // buffer สูงสุด 10 วิ (ลด delay)
-                            maxMaxBufferLength:        20,     // ไม่ให้ buffer เกิน 20 วิ
-                            liveSyncDurationCount:     2,      // sync กับ live edge ห่าง 2 segment
-                            liveMaxLatencyDurationCount: 4,    // ถ้า delay > 4 segment ให้ catch-up
-                            liveDurationInfinity:      true,   // treat live เป็น infinite duration
-                            highBufferWatchdogPeriod:  2,      // ตรวจ buffer สูงเกิน ทุก 2 วิ
-                            nudgeMaxRetry:             5,      // nudge playback ถ้า stall
-                            maxFragLookUpTolerance:    0.2,
-                            /* ── Network tuning ── */
+                            lowLatencyMode:            false,
+                            maxBufferLength:           12,     // buffer 12 วิ — ลด bandwidth ที่ video ใช้ล่วงหน้า
+                            maxMaxBufferLength:        25,     // ceiling 25 วิ
+                            maxBufferHole:             0.5,
+                            maxStarvationDelay:        4,
+                            maxLoadingDelay:           4,
+                            liveSyncDurationCount:     3,
+                            liveMaxLatencyDurationCount: 5,
+                            liveDurationInfinity:      true,
+                            highBufferWatchdogPeriod:  5,
+                            nudgeMaxRetry:             8,
+                            nudgeOffset:               0.2,
+                            maxFragLookUpTolerance:    0.3,
                             xhrSetup: function(xhr) {
                                 xhr.withCredentials = false;
                             },
@@ -1517,11 +1565,7 @@
                             const ahead = buf.end(buf.length - 1) - video.currentTime;
                             document.getElementById('vpBufferVal').textContent = ahead.toFixed(1);
 
-                            /* Auto catch-up: ถ้า buffer สะสมเกิน 18 วิ ให้ข้ามไปใกล้ live edge */
-                            if (ahead > 18 && !video.paused) {
-                                video.currentTime = buf.end(buf.length - 1) - 2;
-                                showHint('⚡ Catch-up — ลด delay อัตโนมัติ');
-                            }
+                            /* ปิด auto catch-up — ไม่กระโดดตำแหน่ง ป้องกันหมุน */
                         }
 
                         /* Live latency */
@@ -1542,17 +1586,16 @@
                         if (!video.muted) localStorage.setItem('vp_volume', video.volume);
                     }, 2000);
 
-                    /* ── Playback speed nudge เมื่อ stall (กลุ่ม 3) ── */
+                    /* ── Stall recovery: รอ HLS.js จัดการเอง ไม่ seek เอง ── */
                     video.addEventListener('waiting', () => {
-                        /* ถ้ารอนานเกิน 4 วิ ให้ลอง seek ไป live edge */
                         clearTimeout(video._stallTimer);
                         video._stallTimer = setTimeout(() => {
+                            /* ถ้า stall นานเกิน 8 วิ และ buffer ว่าง → reconnect */
                             if (video.paused || !hls) return;
                             const buf = video.buffered;
-                            if (buf.length) {
-                                video.currentTime = buf.end(buf.length - 1) - 0.5;
-                            }
-                        }, 4000);
+                            const ahead = buf.length ? buf.end(buf.length - 1) - video.currentTime : 0;
+                            if (ahead < 0.5) initHls();
+                        }, 8000);
                     });
                     video.addEventListener('playing', () => clearTimeout(video._stallTimer));
 
@@ -2344,7 +2387,7 @@
     const IS_LAST_CLASS    = {{ is_last_class|yesno:"true,false" }}; /* คาบสุดท้ายของวัน */
     const IS_DAY_DONE      = {{ is_day_done|yesno:"true,false" }};  /* ไม่มีคาบเหลือในวันนี้แล้ว */
     const SEND_URL  = '/chat/' + ROOM + '/send/';
-    const POLL_MS   = 3000;
+    const POLL_MS   = 2000;
     let   fetchSince = SINCE;   /* อัปเดตได้เมื่อขึ้นคาบใหม่ */
 
     /* สร้าง ISO string เวลาท้องถิ่น (ไม่มี Z / timezone offset)
