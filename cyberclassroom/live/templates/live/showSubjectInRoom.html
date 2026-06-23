@@ -1495,15 +1495,17 @@
                     function initHls() {
                         if (hls) { hls.destroy(); }
                         hls = new Hls({
-                            /* ── Single quality 720p + Chat optimized ── */
+                            /* ── Single quality 720p — Sweet spot (low latency + stable) ── */
                             enableWorker:              true,
                             lowLatencyMode:            false,
-                            maxBufferLength:           12,     // buffer 12 วิ — ลด bandwidth ที่ video ใช้ล่วงหน้า
-                            maxMaxBufferLength:        25,     // ceiling 25 วิ
+                            initialLiveManifestSize:   2,      // รอ 2 segment ก่อนเริ่มเล่น
+                            startFragPrefetch:         true,   // โหลด segment ล่วงหน้าก่อนเริ่มเล่น
+                            maxBufferLength:           15,     // buffer 15 วิ
+                            maxMaxBufferLength:        30,     // ceiling 30 วิ
                             maxBufferHole:             0.5,
                             maxStarvationDelay:        4,
                             maxLoadingDelay:           4,
-                            liveSyncDurationCount:     3,
+                            liveSyncDurationCount:     2,      // ใกล้ live edge — latency ~8-12 วิ
                             liveMaxLatencyDurationCount: 5,
                             liveDurationInfinity:      true,
                             highBufferWatchdogPeriod:  5,
