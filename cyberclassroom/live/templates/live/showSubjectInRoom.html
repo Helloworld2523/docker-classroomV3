@@ -1420,6 +1420,8 @@ video::-webkit-media-controls-fullscreen-button {
                     function showOffline(wait) {
                         offlineDiv.style.display = 'flex';
                         video.style.display = 'none';
+                        var ub = document.getElementById('hlsUnmute');
+                        if (ub) ub.style.display = 'none';
                         const msg = document.getElementById('hlsOfflineMsg');
                         const bar = document.getElementById('hlsRetryBar');
                         bar.style.transition = 'none'; bar.style.width = '0%';
