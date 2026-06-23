@@ -1326,16 +1326,6 @@ video::-webkit-media-controls-fullscreen-button {
                     <!-- Keyboard hint toast -->
                     <div class="vp-hint" id="vpHint" style="display:none;"></div>
 
-                    <!-- ── Now On Air overlay (bottom of player) ── -->
-                    <div id="playerInfoBar" class="player-info-bar" style="display:none;">
-                        <span class="pib-live-dot"></span>
-                        <span class="pib-live-label">LIVE</span>
-                        <span id="pibCode" class="pib-code">—</span>
-                        <span class="pib-sep">·</span>
-                        <span id="pibName" class="pib-name">—</span>
-                        <span id="pibLeft" class="pib-left"></span>
-                    </div>
-
                 </div>
 
                 <!-- ── Shortcut legend ── -->
@@ -1355,6 +1345,19 @@ video::-webkit-media-controls-fullscreen-button {
                             <div id="vpStatusSub" style="font-size:0.72rem;opacity:0.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;"></div>
                         </div>
                         <span id="vpStatusBadge" style="flex-shrink:0;font-size:0.68rem;font-weight:700;padding:2px 9px;border-radius:20px;"></span>
+                    </div>
+                </div>
+
+                <!-- ── ปุ่มเต็มหน้าจอ ── -->
+                <div style="width:100%;max-width:860px;margin:0 auto;">
+                    <div style="display:flex;justify-content:flex-end;padding:0.35rem 0.5rem;background:#0d1117;border-radius:0 0 10px 10px;border-top:1px solid rgba(255,255,255,0.07);">
+                        <button id="mainFsBtn"
+                            onmouseover="this.style.background='rgba(79,114,212,0.25)';this.style.borderColor='rgba(79,114,212,0.6)';this.style.color='#a5b4fc';"
+                            onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.12)';this.style.color='#94a3b8';"
+                            style="background:transparent;border:1px solid rgba(255,255,255,0.12);color:#94a3b8;border-radius:6px;padding:0.3rem 0.85rem;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;gap:0.45rem;transition:all 0.15s;">
+                            <i class="fas fa-expand" id="mainFsIcon" style="font-size:0.75rem;"></i>
+                            <span id="mainFsLabel">เต็มหน้าจอ</span>
+                        </button>
                     </div>
                 </div>
 
@@ -1385,6 +1388,32 @@ video::-webkit-media-controls-fullscreen-button {
                             <div id="hlsRetryBar" style="height:100%;background:#4f72d4;width:0%;transition:width linear;"></div>
                         </div>`;
                     document.getElementById('vpWrap').appendChild(offlineDiv);
+
+                    /* ── Unmute overlay ── */
+                    const unmuteDiv = document.createElement('div');
+                    unmuteDiv.id = 'hlsUnmute';
+                    unmuteDiv.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:20;pointer-events:none;';
+                    unmuteDiv.innerHTML = `
+                        <button id="hlsUnmuteBtn" style="
+                            pointer-events:auto;
+                            background:rgba(10,15,30,0.75);
+                            border:2px solid rgba(255,255,255,0.25);
+                            backdrop-filter:blur(6px);
+                            color:#fff;border-radius:50px;
+                            padding:0.75rem 2rem;
+                            font-size:1.1rem;font-weight:700;
+                            cursor:pointer;display:flex;align-items:center;gap:0.6rem;
+                            box-shadow:0 4px 24px rgba(0,0,0,0.5);
+                            transition:transform 0.15s,background 0.15s;">
+                            <i class="fas fa-volume-mute" style="font-size:1.3rem;"></i> แตะเพื่อเปิดเสียง
+                        </button>`;
+                    document.getElementById('vpWrap').appendChild(unmuteDiv);
+
+                    document.getElementById('hlsUnmuteBtn').addEventListener('click', function() {
+                        video.muted = false;
+                        video.volume = 1;
+                        unmuteDiv.style.display = 'none';
+                    });
 
                     let retryCount = 0, retryTimer, retryBarTimer;
 
@@ -1441,6 +1470,107 @@ video::-webkit-media-controls-fullscreen-button {
                     const overlay = { style: { display: '' } };
                     function showOverlay() {}
                     function hideOverlay() {}
+
+                    /* ── ปุ่มเต็มหน้าจอหลัก ── */
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    (function() {
+                        const btn   = document.getElementById('mainFsBtn');
+                        const icon  = document.getElementById('mainFsIcon');
+                        const label = document.getElementById('mainFsLabel');
+                        const wrap  = document.getElementById('vpWrap');
+                        if (!btn) return;
+
+                        function setExitState() {
+                            icon.className  = 'fas fa-compress';
+                            label.textContent = 'ออกจากเต็มหน้าจอ';
+                            btn.style.color = '#fff';
+                        }
+                        function setEnterState() {
+                            icon.className  = 'fas fa-expand';
+                            label.textContent = 'เต็มหน้าจอ';
+                            btn.style.color = '#cbd5e1';
+                        }
+
+                        if (isIOS) {
+                            /* iOS ใช้ CSS fake fullscreen */
+                            btn.addEventListener('click', function() {
+                                if (wrap.classList.contains('vp-ios-fs')) {
+                                    wrap.classList.remove('vp-ios-fs');
+                                    document.body.style.overflow = '';
+                                    var cb = document.getElementById('iosFsClose');
+                                    if (cb) cb.style.display = 'none';
+                                    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+                                    setEnterState();
+                                } else {
+                                    wrap.classList.add('vp-ios-fs');
+                                    document.body.style.overflow = 'hidden';
+                                    var cb = document.getElementById('iosFsClose');
+                                    if (cb) cb.style.display = 'none'; /* ซ่อนปุ่ม close ลอย ใช้ปุ่มนี้แทน */
+                                    if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(function(){});
+                                    setExitState();
+                                }
+                            });
+                        } else {
+                            /* Android / PC ใช้ native Fullscreen API */
+                            btn.addEventListener('click', function() {
+                                if (!document.fullscreenElement) {
+                                    (wrap.requestFullscreen || wrap.webkitRequestFullscreen || wrap.mozRequestFullScreen).call(wrap);
+                                } else {
+                                    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen).call(document);
+                                }
+                            });
+                            document.addEventListener('fullscreenchange', function() {
+                                document.fullscreenElement ? setExitState() : setEnterState();
+                            });
+                            document.addEventListener('webkitfullscreenchange', function() {
+                                document.webkitFullscreenElement ? setExitState() : setEnterState();
+                            });
+                        }
+                    })();
+
+                    /* ── iOS fake fullscreen (เฉพาะกดปุ่มเอง ไม่ auto) ── */
+                    if (isIOS) {
+                        const wrap = document.getElementById('vpWrap');
+
+                        /* ปุ่มปิด — fixed มุมขวาบน */
+                        const closeBtn = document.createElement('button');
+                        closeBtn.innerHTML = '<i class="fas fa-compress-arrows-alt"></i>';
+                        closeBtn.style.cssText = 'display:none;position:fixed;top:14px;right:14px;z-index:10001;' +
+                            'background:rgba(0,0,0,0.65);border:none;color:#fff;border-radius:50%;' +
+                            'width:44px;height:44px;font-size:1.2rem;cursor:pointer;' +
+                            'align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+                        document.body.appendChild(closeBtn);
+
+                        function enterIosFs() {
+                            wrap.classList.add('vp-ios-fs');
+                            closeBtn.style.display = 'flex';
+                            document.body.style.overflow = 'hidden';
+                            if (screen.orientation && screen.orientation.lock) {
+                                screen.orientation.lock('landscape').catch(function(){});
+                            }
+                        }
+                        function exitIosFs() {
+                            wrap.classList.remove('vp-ios-fs');
+                            closeBtn.style.display = 'none';
+                            document.body.style.overflow = '';
+                            if (screen.orientation && screen.orientation.unlock) {
+                                screen.orientation.unlock();
+                            }
+                        }
+                        closeBtn.addEventListener('click', exitIosFs);
+
+                        /* รอ Video.js โหลด แล้วดักปุ่ม fullscreen */
+                        setTimeout(function() {
+                            var fsBtn = document.querySelector('.vjs-fullscreen-control');
+                            if (fsBtn) {
+                                fsBtn.addEventListener('click', function(e) {
+                                    e.stopImmediatePropagation();
+                                    e.preventDefault();
+                                    wrap.classList.contains('vp-ios-fs') ? exitIosFs() : enterIosFs();
+                                }, true);
+                            }
+                        }, 1000);
+                    }
                 })();
                 </script>
 
@@ -1775,12 +1905,12 @@ video::-webkit-media-controls-fullscreen-button {
         if (pInfoBar) {
             if (active && !active.closed && !active.cancelled) {
                 var rem = toMinutes(active.time_end) - nowMins;
-                pInfoBar.style.display = 'flex';
+                if (pInfoBar) pInfoBar.style.display = 'flex';
                 if (pibCode) pibCode.textContent = active.course_no;
                 if (pibName) pibName.textContent = active.course_name;
                 if (pibLeft) pibLeft.textContent = rem + ' นาที';
             } else {
-                pInfoBar.style.display = 'none';
+                if (pInfoBar) pInfoBar.style.display = 'none';
             }
         }
     }
