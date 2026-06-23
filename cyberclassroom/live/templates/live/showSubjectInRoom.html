@@ -470,6 +470,10 @@
     border-radius: 0 0 10px 10px;
     overflow: hidden;
 }
+/* ซ่อนปุ่ม fullscreen native ของ iOS Safari */
+video::-webkit-media-controls-fullscreen-button {
+    display: none !important;
+}
 /* iOS CSS fake fullscreen — ครอบทั้งจอโดย HLS.js ยังทำงานต่อ */
 .vp-wrap.vp-ios-fs {
     position: fixed !important;
@@ -1267,8 +1271,8 @@
         <div class="video-section-wrapper mb-5">
             {% if location in valid_locations %}
 
-                <!-- ── Custom player toolbar ── -->
-                <div class="vp-toolbar">
+                <!-- ── Player toolbar placeholder (ใช้ Video.js controls แทน) ── -->
+                <div class="vp-toolbar" style="display:none;">
                     <div class="vp-toolbar-left">
                         <span class="vp-quality-badge" id="vpQuality">
                             <span class="vp-quality-dot" id="vpQualityDot"></span>
@@ -1298,11 +1302,12 @@
 
                 <!-- ── Video wrapper ── -->
                 <div class="vp-wrap" id="vpWrap">
-                    <video id="my_video"
+                    <video id="my_video" class="video-js vjs-default-skin w-100"
                         controls autoplay muted preload="auto"
                         playsinline webkit-playsinline
-                        style="width:100%;height:100%;object-fit:contain;display:block;">
+                        data-setup='{}'>
                         <source src="{{ server }}{{ q|lower }}/playlist.m3u8" type="application/x-mpegURL">
+                        <p class="vjs-no-js">เบราว์เซอร์ของคุณไม่รองรับ HTML5</p>
                     </video>
 
                     <!-- Reconnecting overlay -->
@@ -1358,258 +1363,24 @@
                     </div>
                 </div>
 
-                <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+                <script src="https://unpkg.com/hls.js@latest"></script>
                 <script>
                 (function () {
                     const SRC      = '{{ server }}{{ q|lower }}/playlist.m3u8';
                     const video    = document.getElementById('my_video');
-                    const wrap     = document.getElementById('vpWrap');
-                    const overlay  = document.getElementById('vpOverlay');
-                    const retryMsg = document.getElementById('vpRetryMsg');
-                    const hint     = document.getElementById('vpHint');
-
-                    /* ── Volume memory ── */
-                    const savedVol = parseFloat(localStorage.getItem('vp_volume') || '1');
-                    video.volume   = isNaN(savedVol) ? 1 : Math.min(1, Math.max(0, savedVol));
-                    video.muted    = (localStorage.getItem('vp_muted') === 'true');
-
-                    const muteBtn  = document.getElementById('vpMuteBtn');
-                    const muteIcon = document.getElementById('vpMuteIcon');
-                    function syncMuteUI() {
-                        muteIcon.className = video.muted ? 'fas fa-volume-mute' : 'fas fa-volume-up';
-                        localStorage.setItem('vp_muted', video.muted);
-                    }
-                    syncMuteUI();
-                    video.addEventListener('volumechange', syncMuteUI);
-                    muteBtn.addEventListener('click', () => { video.muted = !video.muted; });
-
-                    /* ── Volume slider ── */
-                    const volSlider = document.getElementById('vpVolSlider');
-                    if (volSlider) {
-                        volSlider.value = video.muted ? 0 : video.volume;
-                        volSlider.addEventListener('input', () => {
-                            video.volume = parseFloat(volSlider.value);
-                            video.muted  = (parseFloat(volSlider.value) === 0);
-                            localStorage.setItem('vp_volume', volSlider.value);
-                        });
-                        video.addEventListener('volumechange', () => {
-                            if (!volSlider.matches(':active')) {
-                                volSlider.value = video.muted ? 0 : video.volume;
-                            }
-                        });
-                    }
-
-                    /* ── Fullscreen (CSS fake fullscreen บน iOS, native บน Android/Desktop) ── */
-                    const fsBtn  = document.getElementById('vpFsBtn');
-                    const fsIcon = document.getElementById('vpFsIcon');
-                    const isIOS  = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                    let iosFsActive = false;
-
-                    function isInFullscreen() {
-                        return iosFsActive || !!(document.fullscreenElement || document.webkitFullscreenElement);
-                    }
-                    function syncFsUI() {
-                        fsIcon.className = isInFullscreen() ? 'fas fa-compress' : 'fas fa-expand';
-                    }
-                    function enterFs() {
-                        if (isIOS) {
-                            /* CSS fake fullscreen — HLS.js ยังอยู่กับ video ตลอด ไม่หยุด */
-                            iosFsActive = true;
-                            wrap.classList.add('vp-ios-fs');
-                            document.body.classList.add('vp-body-fs');
-                            syncFsUI();
-                        } else if (wrap.requestFullscreen) {
-                            wrap.requestFullscreen();
-                        } else if (wrap.webkitRequestFullscreen) {
-                            wrap.webkitRequestFullscreen();
-                        }
-                    }
-                    function exitFs() {
-                        if (isIOS) {
-                            iosFsActive = false;
-                            wrap.classList.remove('vp-ios-fs');
-                            document.body.classList.remove('vp-body-fs');
-                            syncFsUI();
-                        } else if (document.exitFullscreen) {
-                            document.exitFullscreen();
-                        } else if (document.webkitExitFullscreen) {
-                            document.webkitExitFullscreen();
-                        }
-                    }
-                    fsBtn.addEventListener('click', () => {
-                        isInFullscreen() ? exitFs() : enterFs();
-                    });
-                    document.addEventListener('fullscreenchange', syncFsUI);
-                    document.addEventListener('webkitfullscreenchange', syncFsUI);
-
-                    /* ── Picture-in-Picture ── */
-                    const pipBtn = document.getElementById('vpPipBtn');
-                    pipBtn.addEventListener('click', async () => {
-                        try {
-                            if (document.pictureInPictureElement) await document.exitPictureInPicture();
-                            else await video.requestPictureInPicture();
-                        } catch(e) { showHint('ไม่รองรับ PiP ในเบราว์เซอร์นี้'); }
-                    });
-                    if (!document.pictureInPictureEnabled) pipBtn.style.display = 'none';
-
-                    /* ── Keyboard shortcuts ── */
-                    document.addEventListener('keydown', (e) => {
-                        const tag = document.activeElement.tagName;
-                        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-                        switch(e.code) {
-                            case 'Space':
-                                e.preventDefault();
-                                video.paused ? video.play() : video.pause();
-                                showHint(video.paused ? '⏸ หยุด' : '▶ เล่น');
-                                break;
-                            case 'KeyM':
-                                video.muted = !video.muted;
-                                showHint(video.muted ? '🔇 ปิดเสียง' : '🔊 เปิดเสียง');
-                                break;
-                            case 'KeyF':
-                                fsBtn.click();
-                                showHint(document.fullscreenElement ? '⛶ ออกจาก Fullscreen' : '⛶ Fullscreen');
-                                break;
-                            case 'KeyP':
-                                pipBtn.click();
-                                break;
-                        }
-                    });
-
-                    /* ── Hint toast ── */
-                    let hintTimer;
-                    function showHint(text) {
-                        hint.textContent = text;
-                        hint.style.display = 'block';
-                        hint.classList.add('vp-hint-show');
-                        clearTimeout(hintTimer);
-                        hintTimer = setTimeout(() => {
-                            hint.classList.remove('vp-hint-show');
-                            setTimeout(() => { hint.style.display = 'none'; }, 300);
-                        }, 1200);
-                    }
-
-                    /* ── HLS.js setup ── */
-                    let hls, retryCount = 0, retryTimer;
-
-                    function initHls() {
-                        if (hls) { hls.destroy(); }
-                        hls = new Hls({
-                            /* ── Single quality 720p — Sweet spot (low latency + stable) ── */
-                            enableWorker:              true,
-                            lowLatencyMode:            false,
-                            initialLiveManifestSize:   2,      // รอ 2 segment ก่อนเริ่มเล่น
-                            startFragPrefetch:         true,   // โหลด segment ล่วงหน้าก่อนเริ่มเล่น
-                            maxBufferLength:           15,     // buffer 15 วิ
-                            maxMaxBufferLength:        30,     // ceiling 30 วิ
-                            maxBufferHole:             0.5,
-                            maxStarvationDelay:        4,
-                            maxLoadingDelay:           4,
-                            liveSyncDurationCount:     2,      // ใกล้ live edge — latency ~8-12 วิ
-                            liveMaxLatencyDurationCount: 5,
-                            liveDurationInfinity:      true,
-                            highBufferWatchdogPeriod:  5,
-                            nudgeMaxRetry:             8,
-                            nudgeOffset:               0.2,
-                            maxFragLookUpTolerance:    0.3,
-                            xhrSetup: function(xhr) {
-                                xhr.withCredentials = false;
-                            },
-                        });
-
+                    if (Hls.isSupported()) {
+                        const hls = new Hls();
                         hls.loadSource(SRC);
                         hls.attachMedia(video);
-
-                        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                            video.play().catch(()=>{});
-                            hideOverlay();
-                            retryCount = 0;
-                        });
-
-                        /* ── Quality indicator ── */
-                        hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
-                            const level  = hls.levels[data.level];
-                            const height = level ? level.height : 0;
-                            const bw     = level ? Math.round(level.bitrate / 1000) : 0;
-                            const dot    = document.getElementById('vpQualityDot');
-                            const label  = document.getElementById('vpQualityLabel');
-                            if (height >= 720) {
-                                dot.style.background = '#22c55e'; label.textContent = 'HD ' + height + 'p';
-                            } else if (height >= 360) {
-                                dot.style.background = '#f59e0b'; label.textContent = 'SD ' + height + 'p';
-                            } else {
-                                dot.style.background = '#ef4444'; label.textContent = 'Low ' + height + 'p';
-                            }
-                        });
-
-                        /* ── Auto-reconnect on fatal error ── */
-                        hls.on(Hls.Events.ERROR, (_, data) => {
-                            if (!data.fatal) return;
-                            showOverlay();
-                            clearTimeout(retryTimer);
-                            const wait = Math.min(5 + retryCount * 3, 30);
-                            retryMsg.textContent = 'ลองใหม่ใน ' + wait + ' วินาที (ครั้งที่ ' + (retryCount + 1) + ')';
-                            retryTimer = setTimeout(() => {
-                                retryCount++;
-                                retryMsg.textContent = 'กำลังเชื่อมต่อ...';
-                                initHls();
-                            }, wait * 1000);
-                        });
-                    }
-
-                    /* ── Buffer, Latency monitor & Auto catch-up (กลุ่ม 3) ── */
-                    setInterval(() => {
-                        if (!hls || !video) return;
-
-                        /* Buffer ahead */
-                        const buf = video.buffered;
-                        if (buf.length) {
-                            const ahead = buf.end(buf.length - 1) - video.currentTime;
-                            document.getElementById('vpBufferVal').textContent = ahead.toFixed(1);
-
-                            /* ปิด auto catch-up — ไม่กระโดดตำแหน่ง ป้องกันหมุน */
-                        }
-
-                        /* Live latency */
-                        const latEl = document.getElementById('vpLatencyVal');
-                        if (hls.liveSyncPosition && video.currentTime > 0) {
-                            const lat = hls.liveSyncPosition - video.currentTime;
-                            if (lat > 0) {
-                                latEl.textContent = lat.toFixed(0) + 'วิ';
-                                /* เปลี่ยนสีตาม latency */
-                                const statEl = document.getElementById('vpLatency');
-                                statEl.style.color = lat < 8 ? '#22c55e' : lat < 20 ? '#f59e0b' : '#ef4444';
-                            } else {
-                                latEl.textContent = '< 1วิ';
-                            }
-                        }
-
-                        /* Volume memory */
-                        if (!video.muted) localStorage.setItem('vp_volume', video.volume);
-                    }, 2000);
-
-                    /* ── Stall recovery: รอ HLS.js จัดการเอง ไม่ seek เอง ── */
-                    video.addEventListener('waiting', () => {
-                        clearTimeout(video._stallTimer);
-                        video._stallTimer = setTimeout(() => {
-                            /* ถ้า stall นานเกิน 8 วิ และ buffer ว่าง → reconnect */
-                            if (video.paused || !hls) return;
-                            const buf = video.buffered;
-                            const ahead = buf.length ? buf.end(buf.length - 1) - video.currentTime : 0;
-                            if (ahead < 0.5) initHls();
-                        }, 8000);
-                    });
-                    video.addEventListener('playing', () => clearTimeout(video._stallTimer));
-
-                    function showOverlay() { overlay.style.display = 'flex'; }
-                    function hideOverlay() { overlay.style.display = 'none'; }
-
-                    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-                        initHls();
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
                     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                         video.src = SRC;
                         video.play().catch(()=>{});
                     }
+                    /* dummy refs เพื่อไม่ให้ updateBanner() error */
+                    const overlay = { style: { display: '' } };
+                    function showOverlay() {}
+                    function hideOverlay() {}
                 })();
                 </script>
 
