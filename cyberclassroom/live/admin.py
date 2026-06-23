@@ -65,6 +65,7 @@ _DAY_CHOICES_EN = [
 ]
 
 class ClassScheduleCenterForm(forms.ModelForm):
+    instructor = forms.CharField(max_length=255, required=False, label='อาจารย์ผู้สอน')
     # รหัสวิชา — รองรับหลายรหัสคั่นด้วย , หรือขึ้นบรรทัดใหม่
     course_no  = forms.CharField(
         label='รหัสวิชา',
@@ -419,6 +420,7 @@ class ClassScheduleCenterInlineForm(forms.ModelForm):
     course_day = forms.ChoiceField(choices=_DAY_CHOICES_EN, label='วันที่เรียน')
     time_start = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'), input_formats=['%H:%M'])
     time_end   = forms.TimeField(widget=forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'), input_formats=['%H:%M'])
+    instructor = forms.CharField(max_length=255, required=False, label='อาจารย์ผู้สอน')
 
     class Meta:
         model  = ClassScheduleCenter
