@@ -474,6 +474,10 @@
 video::-webkit-media-controls-fullscreen-button {
     display: none !important;
 }
+@keyframes satellitePulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:0.4; transform:scale(0.85); }
+}
 /* iOS CSS fake fullscreen — ครอบทั้งจอโดย HLS.js ยังทำงานต่อ */
 .vp-wrap.vp-ios-fs {
     position: fixed !important;
@@ -1368,11 +1372,67 @@ video::-webkit-media-controls-fullscreen-button {
                 (function () {
                     const SRC      = '{{ server }}{{ q|lower }}/playlist.m3u8';
                     const video    = document.getElementById('my_video');
-                    if (Hls.isSupported()) {
+
+                    /* ── Offline overlay ── */
+                    const offlineDiv = document.createElement('div');
+                    offlineDiv.id = 'hlsOffline';
+                    offlineDiv.style.cssText = 'display:none;position:absolute;inset:0;background:#0a0f1e;color:#fff;flex-direction:column;align-items:center;justify-content:center;gap:0.75rem;z-index:10;border-radius:inherit;';
+                    offlineDiv.innerHTML = `
+                        <i class="fas fa-satellite-dish" style="font-size:2.5rem;color:#4f72d4;animation:satellitePulse 3s ease-in-out infinite;"></i>
+                        <div style="font-size:1rem;font-weight:700;">ยังไม่มีการถ่ายทอดสดในขณะนี้</div>
+                        <div id="hlsOfflineMsg" style="font-size:0.82rem;color:#94a3b8;">กำลังตรวจสอบสัญญาณ...</div>
+                        <div style="width:200px;height:4px;background:#1e3a5f;border-radius:4px;overflow:hidden;margin-top:4px;">
+                            <div id="hlsRetryBar" style="height:100%;background:#4f72d4;width:0%;transition:width linear;"></div>
+                        </div>`;
+                    document.getElementById('vpWrap').appendChild(offlineDiv);
+
+                    let retryCount = 0, retryTimer, retryBarTimer;
+
+                    function showOffline(wait) {
+                        offlineDiv.style.display = 'flex';
+                        video.style.display = 'none';
+                        const msg = document.getElementById('hlsOfflineMsg');
+                        const bar = document.getElementById('hlsRetryBar');
+                        bar.style.transition = 'none'; bar.style.width = '0%';
+                        setTimeout(() => {
+                            bar.style.transition = 'width ' + wait + 's linear';
+                            bar.style.width = '100%';
+                        }, 50);
+                        let t = wait;
+                        retryBarTimer = setInterval(() => {
+                            t--;
+                            msg.textContent = 'ลองใหม่ใน ' + t + ' วินาที (ครั้งที่ ' + (retryCount + 1) + ')';
+                            if (t <= 0) clearInterval(retryBarTimer);
+                        }, 1000);
+                    }
+
+                    function hideOffline() {
+                        offlineDiv.style.display = 'none';
+                        video.style.display = '';
+                        clearInterval(retryBarTimer);
+                    }
+
+                    function initHls() {
                         const hls = new Hls();
                         hls.loadSource(SRC);
                         hls.attachMedia(video);
-                        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                            hideOffline();
+                            video.play().catch(()=>{});
+                            retryCount = 0;
+                        });
+                        hls.on(Hls.Events.ERROR, (_, data) => {
+                            if (!data.fatal) return;
+                            hls.destroy();
+                            const wait = Math.min(15 + retryCount * 5, 60);
+                            showOffline(wait);
+                            clearTimeout(retryTimer);
+                            retryTimer = setTimeout(() => { retryCount++; initHls(); }, wait * 1000);
+                        });
+                    }
+
+                    if (Hls.isSupported()) {
+                        initHls();
                     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                         video.src = SRC;
                         video.play().catch(()=>{});
