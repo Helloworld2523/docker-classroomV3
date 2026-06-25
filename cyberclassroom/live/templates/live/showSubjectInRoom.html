@@ -2809,6 +2809,11 @@ video::-webkit-media-controls-fullscreen-button {
                 showChatBannedUI();
                 return;
             }
+            if (data.error === 'chat_closed') {
+                showToast('อาจารย์ยังไม่เปิดให้แชท', 'error');
+                applyChatOpenState(false);
+                return;
+            }
             if (data.error){ showToast(data.error, 'error'); return; }
             input.value = '';
             appendMessage(data);
