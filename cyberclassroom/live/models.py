@@ -35,6 +35,8 @@ class Classrooms(models.Model):
                                 blank=True, default='',
                                 help_text='ตั้งรหัสลับให้อาจารย์พิมพ์เพื่อแสดง badge "อาจารย์" ในแชท '
                                           '(ว่างเปล่า = ไม่เปิดฟีเจอร์นี้)')
+    chat_open = models.BooleanField('เปิดให้นักศึกษาแชท', default=False,
+                                    help_text='ถ้าปิด → เฉพาะอาจารย์เท่านั้นที่พิมพ์ได้')
 
     class Meta:
         verbose_name="รายการห้องเรียน"

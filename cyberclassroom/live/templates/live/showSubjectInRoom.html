@@ -1743,7 +1743,11 @@ video::-webkit-media-controls-fullscreen-button {
                 <span class="chat-live-pill"><span class="chat-live-dot-anim"></span>LIVE</span>
                 <span class="chat-room-label">{{ room.room_name }}</span>
             </div>
-            <div class="chat-header-right">
+            <div class="chat-header-right" style="display:flex;align-items:center;gap:0.5rem;">
+                <!-- ปุ่ม toggle เปิด/ปิดแชท — แสดงเฉพาะตอน teacher login -->
+                <button id="chatToggleBtn" onclick="teacherToggleChat()"
+                    style="display:none;font-size:0.72rem;padding:2px 10px;border-radius:20px;border:1px solid;cursor:pointer;font-weight:600;transition:all 0.2s;">
+                </button>
                 <i class="fas fa-users" style="font-size:0.75rem;opacity:0.7;"></i>
                 <span id="chatViewerCount" style="font-size:0.78rem;color:rgba(255,255,255,0.8);font-weight:600;">—</span>
             </div>
@@ -1786,7 +1790,13 @@ video::-webkit-media-controls-fullscreen-button {
                 <i class="fas fa-comment-slash"></i>
                 <span>ยังไม่มีข้อความในคาบนี้</span>
             </div>
-            <div class="chat-input-area">
+            <!-- Locked overlay — แสดงเมื่ออาจารย์ปิดแชท -->
+            <div id="chatLockedOverlay" style="display:none;padding:0.9rem 1rem;background:rgba(15,23,42,0.04);border-top:1px solid var(--border,#e2e8f0);text-align:center;">
+                <i class="fas fa-lock" style="font-size:1.2rem;color:#94a3b8;margin-bottom:0.35rem;display:block;"></i>
+                <div style="font-size:0.82rem;color:#64748b;font-weight:500;">อาจารย์ยังไม่เปิดให้แชท</div>
+                <div style="font-size:0.73rem;color:#94a3b8;margin-top:2px;">รอสักครู่...</div>
+            </div>
+            <div class="chat-input-area" id="chatInputArea">
                 <div class="chat-sender-row">
                     <!-- ตัวระบุตัวตน: นักศึกษา / อาจารย์ -->
                     <div class="chat-sender-wrap" id="chatIdentityWrap">
@@ -2419,8 +2429,9 @@ video::-webkit-media-controls-fullscreen-button {
     const NEXT_CLASS_START = '{{ next_class_start|escapejs }}';
     const IS_LAST_CLASS    = {{ is_last_class|yesno:"true,false" }}; /* คาบสุดท้ายของวัน */
     const IS_DAY_DONE      = {{ is_day_done|yesno:"true,false" }};  /* ไม่มีคาบเหลือในวันนี้แล้ว */
-    const SEND_URL  = '/chat/' + ROOM + '/send/';
-    const POLL_MS   = 2000;
+    const SEND_URL       = '/chat/' + ROOM + '/send/';
+    const POLL_MS        = 2000;
+    const CHAT_OPEN_INIT = {{ room.chat_open|yesno:"true,false" }};
     let   fetchSince = SINCE;   /* อัปเดตได้เมื่อขึ้นคาบใหม่ */
 
     /* สร้าง ISO string เวลาท้องถิ่น (ไม่มี Z / timezone offset)
@@ -2449,6 +2460,7 @@ video::-webkit-media-controls-fullscreen-button {
     /* ── ตั้งค่าเริ่มต้น ── */
     updateTeacherBtn();   /* จะ call updateIdentityUI() ด้วย */
     updateEmpty();
+    applyChatOpenState(CHAT_OPEN_INIT);
 
     /* ── ถ้าโหลดหลังจากคาบสุดท้ายจบแล้ว → ปิดแชทสิ้นวันทันที ── */
     if (IS_DAY_DONE) { closeChatForDay(); }
@@ -2624,6 +2636,46 @@ video::-webkit-media-controls-fullscreen-button {
         if (vcBig)  vcBig.textContent  = n;
     };
 
+    /* ── Chat open/close state ── */
+    function applyChatOpenState(isOpen) {
+        const locked   = document.getElementById('chatLockedOverlay');
+        const inputArea = document.getElementById('chatInputArea');
+        const toggleBtn = document.getElementById('chatToggleBtn');
+
+        /* อัปเดต locked overlay สำหรับ นศ (อาจารย์ไม่โดนล็อค) */
+        if (!teacherPin) {
+            if (locked)    locked.style.display    = isOpen ? 'none' : '';
+            if (inputArea) inputArea.style.display  = isOpen ? '' : 'none';
+        }
+
+        /* อัปเดตปุ่ม toggle สำหรับอาจารย์ */
+        if (teacherPin && toggleBtn) {
+            toggleBtn.style.display      = '';
+            toggleBtn.textContent        = isOpen ? '🔓 ปิดแชท นศ' : '🔒 เปิดแชท นศ';
+            toggleBtn.style.background   = isOpen ? 'rgba(220,38,38,0.15)' : 'rgba(34,197,94,0.15)';
+            toggleBtn.style.borderColor  = isOpen ? '#dc2626' : '#16a34a';
+            toggleBtn.style.color        = isOpen ? '#fca5a5' : '#86efac';
+        }
+    }
+
+    window.teacherToggleChat = function() {
+        if (!teacherPin) return;
+        fetch('/chat/' + ROOM + '/toggle/', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+            body: JSON.stringify({teacher_pin: teacherPin})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (typeof data.chat_open !== 'undefined') {
+                applyChatOpenState(data.chat_open);
+                showToast(data.chat_open ? 'เปิดให้นักศึกษาแชทแล้ว' : 'ปิดแชทนักศึกษาแล้ว',
+                          data.chat_open ? 'success' : 'info');
+            }
+        })
+        .catch(() => showToast('เกิดข้อผิดพลาด', 'error'));
+    };
+
     /* ── Fetch ── */
     let isFirstFetch = true;
     function fetchMessages(){
@@ -2632,7 +2684,11 @@ video::-webkit-media-controls-fullscreen-button {
         fetch(url, {cache: 'no-store'})
             .then(r => r.json())
             .then(data => {
-                if (classDone) return;   /* guard: อาจถูกปิดระหว่าง fetch in-flight */
+                if (classDone) return;
+                /* sync chat_open status */
+                if (typeof data.chat_open !== 'undefined') {
+                    applyChatOpenState(data.chat_open);
+                }
                 if (!data.messages || !data.messages.length) return;
                 const atBottom = isFirstFetch || (box.scrollHeight - box.scrollTop - box.clientHeight < 80);
                 data.messages.forEach(appendMessage);
@@ -2795,6 +2851,11 @@ video::-webkit-media-controls-fullscreen-button {
                 senderName     = ROOM.toUpperCase();
                 localStorage.setItem('chat_sender_' + ROOM, senderName);
                 updateTeacherBtn();
+                /* ดึง chat_open สถานะปัจจุบันทันที */
+                fetch('/chat/' + ROOM + '/messages/?since=' + encodeURIComponent(fetchSince) + '&after=' + lastId, {cache:'no-store'})
+                    .then(r => r.json())
+                    .then(d => { if (typeof d.chat_open !== 'undefined') applyChatOpenState(d.chat_open); })
+                    .catch(() => {});
                 showToast('เข้าสู่โหมดอาจารย์แล้ว ✓', 'success');
                 lastId = data.id; /* ซ่อน ping message */
             } else {

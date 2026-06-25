@@ -15,6 +15,7 @@ urlpatterns = [
     # Chat polling endpoints
     path('chat/<str:room_name>/messages/', views.chat_fetch,         name='chat_fetch'),
     path('chat/<str:room_name>/send/',     views.chat_send,          name='chat_send'),
+    path('chat/<str:room_name>/toggle/',   views.chat_toggle_open,   name='chat_toggle_open'),
     path('chat/student-login/',            views.chat_student_login, name='chat_student_login'),
     # path('not-available/', views.not_available, name='not_available'),
     path('live-monitor/', views.live_monitor_view, name='live_monitor'),

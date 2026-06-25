@@ -849,7 +849,12 @@ def chat_fetch(request, room_name):
         }
         for m in msgs
     ]
-    resp = JsonResponse({'messages': result})
+    try:
+        room = Classrooms.objects.get(room_name=room_name)
+        chat_open = room.chat_open
+    except Classrooms.DoesNotExist:
+        chat_open = False
+    resp = JsonResponse({'messages': result, 'chat_open': chat_open})
     resp['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     resp['Pragma'] = 'no-cache'
     return resp
@@ -884,6 +889,10 @@ def chat_send(request, room_name):
             teacher_pin and
             room.chat_pin == teacher_pin
         )
+
+        # บล็อกนักศึกษาถ้าอาจารย์ยังไม่เปิดแชท
+        if not is_teacher and not room.chat_open:
+            return JsonResponse({'error': 'chat_closed', 'message': 'อาจารย์ยังไม่เปิดให้แชท'}, status=403)
 
         # หาวิชาที่กำลังสอนในขณะนี้
         now_local = datetime.now()
@@ -933,6 +942,25 @@ def chat_send(request, room_name):
         return JsonResponse({'error': 'invalid JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_POST
+def chat_toggle_open(request, room_name):
+    """อาจารย์เปิด/ปิดให้นักศึกษาแชท — ต้องส่ง teacher_pin มาด้วย"""
+    try:
+        data        = json.loads(request.body)
+        teacher_pin = data.get('teacher_pin', '').strip()
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({'error': 'invalid json'}, status=400)
+
+    room = get_object_or_404(Classrooms, room_name=room_name)
+
+    if not room.chat_pin or room.chat_pin != teacher_pin:
+        return JsonResponse({'error': 'unauthorized'}, status=403)
+
+    room.chat_open = not room.chat_open
+    room.save(update_fields=['chat_open'])
+    return JsonResponse({'chat_open': room.chat_open})
 
 
 @require_POST
