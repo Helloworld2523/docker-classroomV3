@@ -1052,3 +1052,12 @@ def chat_student_login(request):
         return JsonResponse({'ok': False, 'detail': f'eshub ตอบกลับ error {e.code}'}, status=502)
     except Exception:
         return JsonResponse({'ok': False, 'detail': 'เชื่อมต่อ eshub ไม่ได้ กรุณาลองใหม่'}, status=500)
+
+
+def live_event(request):
+    STREAM_URL  = 'https://ram1.ru.ac.th/hls/RU_BANGNA.m3u8'
+    VIEWER_ROOM = 'RU_BANGNA'
+    return render(request, 'live/live_event.html', {
+        'stream_url':  STREAM_URL,
+        'viewer_room': VIEWER_ROOM,
+    })
