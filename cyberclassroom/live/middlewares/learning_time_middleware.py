@@ -19,6 +19,7 @@ class LearningHoursMiddleware:
             '/get-live-viewers/',
             '/viewer-data/',   # Monitor API polling
             '/monitor-sse/',   # Monitor SSE
+            '/live',           # หน้าถ่ายทอดสด — เปิดตลอด (OG crawlers + ผู้ชม)
         )
         if request.path.startswith(EXEMPT_PREFIXES):
             return self.get_response(request)
