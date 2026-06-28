@@ -156,12 +156,16 @@ def get_live_viewers(request):
     return JsonResponse({'sessions_total': countOnline})
 
 def get_live_room_viewers(request, room_name):
+    from live._wowza_poller import get_cached
+    cached = get_cached(room_name)
+    if cached['total'] > 0 or cached['updated']:
+        return JsonResponse({'sessions_total': cached['total']})
+    # fallback → DB (กรณี poller ยังไม่ได้รัน หรือ room อื่นที่ไม่ใช่ rucom)
     try:
         data_c = Count.objects.get(room_name=room_name)
         countOnline = data_c.sessions_total
     except Count.DoesNotExist:
-        countOnline = 0  # ถ้าไม่มีข้อมูล ให้กำหนดเป็น 0
-
+        countOnline = 0
     return JsonResponse({'sessions_total': countOnline})
 
 # @ratelimit(key='ip', rate='10/m', block=True)
