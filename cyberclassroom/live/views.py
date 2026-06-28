@@ -1055,8 +1055,8 @@ def chat_student_login(request):
 
 
 def live_event(request):
-    STREAM_URL  = 'https://ram1.ru.ac.th/hls/RU_BANGNA.m3u8'
-    VIEWER_ROOM = 'RU_BANGNA'
+    STREAM_URL  = 'http://202.41.160.65:1935/live/rucom/playlist.m3u8'
+    VIEWER_ROOM = 'rucom'
     return render(request, 'live/live_event.html', {
         'stream_url':  STREAM_URL,
         'viewer_room': VIEWER_ROOM,

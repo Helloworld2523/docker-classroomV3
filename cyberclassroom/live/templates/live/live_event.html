@@ -57,7 +57,8 @@ body{background:var(--ru-navy);color:var(--text-primary);font-family:'Sarabun',s
 /* ── Player wrapper ── */
 .lv-player-section{max-width:900px;margin:0 auto;padding:1rem 0.75rem 0;}
 .lv-player-wrap{position:relative;background:#000;border-radius:10px;overflow:hidden;aspect-ratio:16/9;}
-.lv-player-wrap video{width:100%;height:100%;display:block;}
+.lv-player-wrap video,.lv-player-wrap .video-js{width:100%!important;height:100%!important;display:block;position:absolute;top:0;left:0;}
+.lv-player-wrap .vjs-tech{width:100%!important;height:100%!important;object-fit:contain;}
 .vjs-default-skin .vjs-big-play-button{display:none!important;}
 
 /* offline overlay */
@@ -288,7 +289,7 @@ body{background:var(--ru-navy);color:var(--text-primary);font-family:'Sarabun',s
 <script>
 (function(){
     const SRC        = '{{ stream_url }}';
-    const VIEWER_URL = '/viewer-data/';
+    const VIEWER_URL = '/get-live-viewers/{{ viewer_room }}/';
     const VIEWER_ROOM = '{{ viewer_room }}';
     const video      = document.getElementById('lv_video');
     const wrap       = document.getElementById('lvWrap');
@@ -419,9 +420,7 @@ body{background:var(--ru-navy);color:var(--text-primary);font-family:'Sarabun',s
         fetch(VIEWER_URL, {cache: 'no-store'})
             .then(function(r){ return r.json(); })
             .then(function(data){
-                var rooms = data.rooms || [];
-                var found = rooms.find(function(r){ return r.room_name === VIEWER_ROOM; });
-                var num = found ? (parseInt(found.viewers_total) || 0) : 0;
+                var num = parseInt(data.sessions_total) || 0;
                 var el = document.getElementById('lvViewerNum');
                 if (el) el.textContent = num.toLocaleString('th-TH');
             })
