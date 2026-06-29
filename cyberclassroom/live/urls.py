@@ -26,7 +26,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard_stats, name='dashboard'),
     path('admin-api/course-search/', views.course_search_proxy, name='course_search_proxy'),
     # สำหรับงานถ่ายทอดสด
-    path('live', views.live_event, name='live_event'),
+    # path('live', views.live_event, name='live_event'),  # ปิดถ่ายทอดสด 29/06/2569
     # path('live', views.live, name='live'),
     # path('get-live-viewers/', views.get_live_viewers, name='get-live-viewers'),
     # สำหรับงานถ่ายทอดสด
