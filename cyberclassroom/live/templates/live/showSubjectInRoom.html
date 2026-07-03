@@ -2877,6 +2877,11 @@ video::-webkit-media-controls-fullscreen-button {
         if (teacherPin){
             tBtn.classList.add('active');
             tBtn.innerHTML = '<i class="fas fa-star"></i><span>กำลังสอน</span>';
+            /* อาจารย์ login แล้ว — ซ่อน locked overlay + แสดง input เสมอ */
+            const locked2 = document.getElementById('chatLockedOverlay');
+            const input2  = document.getElementById('chatInputArea');
+            if (locked2) locked2.style.display = 'none';
+            if (input2)  input2.style.display  = '';
             /* โหมดอาจารย์ — ซ่อน video แสดงแต่แชท */
             const videoCol = document.getElementById('videoColumn');
             const chatCol  = document.getElementById('chatColumn');
@@ -3014,6 +3019,15 @@ video::-webkit-media-controls-fullscreen-button {
     /* ── Start polling ── */
     fetchMessages();
     setInterval(fetchMessages, POLL_MS);
+
+    /* ── Poll chat_open แยก — ทำงานเสมอแม้ classDone = true ── */
+    function pollChatOpen(){
+        fetch('/chat/' + ROOM + '/messages/?since=' + encodeURIComponent(fetchSince) + '&after=' + lastId, {cache:'no-store'})
+            .then(r => r.json())
+            .then(d => { if (typeof d.chat_open !== 'undefined') applyChatOpenState(d.chat_open); })
+            .catch(() => {});
+    }
+    setInterval(pollChatOpen, 3000);
 })();
 </script>
 {% endif %}
