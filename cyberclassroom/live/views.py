@@ -387,6 +387,8 @@ def showSubjectInRoom(request, room):
     now = datetime.now()   # local Bangkok time (TZ=Asia/Bangkok)
     today_day_en = now.strftime("%A")
     today_day_int = now.strftime("%w")  # string '0'-'6'
+    if today_day_int == '0':
+        today_day_int = '7'
 
     # แปลงชื่อห้อง
     q = room.lower()
@@ -402,6 +404,7 @@ def showSubjectInRoom(request, room):
     ).order_by('time_start')
     subjectCount = data_subject.count()
 
+    
     # งดบรรยายวันนี้: set ของ schedule id ที่มี ClassCancellation วันนี้
     import datetime as _dt
     from .models import ClassCancellation as _CC
@@ -419,7 +422,7 @@ def showSubjectInRoom(request, room):
     }
 
     # สร้าง mapping ชื่อวันอังกฤษ
-    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday','Sunday']
     rotated_days = day_order[datetime.today().weekday():] + day_order[:datetime.today().weekday()]
 
     def get_day_name(day_value):
@@ -901,6 +904,7 @@ def chat_send(request, room_name):
         # หาวิชาที่กำลังสอนในขณะนี้
         now_local = datetime.now()
         now_day  = now_local.strftime('%w')   # 0=อาทิตย์ … 6=เสาร์
+        if now_day == '0': now_day = '7'      # DB ใช้ '7' สำหรับอาทิตย์
         now_time = now_local.strftime('%H:%M')
         active_course = ''
         try:
