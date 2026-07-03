@@ -1796,6 +1796,13 @@ video::-webkit-media-controls-fullscreen-button {
                 <div style="font-size:0.82rem;color:#64748b;font-weight:500;">อาจารย์ยังไม่เปิดให้แชท</div>
                 <div style="font-size:0.73rem;color:#94a3b8;margin-top:2px;">รอสักครู่...</div>
             </div>
+            <!-- ปุ่มอาจารย์ — แสดงเสมอ ไม่ถูกซ่อนตาม chat_open -->
+                    <div style="display:flex;justify-content:flex-end;padding:0.3rem 0.5rem 0;">
+                        <button id="chatTeacherBtn" onclick="chatPromptTeacher()" class="chat-teacher-btn" title="เข้าสู่โหมดอาจารย์">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <span>อาจารย์</span>
+                        </button>
+                    </div>
             <div class="chat-input-area" id="chatInputArea">
                 <div class="chat-sender-row">
                     <!-- ตัวระบุตัวตน: นักศึกษา / อาจารย์ -->
@@ -1815,10 +1822,6 @@ video::-webkit-media-controls-fullscreen-button {
                             <i class="fas fa-sign-out-alt"></i>
                         </button>
                     </div>
-                    <button id="chatTeacherBtn" onclick="chatPromptTeacher()" class="chat-teacher-btn" title="เข้าสู่โหมดอาจารย์">
-                        <i class="fas fa-chalkboard-teacher"></i>
-                        <span>อาจารย์</span>
-                    </button>
                 </div>
                 <div class="chat-compose-row">
                     <textarea id="chatInput" rows="2" placeholder="พิมพ์ข้อความ…" class="chat-compose-input" maxlength="500"></textarea>
