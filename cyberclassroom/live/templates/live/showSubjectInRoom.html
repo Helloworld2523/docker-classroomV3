@@ -1744,14 +1744,19 @@ video::-webkit-media-controls-fullscreen-button {
                 <span class="chat-room-label">{{ room.room_name }}</span>
             </div>
             <div class="chat-header-right" style="display:flex;align-items:center;gap:0.5rem;">
-                <!-- ปุ่ม toggle เปิด/ปิดแชท — แสดงเฉพาะตอน teacher login -->
-                <button id="chatToggleBtn" onclick="teacherToggleChat()"
-                    style="display:none;font-size:0.72rem;padding:2px 10px;border-radius:20px;border:1px solid;cursor:pointer;font-weight:600;transition:all 0.2s;">
-                </button>
+                <!-- ปุ่ม toggle — แสดงเฉพาะตอน teacher login -->
+                <div id="chatTeacherControls" style="display:none;align-items:center;gap:0.4rem;">
+                    <button id="chatToggleBtn" onclick="teacherToggleChat()"
+                        style="display:none;font-size:0.75rem;padding:4px 12px;border-radius:20px;border:1.5px solid;cursor:pointer;font-weight:700;transition:all 0.2s;">
+                    </button>
+                </div>
                 <i class="fas fa-users" style="font-size:0.75rem;opacity:0.7;"></i>
                 <span id="chatViewerCount" style="font-size:0.78rem;color:rgba(255,255,255,0.8);font-weight:600;">—</span>
             </div>
         </div>
+
+        <!-- แถบสถานะแชท เต็มความกว้าง — แสดงเฉพาะอาจารย์ -->
+        <div id="chatStatusBar" style="display:none;width:100%;padding:0.45rem 1rem;text-align:center;font-size:0.82rem;font-weight:700;letter-spacing:0.03em;transition:all 0.3s;"></div>
 
         <!-- Tabs -->
         <div class="chat-tabs">
@@ -2651,13 +2656,27 @@ video::-webkit-media-controls-fullscreen-button {
             if (inputArea) inputArea.style.display  = isOpen ? '' : 'none';
         }
 
-        /* อัปเดตปุ่ม toggle สำหรับอาจารย์ */
-        if (teacherPin && toggleBtn) {
-            toggleBtn.style.display      = '';
-            toggleBtn.textContent        = isOpen ? '🔓 ปิดแชท นศ' : '🔒 เปิดแชท นศ';
-            toggleBtn.style.background   = isOpen ? 'rgba(220,38,38,0.15)' : 'rgba(34,197,94,0.15)';
-            toggleBtn.style.borderColor  = isOpen ? '#dc2626' : '#16a34a';
-            toggleBtn.style.color        = isOpen ? '#fca5a5' : '#86efac';
+        /* อัปเดตปุ่ม toggle + status bar สำหรับอาจารย์ */
+        const controls  = document.getElementById('chatTeacherControls');
+        const statusBar = document.getElementById('chatStatusBar');
+        if (teacherPin && controls) {
+            controls.style.display = 'flex';
+            if (toggleBtn) {
+                toggleBtn.style.display     = '';
+                toggleBtn.textContent       = isOpen ? '🔴 ปิดแชท นศ' : '🟢 เปิดแชท นศ';
+                toggleBtn.style.background  = isOpen ? 'rgba(220,38,38,0.2)' : 'rgba(34,197,94,0.2)';
+                toggleBtn.style.borderColor = isOpen ? '#dc2626' : '#16a34a';
+                toggleBtn.style.color       = isOpen ? '#fca5a5' : '#86efac';
+            }
+            if (statusBar) {
+                statusBar.style.display    = '';
+                statusBar.textContent      = isOpen ? '✅ แชทเปิดอยู่ — นักศึกษาสามารถพิมพ์ข้อความได้' : '🔒 แชทปิดอยู่ — เฉพาะอาจารย์เท่านั้นที่พิมพ์ได้';
+                statusBar.style.background = isOpen ? '#166534' : '#7f1d1d';
+                statusBar.style.color      = isOpen ? '#ffffff' : '#ffffff';
+                statusBar.style.borderBottom = isOpen ? '2px solid #22c55e' : '2px solid #ef4444';
+            }
+        } else if (!teacherPin && statusBar) {
+            statusBar.style.display = 'none';
         }
     }
 
@@ -2975,6 +2994,18 @@ video::-webkit-media-controls-fullscreen-button {
         return v ? v.pop() : '';
     }
 
+    /* ── ล้าง session นักศึกษา (เรียกเมื่อหมดคาบ) ── */
+    function clearStudentSession(){
+        studentCode = '';
+        studentName = '';
+        senderName  = '';
+        sessionStorage.removeItem('chat_student_' + ROOM);
+        sessionStorage.removeItem('chat_student_name_' + ROOM);
+        localStorage.removeItem('chat_sender_' + ROOM);
+        if (senderEl) senderEl.value = '';
+        updateIdentityUI();
+    }
+
     /* ── ปิดแชทสิ้นวัน ── */
     function closeChatForDay(){
         classDone = true;
@@ -2982,6 +3013,22 @@ video::-webkit-media-controls-fullscreen-button {
         box.innerHTML = '';
         msgCount = 0;
         updateEmpty();
+        /* ล้าง session นักศึกษา → ต้อง login ใหม่คาบหน้า */
+        clearStudentSession();
+        /* ล้าง teacher PIN + ปิด chat_open ใน DB */
+        if (teacherPin) {
+            const pinToClose = teacherPin;
+            teacherPin = '';
+            localStorage.removeItem('chat_teacher_pin_' + ROOM);
+            /* ถ้าแชทเปิดอยู่ → ยิง toggle เพื่อปิด */
+            fetch('/chat/' + ROOM + '/toggle/', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json','X-CSRFToken': getCookie('csrftoken')},
+                body: JSON.stringify({teacher_pin: pinToClose, force_close: true})
+            }).catch(() => {});
+            updateTeacherBtn();
+        }
+        applyChatOpenState(false);
         /* ซ่อน input area ทั้งหมด */
         const inputArea = document.querySelector('.chat-input-area');
         if (inputArea) inputArea.style.display = 'none';
@@ -3000,10 +3047,11 @@ video::-webkit-media-controls-fullscreen-button {
                 /* คาบสุดท้ายของวัน → ปิดแชทถาวร */
                 closeChatForDay();
             } else {
-                /* ยังมีคาบถัดไป → เคลียข้อความเก่า แต่ polling ทำงานต่อ */
+                /* ยังมีคาบถัดไป → เคลียข้อความเก่า + ล้าง session นศ ต้อง login ใหม่ */
                 box.innerHTML = '';
                 msgCount = 0;
                 updateEmpty();
+                clearStudentSession();
                 /*
                  * อัปเดต fetchSince → ข้อความเก่า (คาบก่อน) จะไม่โหลดกลับมา
                  * ไม่ set classDone = true → polling ยังทำงานต่อเนื่อง

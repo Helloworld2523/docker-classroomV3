@@ -966,7 +966,11 @@ def chat_toggle_open(request, room_name):
     if not room.chat_pin or room.chat_pin != teacher_pin:
         return JsonResponse({'error': 'unauthorized'}, status=403)
 
-    room.chat_open = not room.chat_open
+    force_close = data.get('force_close', False)
+    if force_close:
+        room.chat_open = False
+    else:
+        room.chat_open = not room.chat_open
     room.save(update_fields=['chat_open'])
     return JsonResponse({'chat_open': room.chat_open})
 
