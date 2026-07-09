@@ -1861,6 +1861,39 @@ video::-webkit-media-controls-fullscreen-button {
     {% endif %}
 </div><!-- /row -->
 
+<!-- ─── Teacher PIN Modal ─── -->
+<div id="teacherPinModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;">
+    <div style="background:#0d1e3d;border:1px solid rgba(201,162,39,0.3);border-radius:16px;padding:1.75rem 1.5rem;width:min(360px,90vw);box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+        <div style="text-align:center;margin-bottom:1.2rem;">
+            <i class="fas fa-chalkboard-teacher" style="font-size:2rem;color:#c9a227;margin-bottom:0.5rem;display:block;"></i>
+            <div style="font-size:1rem;font-weight:700;color:#f0f4ff;">เข้าสู่โหมดอาจารย์</div>
+            <div style="font-size:0.78rem;color:#94a3b8;margin-top:4px;">กรุณาใส่รหัสอาจารย์ประจำห้อง</div>
+        </div>
+        <div style="position:relative;margin-bottom:1rem;">
+            <input id="teacherPinInput" type="password" placeholder="รหัสอาจารย์" autocomplete="off"
+                style="width:100%;padding:0.6rem 2.5rem 0.6rem 0.9rem;border-radius:10px;border:1.5px solid rgba(201,162,39,0.35);background:#0a1628;color:#f0f4ff;font-size:0.95rem;font-family:inherit;outline:none;box-sizing:border-box;"
+                onkeydown="if(event.key==='Enter') submitTeacherPin();" />
+            <button onclick="togglePinVisibility()" tabindex="-1"
+                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.9rem;padding:0;">
+                <i class="fas fa-eye" id="pinEyeIcon"></i>
+            </button>
+        </div>
+        <div style="display:flex;gap:0.6rem;">
+            <button onclick="closeTeacherPinModal()"
+                style="flex:1;padding:0.6rem;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#94a3b8;font-size:0.85rem;cursor:pointer;font-family:inherit;">
+                ยกเลิก
+            </button>
+            <button onclick="submitTeacherPin()" id="teacherPinSubmitBtn"
+                style="flex:2;padding:0.6rem;border-radius:10px;border:none;background:#c9a227;color:#0a1628;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                <i class="fas fa-sign-in-alt me-1"></i> เข้าสู่ระบบ
+            </button>
+        </div>
+        <div id="teacherPinError" style="display:none;margin-top:0.7rem;text-align:center;font-size:0.78rem;color:#f87171;">
+            <i class="fas fa-exclamation-circle me-1"></i> รหัสไม่ถูกต้อง กรุณาลองใหม่
+        </div>
+    </div>
+</div>
+
 <!-- ─── NOW ON AIR: banner + player overlay (ทุกห้อง ไม่จำกัดเฉพาะ chat_pin) ─── -->
 <script>
 (function () {
@@ -2846,22 +2879,40 @@ video::-webkit-media-controls-fullscreen-button {
         .finally(() => { if (!input.disabled) btn.disabled = false; });
     };
 
-    /* ── Teacher login ── */
-    window.chatPromptTeacher = function(){
-        if (teacherPin){
-            if (confirm('ออกจากโหมดอาจารย์?')){
-                teacherPin = '';
-                localStorage.removeItem('chat_teacher_pin_' + ROOM);
-                /* ถ้ามี studentCode อยู่ก็กลับสู่โหมดนักศึกษา ไม่ต้อง login ใหม่ */
-                senderEl.value = studentCode || '';
-                senderName     = studentCode || '';
-                updateTeacherBtn();
-                showToast('ออกจากโหมดอาจารย์แล้ว', 'success');
-            }
-            return;
+    /* ── Teacher PIN Modal ── */
+    function openTeacherPinModal(){
+        const modal = document.getElementById('teacherPinModal');
+        const inp   = document.getElementById('teacherPinInput');
+        const err   = document.getElementById('teacherPinError');
+        if (!modal) return;
+        inp.value = '';
+        err.style.display = 'none';
+        modal.style.display = 'flex';
+        setTimeout(() => inp.focus(), 100);
+    }
+    window.closeTeacherPinModal = function(){
+        const modal = document.getElementById('teacherPinModal');
+        if (modal) modal.style.display = 'none';
+    };
+    window.togglePinVisibility = function(){
+        const inp  = document.getElementById('teacherPinInput');
+        const icon = document.getElementById('pinEyeIcon');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            inp.type = 'password';
+            icon.className = 'fas fa-eye';
         }
-        const pin = prompt('กรุณาใส่รหัสอาจารย์:');
+    };
+    window.submitTeacherPin = function(){
+        const inp  = document.getElementById('teacherPinInput');
+        const err  = document.getElementById('teacherPinError');
+        const btn  = document.getElementById('teacherPinSubmitBtn');
+        const pin  = inp.value.trim();
         if (!pin) return;
+        btn.disabled = true;
+        btn.textContent = 'กำลังตรวจสอบ...';
         fetch(SEND_URL, {
             method:'POST',
             headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
@@ -2869,27 +2920,47 @@ video::-webkit-media-controls-fullscreen-button {
         })
         .then(r => r.json())
         .then(data => {
-            if (data.error){ showToast('รหัสไม่ถูกต้อง', 'error'); return; }
             if (data.is_teacher){
                 teacherPin = pin;
                 localStorage.setItem('chat_teacher_pin_' + ROOM, pin);
-                /* ชื่อผู้ส่งเป็นชื่อห้องอัตโนมัติ */
                 senderEl.value = ROOM.toUpperCase();
                 senderName     = ROOM.toUpperCase();
                 localStorage.setItem('chat_sender_' + ROOM, senderName);
+                closeTeacherPinModal();
                 updateTeacherBtn();
-                /* ดึง chat_open สถานะปัจจุบันทันที */
                 fetch('/chat/' + ROOM + '/messages/?since=' + encodeURIComponent(fetchSince) + '&after=' + lastId, {cache:'no-store'})
                     .then(r => r.json())
                     .then(d => { if (typeof d.chat_open !== 'undefined') applyChatOpenState(d.chat_open); })
                     .catch(() => {});
                 showToast('เข้าสู่โหมดอาจารย์แล้ว ✓', 'success');
-                lastId = data.id; /* ซ่อน ping message */
+                lastId = data.id;
             } else {
-                showToast('รหัสไม่ถูกต้อง', 'error');
+                err.style.display = '';
+                inp.value = '';
+                inp.focus();
             }
         })
-        .catch(() => showToast('เชื่อมต่อไม่ได้', 'error'));
+        .catch(() => { err.style.display = ''; })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sign-in-alt me-1"></i> เข้าสู่ระบบ';
+        });
+    };
+
+    /* ── Teacher login ── */
+    window.chatPromptTeacher = function(){
+        if (teacherPin){
+            if (confirm('ออกจากโหมดอาจารย์?')){
+                teacherPin = '';
+                localStorage.removeItem('chat_teacher_pin_' + ROOM);
+                senderEl.value = studentCode || '';
+                senderName     = studentCode || '';
+                updateTeacherBtn();
+                showToast('ออกจากโหมดอาจารย์แล้ว', 'success');
+            }
+            return;
+        }
+        openTeacherPinModal();
     };
 
     function updateTeacherBtn(){
